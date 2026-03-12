@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,7 @@ const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'PG 1st Year', 'P
 
 const ORG_TYPES = ['Startup', 'NGO / Non-profit', 'Company', 'Government Body', 'Research Institution', 'Individual', 'Other']
 
-export default function JoinPage() {
+function JoinContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [userType, setUserType] = useState<UserType>(null)
@@ -272,5 +272,13 @@ export default function JoinPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#FAF8F4' }} />}>
+      <JoinContent />
+    </Suspense>
   )
 }
