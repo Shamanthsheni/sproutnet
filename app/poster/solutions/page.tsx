@@ -43,7 +43,7 @@ export default async function PosterSolutionsPage() {
       .select('id, stage, milestone, status, created_at, problem_id, student_id, problems(title, domain), users(name, dept, year)')
       .in('problem_id', problemIds)
       .order('created_at', { ascending: false })
-    submissions = (data ?? []) as SubmissionRow[]
+    submissions = (data ?? []) as unknown as SubmissionRow[]
   }
 
   return (
