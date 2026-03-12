@@ -1,36 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const supabase = createClient()
-
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authError) {
-      setError('Invalid email or password. Please try again.')
-      setLoading(false)
-      return
-    }
-
-    router.push('/dashboard')
-    router.refresh()
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -57,55 +29,42 @@ export default function LoginPage() {
             </span>
           </Link>
           <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 32, fontWeight: 400, color: '#1C1410', letterSpacing: '-0.5px', lineHeight: 1.1, display: 'block' }}>
-            Welcome back.
+            Choose your sign in
           </h1>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: '#4A3F38', marginTop: 8, fontWeight: 300 }}>
-            Sign in to continue building.
+            Separate access for students and problem posters.
           </p>
         </div>
 
-        {/* Card */}
+        {/* Role selector */}
         <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '36px 40px', boxShadow: '0 4px 24px rgba(28,20,16,0.07)' }}>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {error && (
-              <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#DC2626' }}>
-                {error}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, color: '#1C1410' }}>
-                Email address
-              </label>
-              <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@jyothyit.ac.in"
-                style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8, padding: '11px 14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, color: '#1C1410' }}>
-                Password
-              </label>
-              <input
-                type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••"
-                style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8, padding: '11px 14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}
-              />
-            </div>
-
-            <button type="submit" disabled={loading} style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410',
-              background: loading ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8,
-              padding: '13px', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 4,
-              boxShadow: '0 2px 10px rgba(244,167,35,0.3)', width: '100%'
+          <div style={{ display: 'grid', gap: 16 }}>
+            <a href="/login/student" style={{
+              display: 'block', textDecoration: 'none',
+              border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '18px 20px',
+              background: '#FAF8F4'
             }}>
-              {loading ? 'Signing in...' : 'Sign in →'}
-            </button>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410' }}>
+                I&apos;m a Student
+              </div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', marginTop: 6, fontWeight: 300 }}>
+                Sign in to browse problems and submit solutions.
+              </div>
+            </a>
 
-          </form>
+            <a href="/login/poster" style={{
+              display: 'block', textDecoration: 'none',
+              border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '18px 20px',
+              background: '#FAF8F4'
+            }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410' }}>
+                I&apos;m a Problem Poster
+              </div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', marginTop: 6, fontWeight: 300 }}>
+                Sign in to post a problem and review submissions.
+              </div>
+            </a>
+          </div>
 
           <div style={{ borderTop: '1px solid rgba(28,20,16,0.07)', margin: '24px 0' }} />
 
