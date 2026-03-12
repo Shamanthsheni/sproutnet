@@ -321,7 +321,7 @@ export default async function LeaderboardPage() {
               Every submission moves your rank.
             </div>
           </div>
-          <Link href="/problems" style={{
+          <Link href="/login/student" style={{
             fontFamily: 'DM Sans, sans-serif',
             fontSize: 14, fontWeight: 600,
             color: '#1C1410', background: '#F4A723',

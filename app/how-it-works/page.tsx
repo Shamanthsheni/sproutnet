@@ -106,7 +106,7 @@ footer{background:var(--soil);padding:52px}
           </ul>
           <div className="nav-right">
             <a href="/login" className="btn-ghost">Log in</a>
-            <a href="/join" className="btn-nav">Start Solving &rarr;</a>
+            <a href="/login/student" className="btn-nav">Start Solving &rarr;</a>
           </div>
         </nav>
 
@@ -361,7 +361,7 @@ footer{background:var(--soil);padding:52px}
           <div className="closing-inner">
             <h2 className="closing-title">You understand how it works. Now use it.</h2>
             <div className="cta-row">
-              <a href="/join" className="btn-primary">Start Solving &rarr;</a>
+              <a href="/login/student" className="btn-primary">Start Solving &rarr;</a>
               <a href="/problems" className="btn-secondary">See Open Problems</a>
             </div>
             <p className="closing-fine">Phase 1 open to @jyothyit.ac.in students.</p>

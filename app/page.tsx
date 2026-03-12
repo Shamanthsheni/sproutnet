@@ -177,7 +177,7 @@ footer{background:var(--soil);padding:52px}
         </ul>
         <div className="nav-right">
           {!user && <a href="/login" className="btn-ghost">Log in</a>}
-          <a href={user ? '/dashboard' : '/join'} className="btn-nav">
+          <a href={user ? '/dashboard' : '/login/student'} className="btn-nav">
             {user ? 'Dashboard →' : 'Start Solving →'}
           </a>
         </div>
@@ -192,7 +192,7 @@ footer{background:var(--soil);padding:52px}
           </p>
 
           <div className="hero-ctas a3">
-            <a href="/join" className="btn-hp">Start Solving →</a>
+            <a href="/login/student" className="btn-hp">Start Solving →</a>
             <a href="/problems" className="btn-hs">See Open Problems</a>
           </div>
 
