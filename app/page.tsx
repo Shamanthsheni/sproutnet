@@ -168,7 +168,7 @@ footer{background:var(--soil);padding:52px}
           <span className="nav-wm">SproutNet</span>
         </a>
         <ul className="nav-links">
-          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="/how-it-works">How It Works</a></li>
           <li><a href="/problems">Problems</a></li>
           <li><a href="/leaderboard">Leaderboard</a></li>
           <li><a href="#about">About</a></li>
@@ -320,7 +320,7 @@ footer{background:var(--soil);padding:52px}
             <div className="ft-tl">Structured thinking for real India.</div>
           </div>
           <div className="ft-links">
-            <a href="#how-it-works">How It Works</a>
+            <a href="/how-it-works">How It Works</a>
             <a href="/problems">Problems</a>
             <a href="/leaderboard">Leaderboard</a>
             <a href="/login">Sign in</a>
