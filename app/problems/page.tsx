@@ -28,8 +28,8 @@ export default async function ProblemsPage({
   let query = supabase
     .from('problems')
     .select('id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context')
-    .eq('status', 'open')
     .order('created_at', { ascending: false })
+    .eq('status', 'open')
 
   if (selectedDomain !== 'All') {
     query = query.eq('domain', selectedDomain)

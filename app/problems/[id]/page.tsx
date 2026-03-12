@@ -67,6 +67,9 @@ export default function ProblemDetailPage() {
   const [posting, setPosting] = useState(false)
   const [activeSection, setActiveSection] = useState('context')
   const [hasSubmitted, setHasSubmitted] = useState(false)
+  const [isEnrolled, setIsEnrolled] = useState(false)
+  const [enrolling, setEnrolling] = useState(false)
+  const [enrollError, setEnrollError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -92,6 +95,15 @@ export default function ProblemDetailPage() {
 
         // Check if student already submitted
         if (profile?.role === 'student') {
+          const { data: enroll } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('problem_id', id)
+            .eq('student_id', authUser.id)
+            .eq('status', 'active')
+            .limit(1)
+          setIsEnrolled((enroll?.length ?? 0) > 0)
+
           const { data: sub } = await supabase
             .from('submissions')
             .select('id')
@@ -127,6 +139,33 @@ export default function ProblemDetailPage() {
     if (data) setComments(prev => [...prev, data as unknown as Comment])
     setCommentBody('')
     setPosting(false)
+  }
+
+  async function enroll() {
+    if (!user || user.role !== 'student') return
+    setEnrolling(true)
+    setEnrollError('')
+    const res = await fetch('/api/enrollments/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem_id: id })
+    })
+    if (res.ok) {
+      setIsEnrolled(true)
+    } else {
+      const text = await res.text().catch(() => '')
+      let message = `Request failed (${res.status}).`
+      if (text) {
+        try {
+          const data = JSON.parse(text)
+          message = data?.error ?? message
+        } catch {
+          message = text
+        }
+      }
+      setEnrollError(message)
+    }
+    setEnrolling(false)
   }
 
   if (loading) return (
@@ -419,18 +458,47 @@ export default function ProblemDetailPage() {
             </div>
 
             {user?.role === 'student' ? (
-              <button
-                onClick={() => router.push(`/problems/${problem.id}/submit`)}
-                style={{
-                  width: '100%', fontFamily: 'DM Sans, sans-serif',
-                  fontSize: 15, fontWeight: 600,
-                  color: '#1C1410', background: '#F4A723',
-                  border: 'none', borderRadius: 8,
-                  padding: '14px', cursor: 'pointer'
-                }}
-              >
-                {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
-              </button>
+              isEnrolled ? (
+                <button
+                  onClick={() => router.push(`/problems/${problem.id}/submit`)}
+                  style={{
+                    width: '100%', fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 15, fontWeight: 600,
+                    color: '#1C1410', background: '#F4A723',
+                    border: 'none', borderRadius: 8,
+                    padding: '14px', cursor: 'pointer'
+                  }}
+                >
+                  {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
+                </button>
+              ) : (
+                <div>
+                  <button
+                    onClick={enroll}
+                    disabled={enrolling}
+                    style={{
+                      width: '100%', fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 15, fontWeight: 600,
+                      color: '#1C1410', background: enrolling ? '#F9C05A' : '#F4A723',
+                      border: 'none', borderRadius: 8,
+                      padding: '14px', cursor: enrolling ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {enrolling ? 'Enrolling...' : 'Enroll to Solve →'}
+                  </button>
+                  {enrollError && (
+                    <div style={{
+                      marginTop: 10,
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 12,
+                      color: '#DC2626',
+                      textAlign: 'center'
+                    }}>
+                      {enrollError}
+                    </div>
+                  )}
+                </div>
+              )
             ) : !user ? (
               <Link href="/login" style={{
                 display: 'block', textAlign: 'center',
