@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 export default async function LandingPage() {
   const supabase = await createClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { count: totalProblems } = await supabase
     .from('problems')
     .select('*', { count: 'exact', head: true })
@@ -174,8 +176,10 @@ footer{background:var(--soil);padding:52px}
           <li><a href="#about">About</a></li>
         </ul>
         <div className="nav-right">
-          <a href="/login" className="btn-ghost">Log in</a>
-          <a href="/join" className="btn-nav">Start Solving →</a>
+          {!user && <a href="/login" className="btn-ghost">Log in</a>}
+          <a href={user ? '/dashboard' : '/join'} className="btn-nav">
+            {user ? 'Dashboard →' : 'Start Solving →'}
+          </a>
         </div>
       </nav>
 
@@ -197,7 +201,7 @@ footer{background:var(--soil);padding:52px}
               <span className="poster-bar-label">For organisations &amp; NGOs</span>
               <span className="poster-bar-text"><strong>Have a real problem to solve?</strong> Post your challenge, get structured solutions from India&apos;s sharpest students.</span>
             </div>
-            <a href="/login" className="btn-post">Post a Problem →</a>
+            <a href="/login/poster" className="btn-post">Post a Problem →</a>
           </div>
 
           <div className="hero-trust a4">

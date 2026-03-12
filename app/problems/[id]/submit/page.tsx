@@ -94,6 +94,18 @@ export default function SubmitPage() {
       }
       setUser(profile)
 
+      const { data: enroll } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('problem_id', problemId)
+        .eq('student_id', authUser.id)
+        .eq('status', 'active')
+        .limit(1)
+      if (!enroll || enroll.length === 0) {
+        router.push(`/problems/${problemId}`)
+        return
+      }
+
       const { data: prob } = await supabase
         .from('problems')
         .select('id, title, domain, milestones, deadline')
