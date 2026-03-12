@@ -28,7 +28,18 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const publicRoutes = ['/', '/login', '/join', '/problems', '/leaderboard', '/impact', '/how-it-works', '/about']
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/login/student',
+    '/login/poster',
+    '/join',
+    '/problems',
+    '/leaderboard',
+    '/impact',
+    '/how-it-works',
+    '/about',
+  ]
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || (pathname.startsWith('/problems/') && !pathname.endsWith('/submit'))
   )
@@ -58,8 +69,9 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    if (pathname === '/login' || pathname === '/join') {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    if (pathname.startsWith('/login') || pathname.startsWith('/join')) {
+      const target = role === 'poster' ? '/poster/dashboard' : '/dashboard'
+      return NextResponse.redirect(new URL(target, request.url))
     }
   }
 
