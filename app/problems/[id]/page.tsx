@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { decodeProblemThumbnailFallback } from '@/lib/problem-thumbnail'
 
 type Problem = {
   id: string
@@ -11,6 +12,7 @@ type Problem = {
   domain: string
   problem_type: string
   status: string
+  thumbnail_url: string | null
   reward_amount: number | null
   context: string
   problem_stmt: string
@@ -23,6 +25,7 @@ type Problem = {
   submission_count: number
   judge_type: string
   poster_id: string
+  rejected_reason?: string | null
 }
 
 type Comment = {
@@ -70,6 +73,7 @@ export default function ProblemDetailPage() {
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState('')
+  const [nowMs] = useState(() => Date.now())
 
   useEffect(() => {
     async function load() {
@@ -81,7 +85,10 @@ export default function ProblemDetailPage() {
         .select('*')
         .eq('id', id)
         .single()
-      setProblem(prob)
+      setProblem(prob ? {
+        ...prob,
+        thumbnail_url: prob.thumbnail_url ?? decodeProblemThumbnailFallback(prob.rejected_reason),
+      } : null)
 
       // Load current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -185,7 +192,7 @@ export default function ProblemDetailPage() {
   )
 
   const isIndustry = problem.problem_type === 'industry_challenge'
-  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - nowMs) / (1000 * 60 * 60 * 24))
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
@@ -286,6 +293,24 @@ export default function ProblemDetailPage() {
           }}>
             {problem.title}
           </h1>
+
+          {problem.thumbnail_url && (
+            <div style={{
+              background: '#fff',
+              border: '1.5px solid rgba(28,20,16,0.07)',
+              borderRadius: 16,
+              overflow: 'hidden',
+              marginBottom: 28
+            }}>
+              <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
+                <img
+                  src={problem.thumbnail_url}
+                  alt={`${problem.title} thumbnail`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Section tabs */}
           <div style={{
@@ -472,7 +497,7 @@ export default function ProblemDetailPage() {
               color: 'rgba(250,248,244,0.4)', letterSpacing: '0.1em',
               textTransform: 'uppercase', marginBottom: 14
             }}>
-              // ready to build?
+              {'// ready to build?'}
             </div>
             <div style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
@@ -536,11 +561,38 @@ export default function ProblemDetailPage() {
                 Sign in to Solve →
               </Link>
             ) : (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-                color: 'rgba(250,248,244,0.4)', textAlign: 'center'
-              }}>
-                Only students can submit solutions.
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 13,
+                  color: 'rgba(250,248,244,0.7)',
+                  textAlign: 'center',
+                  lineHeight: 1.6
+                }}>
+                  You&apos;re signed in as a {user.role} account. Enroll is only available for student accounts.
+                </div>
+                <Link href="/login/student" style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: '#1C1410',
+                  background: '#F4A723',
+                  borderRadius: 8,
+                  padding: '14px',
+                  textDecoration: 'none'
+                }}>
+                  Switch to Student Login →
+                </Link>
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 12,
+                  color: 'rgba(250,248,244,0.45)',
+                  textAlign: 'center'
+                }}>
+                  Student accounts can enroll and submit solutions.
+                </div>
               </div>
             )}
           </div>
