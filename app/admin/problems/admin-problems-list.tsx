@@ -153,7 +153,7 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
         padding: '14px 14px',
         marginBottom: 16
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 160px 220px 180px', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, alignItems: 'center' }}>
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -212,6 +212,7 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1.6fr 180px 160px 130px 120px 110px 360px',
+            minWidth: 980,
             gap: 10,
             padding: '12px 14px',
             background: 'var(--bg-hover)',
@@ -244,6 +245,7 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
                 <div key={problem.id} style={{
                   display: 'grid',
                   gridTemplateColumns: '1.6fr 180px 160px 130px 120px 110px 360px',
+                  minWidth: 980,
                   gap: 10,
                   padding: '12px 14px',
                   borderBottom: '1px solid var(--border-primary)',

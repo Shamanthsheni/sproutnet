@@ -116,8 +116,15 @@ export default function PostProblemForm({ posterName }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
       <nav style={{
-        height: 66, padding: '0 52px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
@@ -131,7 +138,7 @@ export default function PostProblemForm({ posterName }: Props) {
           </svg>
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
           <span style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 11,
@@ -148,7 +155,7 @@ export default function PostProblemForm({ posterName }: Props) {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '52px 24px' }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
         {showPopup && (
           <div style={{
             position: 'fixed',
@@ -213,7 +220,7 @@ export default function PostProblemForm({ posterName }: Props) {
         <div style={{ marginBottom: 32 }}>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 42,
+            fontSize: 'clamp(30px, 6vw, 42px)',
             fontWeight: 400,
             color: '#1C1410',
             letterSpacing: '-0.5px',
@@ -230,7 +237,7 @@ export default function PostProblemForm({ posterName }: Props) {
           background: '#fff',
           border: '1.5px solid rgba(28,20,16,0.07)',
           borderRadius: 14,
-          padding: '32px',
+          padding: 'clamp(22px, 3vw, 32px)',
           display: 'grid',
           gap: 18
         }}>
@@ -255,7 +262,7 @@ export default function PostProblemForm({ posterName }: Props) {
             />
           </Field>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
             <Field label="Domain">
               <select value={domain} onChange={e => setDomain(e.target.value)} style={inputStyle}>
                 {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -281,7 +288,7 @@ export default function PostProblemForm({ posterName }: Props) {
             </Field>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             <Field label="Milestones">
               <input
                 type="number"
@@ -367,7 +374,7 @@ export default function PostProblemForm({ posterName }: Props) {
             />
           </Field>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap', rowGap: 10 }}>
             <Link href="/poster/dashboard" style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: 14,

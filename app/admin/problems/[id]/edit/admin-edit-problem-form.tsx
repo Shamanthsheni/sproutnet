@@ -133,7 +133,7 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
       borderRadius: 18,
       padding: '18px'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <span style={{
             fontFamily: 'JetBrains Mono, monospace',
@@ -205,7 +205,7 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
           <input value={title} onChange={e => setTitle(e.target.value)} required style={inputStyle} />
         </Field>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           <Field label="Domain">
             <select value={domain} onChange={e => setDomain(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
               {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -224,7 +224,7 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
           </Field>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <Field label="Milestones">
             <input type="number" min="1" max="7" value={milestones} onChange={e => setMilestones(e.target.value)} style={inputStyle} />
           </Field>

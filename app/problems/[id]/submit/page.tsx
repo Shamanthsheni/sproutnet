@@ -246,8 +246,15 @@ export default function SubmitPage() {
 
       {/* Nav */}
       <nav style={{
-        height: 66, padding: '0 52px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
@@ -261,7 +268,7 @@ export default function SubmitPage() {
           </svg>
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', rowGap: 8 }}>
           {/* Progress indicator */}
           <div style={{
             fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
@@ -270,13 +277,24 @@ export default function SubmitPage() {
           }}>
             {completedFields} / 7 fields
           </div>
-          <Link href={`/problems/${problemId}`} style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>
-            ← Back to problem
-          </Link>
+          <div className="sn-nav-actions" style={{ display: 'flex', alignItems: 'center' }}>
+            <Link href={`/problems/${problemId}`} style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>
+              ← Back to problem
+            </Link>
+          </div>
         </div>
+        <details className="sn-mobile-menu">
+          <summary aria-label="Open navigation menu">
+            <span className="sn-menu-icon" aria-hidden="true"></span>
+            <span className="sn-menu-label">Menu</span>
+          </summary>
+          <div className="sn-mobile-panel">
+            <Link href={`/problems/${problemId}`}>Back to problem</Link>
+          </div>
+        </details>
       </nav>
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '52px 24px' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 36 }}>
@@ -289,7 +307,7 @@ export default function SubmitPage() {
           </div>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 32, fontWeight: 400,
+            fontSize: 'clamp(26px, 5.5vw, 32px)', fontWeight: 400,
             color: '#1C1410', letterSpacing: '-0.3px',
             lineHeight: 1.2, marginBottom: 8
           }}>
@@ -302,7 +320,7 @@ export default function SubmitPage() {
 
         {/* Milestone selector */}
         {problem && problem.milestones > 1 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap', rowGap: 8 }}>
             {Array.from({ length: problem.milestones }, (_, i) => (
               <button
                 key={i + 1}
@@ -323,7 +341,7 @@ export default function SubmitPage() {
 
         {/* Stage indicator */}
         <div style={{
-          display: 'flex', gap: 0,
+          display: 'flex', gap: 8, flexWrap: 'wrap',
           background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
           borderRadius: 12, padding: 6, marginBottom: 32
         }}>
@@ -332,7 +350,7 @@ export default function SubmitPage() {
             { id: 'full', label: 'Stage 2 — Full Submission', desc: '4 fields · ~30 min', done: !!stage2Complete },
           ].map((s, i) => (
             <div key={s.id} style={{
-              flex: 1, padding: '14px 20px', borderRadius: 8,
+              flex: '1 1 260px', padding: '14px 20px', borderRadius: 8,
               background: stage === s.id ? '#1C1410' : 'transparent',
               cursor: 'pointer'
             }} onClick={() => existing && setStage(s.id as 'draft' | 'full')}>
@@ -429,12 +447,13 @@ export default function SubmitPage() {
               </div>
             ))}
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', rowGap: 10 }}>
               <button onClick={saveDraft} disabled={saving || !stage1Complete} style={{
                 fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
                 color: '#1C1410', background: saving ? '#F9C05A' : '#F4A723',
                 border: 'none', borderRadius: 8,
                 padding: '13px 32px', cursor: saving ? 'not-allowed' : 'pointer',
+                flex: '1 1 220px',
                 boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
               }}>
                 {saving ? 'Saving...' : saved ? '✓ Saved — Continue to Stage 2 →' : 'Save Draft →'}
@@ -445,7 +464,8 @@ export default function SubmitPage() {
                   fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
                   color: '#FAF8F4', background: '#2D6A4F',
                   border: 'none', borderRadius: 8,
-                  padding: '13px 32px', cursor: 'pointer'
+                  padding: '13px 32px', cursor: 'pointer',
+                  flex: '1 1 220px'
                 }}>
                   Go to Stage 2 →
                 </button>
@@ -531,12 +551,13 @@ export default function SubmitPage() {
               </div>
             ))}
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', rowGap: 10 }}>
               <button onClick={() => setStage('draft')} style={{
                 fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500,
                 color: '#4A3F38', background: '#fff',
                 border: '1.5px solid rgba(28,20,16,0.12)',
-                borderRadius: 8, padding: '13px 24px', cursor: 'pointer'
+                borderRadius: 8, padding: '13px 24px', cursor: 'pointer',
+                flex: '1 1 220px'
               }}>
                 ← Back to Stage 1
               </button>
@@ -548,6 +569,7 @@ export default function SubmitPage() {
                 border: 'none', borderRadius: 8,
                 padding: '13px 32px',
                 cursor: stage2Complete ? 'pointer' : 'not-allowed',
+                flex: '1 1 220px',
                 boxShadow: stage2Complete ? '0 2px 10px rgba(244,167,35,0.3)' : 'none'
               }}>
                 {saving ? 'Submitting...' : 'Submit for Judging →'}

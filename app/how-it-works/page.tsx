@@ -82,8 +82,10 @@ footer{background:var(--soil);padding:52px}
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .rise{opacity:0;animation:rise .7s ease-out forwards}
 .d1{animation-delay:.12s}.d2{animation-delay:.22s}.d3{animation-delay:.34s}.d4{animation-delay:.46s}
-@media(max-width:1024px){.hiw-nav{padding:0 24px}.nav-links{display:none}.hiw-hero{padding:104px 24px 64px}.hiw-section{padding:70px 24px}.hero-stats{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}.ft-inner{flex-direction:column;align-items:flex-start}}
-@media(max-width:640px){.cta-row{flex-direction:column;width:100%}.btn-primary,.btn-secondary{width:100%;justify-content:center}}
+@media(max-width:1024px){.hiw-nav{padding:0 24px}.hiw-hero{padding:104px 24px 64px}.hiw-section{padding:70px 24px}.hero-stats{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}.ft-inner{flex-direction:column;align-items:flex-start}}
+@media(max-width:900px){.hiw-nav{height:auto;flex-wrap:wrap;row-gap:10px;padding:12px 20px;align-items:center}}
+@media(max-width:640px){.hiw-hero{padding:88px 20px 52px}.hero-title{font-size:clamp(34px,9vw,56px)}.hero-sub{font-size:16px}.hero-stats{gap:12px}.hiw-section{padding:56px 20px}.card{padding:20px}.hiw-quote{padding:14px 16px}.score-box{padding:18px}.faq-item{padding:14px 16px}.closing{padding:70px 20px}.closing-title{font-size:clamp(30px,9vw,48px)}.cta-row{flex-direction:column;width:100%}.btn-primary,.btn-secondary{width:100%;justify-content:center}.ft-links{flex-direction:column;align-items:flex-start;gap:12px}.ft-inner{gap:16px}}
+@media(max-width:480px){.nav-right a{width:100%;display:inline-flex;align-items:center;justify-content:center}.btn-ghost,.btn-nav{width:100%}.stat-card{padding:16px 18px}.stat-num{font-size:20px}.section-title{font-size:clamp(28px,9vw,40px)}.section-sub{font-size:15px}.card-title{font-size:15px}.card-body{font-size:13.5px}.score-title{font-size:14px}.score-body{font-size:13px}}
       `}}/>
 
       <div className="hiw-page">
@@ -98,16 +100,30 @@ footer{background:var(--soil);padding:52px}
             </svg>
             <span className="nav-wm">SproutNet</span>
           </a>
-          <ul className="nav-links">
+          <ul className="nav-links sn-nav-links">
             <li><a href="/how-it-works" className="active">How It Works</a></li>
             <li><a href="/problems">Problems</a></li>
             <li><a href="/leaderboard">Leaderboard</a></li>
             <li><a href="/#about">About</a></li>
           </ul>
-          <div className="nav-right">
+          <div className="nav-right sn-nav-actions">
             <a href="/login" className="btn-ghost">Log in</a>
             <a href="/login/student" className="btn-nav">Start Solving &rarr;</a>
           </div>
+          <details className="sn-mobile-menu">
+            <summary aria-label="Open navigation menu">
+              <span className="sn-menu-icon" aria-hidden="true"></span>
+              <span className="sn-menu-label">Menu</span>
+            </summary>
+            <div className="sn-mobile-panel">
+              <a href="/how-it-works">How It Works</a>
+              <a href="/problems">Problems</a>
+              <a href="/leaderboard">Leaderboard</a>
+              <a href="/#about">About</a>
+              <a href="/login" className="sn-menu-ghost">Log in</a>
+              <a href="/login/student" className="sn-menu-primary">Start Solving &rarr;</a>
+            </div>
+          </details>
         </nav>
 
         <header className="hiw-hero">

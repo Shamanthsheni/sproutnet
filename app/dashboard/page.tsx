@@ -28,9 +28,13 @@ export default async function DashboardPage() {
 
       {/* Nav */}
       <nav style={{
-        height: 66,
-        padding: '0 52px',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
         display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
         alignItems: 'center',
         justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
@@ -50,7 +54,7 @@ export default async function DashboardPage() {
             SproutNet
           </span>
         </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', rowGap: 8 }}>
           <span style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 11,
@@ -82,13 +86,13 @@ export default async function DashboardPage() {
       </nav>
 
       {/* Content */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
 
         {/* Welcome */}
         <div style={{ marginBottom: 48 }}>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 42,
+            fontSize: 'clamp(30px, 6vw, 42px)',
             fontWeight: 400,
             color: '#1C1410',
             letterSpacing: '-0.5px',
@@ -104,7 +108,7 @@ export default async function DashboardPage() {
 
         {/* Role-based stats */}
         {isStudent && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
             {[
               { label: 'Builder Score', value: profile.builder_score ?? 0, accent: '#F4A723' },
               { label: 'Problems Attempted', value: profile.attempted ?? 0, accent: '#2D6A4F' },
@@ -135,7 +139,7 @@ export default async function DashboardPage() {
         )}
 
         {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {isStudent && (
             <>
               <ActionCard href="/problems" icon="🔍" title="Browse Problems" desc="See all open problems across 8 domains." />
@@ -168,7 +172,7 @@ function ActionCard({ href, icon, title, desc }: {
       background: '#fff',
       border: '1.5px solid rgba(28,20,16,0.07)',
       borderRadius: 12,
-      padding: '28px',
+      padding: 'clamp(20px, 3vw, 28px)',
       textDecoration: 'none',
       display: 'block',
     }}>

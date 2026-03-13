@@ -57,7 +57,7 @@ export default async function AdminProblemEnrollmentsPage({ params }: { params: 
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 22, flexWrap: 'wrap' }}>
         <div>
           <div style={{
             fontFamily: 'JetBrains Mono, monospace',
@@ -71,7 +71,7 @@ export default async function AdminProblemEnrollmentsPage({ params }: { params: 
           </div>
           <h1 style={{
             fontFamily: 'Sora, sans-serif',
-            fontSize: 26,
+            fontSize: 'clamp(20px, 4vw, 26px)',
             fontWeight: 950,
             color: 'var(--text-primary)',
             letterSpacing: '-0.5px',

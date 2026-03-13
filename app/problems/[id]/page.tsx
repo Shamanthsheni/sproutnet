@@ -192,8 +192,15 @@ export default function ProblemDetailPage() {
 
       {/* Nav */}
       <nav style={{
-        height: 66, padding: '0 52px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
@@ -207,7 +214,7 @@ export default function ProblemDetailPage() {
           </svg>
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div className="sn-nav-actions" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
           <Link href="/problems" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>← Problems</Link>
           {user && (
             <Link href="/dashboard" style={{
@@ -217,12 +224,30 @@ export default function ProblemDetailPage() {
             }}>Dashboard</Link>
           )}
         </div>
+        <details className="sn-mobile-menu">
+          <summary aria-label="Open navigation menu">
+            <span className="sn-menu-icon" aria-hidden="true"></span>
+            <span className="sn-menu-label">Menu</span>
+          </summary>
+          <div className="sn-mobile-panel">
+            <Link href="/problems">Back to problems</Link>
+            {user && <Link href="/dashboard" className="sn-menu-primary">Dashboard</Link>}
+          </div>
+        </details>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 24px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
+      <div style={{
+        maxWidth: 1100,
+        margin: '0 auto',
+        padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)',
+        display: 'flex',
+        gap: 32,
+        flexWrap: 'wrap',
+        alignItems: 'flex-start'
+      }}>
 
         {/* LEFT — Problem content */}
-        <div>
+        <div style={{ flex: '1 1 620px', minWidth: 0 }}>
           {/* Badges */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
             <span style={{
@@ -255,7 +280,7 @@ export default function ProblemDetailPage() {
           {/* Title */}
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 38, fontWeight: 400,
+            fontSize: 'clamp(28px, 6vw, 38px)', fontWeight: 400,
             color: '#1C1410', letterSpacing: '-0.5px',
             lineHeight: 1.15, marginBottom: 32
           }}>
@@ -436,7 +461,7 @@ export default function ProblemDetailPage() {
         </div>
 
         {/* RIGHT — Sidebar */}
-        <div>
+        <div style={{ flex: '0 1 320px', width: '100%' }}>
           {/* CTA Card */}
           <div style={{
             background: '#1C1410', borderRadius: 14,

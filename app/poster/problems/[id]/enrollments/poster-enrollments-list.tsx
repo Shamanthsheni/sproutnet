@@ -61,7 +61,9 @@ export default function PosterEnrollmentsList({ enrollments, problemId }: { enro
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: 16
+          gap: 16,
+          rowGap: 12,
+          flexWrap: 'wrap'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{

@@ -23,17 +23,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="admin-theme admin-shell">
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: '100vh' }}>
+      <div className="admin-theme admin-shell">
+      <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'var(--admin-columns, 260px 1fr)', minHeight: '100vh' }}>
 
         {/* Sidebar */}
-        <aside style={{
+        <aside className="admin-sidebar" style={{
           borderRight: '1px solid var(--border-primary)',
           background: 'var(--bg-surface)',
-          padding: '22px 18px',
-          position: 'sticky',
+          padding: 'clamp(16px, 3vw, 22px) clamp(14px, 3vw, 18px)',
+          position: 'var(--admin-aside-position, sticky)' as any,
           top: 0,
-          height: '100vh',
+          height: 'var(--admin-aside-height, 100vh)' as any,
           overflowY: 'auto'
         }}>
           <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 18 }}>
@@ -82,11 +82,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {/* Main */}
         <div>
           <header style={{
-            height: 64,
-            padding: '0 26px',
+            minHeight: 64,
+            height: 'auto',
+            padding: '10px clamp(16px, 3vw, 26px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
+            flexWrap: 'wrap',
+            rowGap: 8,
             borderBottom: '1px solid var(--border-primary)',
             background: 'rgba(246,247,248,0.9)',
             backdropFilter: 'blur(8px)',
@@ -101,7 +104,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </form>
           </header>
 
-          <main style={{ padding: '28px 26px 70px' }}>
+          <main style={{ padding: 'clamp(20px, 3vw, 28px) clamp(16px, 3vw, 26px) 70px' }}>
             {children}
           </main>
         </div>

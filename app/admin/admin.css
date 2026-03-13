@@ -38,6 +38,9 @@
   background: var(--bg-main);
   color: var(--text-primary);
   font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --admin-columns: 260px 1fr;
+  --admin-aside-position: sticky;
+  --admin-aside-height: 100vh;
 }
 
 .admin-surface {
@@ -192,6 +195,8 @@
 
 .admin-table {
   overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 16px;
   border: 1px solid var(--border-primary);
   background: var(--bg-surface);
@@ -200,4 +205,12 @@
 .admin-table-header {
   background: var(--bg-hover);
   border-bottom: 1px solid var(--border-primary);
+}
+
+@media (max-width: 1024px) {
+  .admin-shell {
+    --admin-columns: 1fr;
+    --admin-aside-position: static;
+    --admin-aside-height: auto;
+  }
 }
