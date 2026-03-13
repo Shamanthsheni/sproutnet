@@ -102,22 +102,20 @@ export default function ProblemDetailPage() {
 
         // Check if student already submitted
         if (profile?.role === 'student') {
-          const { data: enroll } = await supabase
-            .from('enrollments')
-            .select('id')
-            .eq('problem_id', id)
-            .eq('student_id', authUser.id)
-            .eq('status', 'active')
-            .limit(1)
-          setIsEnrolled((enroll?.length ?? 0) > 0)
+          const statusRes = await fetch('/api/enrollments/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problem_id: id }),
+          })
 
-          const { data: sub } = await supabase
-            .from('submissions')
-            .select('id')
-            .eq('problem_id', id)
-            .eq('student_id', authUser.id)
-            .limit(1)
-          setHasSubmitted((sub?.length ?? 0) > 0)
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            setIsEnrolled(Boolean(statusData?.enrolled))
+            setHasSubmitted(Boolean(statusData?.hasSubmitted))
+          } else {
+            setIsEnrolled(false)
+            setHasSubmitted(false)
+          }
         }
       }
 
@@ -159,6 +157,7 @@ export default function ProblemDetailPage() {
     })
     if (res.ok) {
       setIsEnrolled(true)
+      router.push(`/problems/${id}/submit`)
     } else {
       const text = await res.text().catch(() => '')
       let message = `Request failed (${res.status}).`
@@ -509,18 +508,25 @@ export default function ProblemDetailPage() {
 
             {user?.role === 'student' ? (
               isEnrolled ? (
-                <button
-                  onClick={() => router.push(`/problems/${problem.id}/submit`)}
+                <Link
+                  href={`/problems/${problem.id}/submit`}
                   style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 15, fontWeight: 600,
-                    color: '#1C1410', background: '#F4A723',
-                    border: 'none', borderRadius: 8,
-                    padding: '14px', cursor: 'pointer'
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    textAlign: 'center',
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#1C1410',
+                    background: '#F4A723',
+                    borderRadius: 8,
+                    padding: '14px',
+                    textDecoration: 'none'
                   }}
                 >
                   {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
-                </button>
+                </Link>
               ) : (
                 <div>
                   <button
