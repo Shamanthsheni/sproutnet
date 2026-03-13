@@ -67,7 +67,7 @@ export default async function AdminProblemsPage() {
         </div>
         <h1 style={{
           fontFamily: 'Sora, sans-serif',
-          fontSize: 28,
+          fontSize: 'clamp(22px, 4.5vw, 28px)',
           fontWeight: 950,
           color: 'var(--text-primary)',
           letterSpacing: '-0.6px',

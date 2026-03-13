@@ -68,7 +68,7 @@ export default async function AdminAnalyticsPage() {
         </div>
         <h1 style={{
           fontFamily: 'Sora, sans-serif',
-          fontSize: 28,
+          fontSize: 'clamp(22px, 4.5vw, 28px)',
           fontWeight: 950,
           color: 'var(--text-primary)',
           letterSpacing: '-0.6px',
@@ -81,21 +81,21 @@ export default async function AdminAnalyticsPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 18 }}>
         <StatCard label="Problems" value={totalProblems} accent="#1C1410" />
         <StatCard label="Open" value={openProblems} accent="#15803d" />
         <StatCard label="Pending" value={pendingProblems} accent="#92400e" />
         <StatCard label="Users" value={totalUsers} accent="#2D6A4F" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 28 }}>
         <StatCard label="Students" value={students} accent="#2D6A4F" />
         <StatCard label="Posters" value={posters} accent="#F4A723" />
         <StatCard label="Admins" value={admins} accent="#1E40AF" />
         <StatCard label="Enrollments" value={totalEnrollments} accent="#1C1410" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
         <StatCard label="Submissions" value={totalSubmissions} accent="#1C1410" />
         <StatCard label="Avg enrollments/problem" value={totalProblems > 0 ? (totalEnrollments / totalProblems).toFixed(1) : '—'} accent="#2D6A4F" />
         <StatCard label="Avg submissions/problem" value={totalProblems > 0 ? (totalSubmissions / totalProblems).toFixed(1) : '—'} accent="#F4A723" />

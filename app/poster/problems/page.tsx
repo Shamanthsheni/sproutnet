@@ -27,8 +27,15 @@ export default async function PosterProblemsPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
       <nav style={{
-        height: 66, padding: '0 52px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
@@ -42,7 +49,7 @@ export default async function PosterProblemsPage() {
           </svg>
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
           <span style={{
             fontFamily: 'JetBrains Mono, monospace',
             fontSize: 11,
@@ -59,12 +66,12 @@ export default async function PosterProblemsPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 24px' }}>
-        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
+        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
-              fontSize: 38,
+              fontSize: 'clamp(28px, 6vw, 38px)',
               fontWeight: 400,
               color: '#1C1410',
               letterSpacing: '-0.5px',

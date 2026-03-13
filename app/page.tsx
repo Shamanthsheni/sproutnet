@@ -154,8 +154,9 @@ footer{background:var(--soil);padding:52px}
 .rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease-out,transform .6s ease-out}
 .rv.on{opacity:1;transform:translateY(0)}
 .rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
-@media(max-width:1024px){nav{padding:0 24px}.nav-links{display:none}section{padding:72px 24px}.what-grid{grid-template-columns:1fr}.hiw-grid{grid-template-columns:repeat(2,1fr);gap:32px}.hiw-grid::before{display:none}.th-inner{grid-template-columns:1fr;gap:48px}.stats-bar{padding:24px}.si-stat{padding:0 24px}.hero{padding:96px 24px 72px}.reality,.thinking,.closing{padding:72px 24px}footer{padding:40px 24px}.ft-inner{flex-direction:column;align-items:flex-start}}
-@media(max-width:640px){.hiw-grid{grid-template-columns:1fr}.hero-ctas{flex-direction:column;width:100%}.btn-hp,.btn-hs{width:100%;justify-content:center}.stats-bar{flex-direction:column;gap:22px}.si-stat::after{display:none}.poster-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}}
+@media(max-width:1024px){nav{padding:0 24px}section{padding:72px 24px}.what-grid{grid-template-columns:1fr}.hiw-grid{grid-template-columns:repeat(2,1fr);gap:32px}.hiw-grid::before{display:none}.th-inner{grid-template-columns:1fr;gap:48px}.stats-bar{padding:24px}.si-stat{padding:0 24px}.hero{padding:96px 24px 72px}.reality,.thinking,.closing{padding:72px 24px}footer{padding:40px 24px}.ft-inner{flex-direction:column;align-items:flex-start}}
+@media(max-width:900px){nav{height:auto;flex-wrap:wrap;row-gap:10px;padding:12px 20px}}
+@media(max-width:640px){.hiw-grid{grid-template-columns:1fr}.hero-ctas{flex-direction:column;width:100%}.btn-hp,.btn-hs{width:100%;justify-content:center}.stats-bar{flex-direction:column;gap:22px}.si-stat::after{display:none}.poster-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}.nav-right a{width:100%;justify-content:center}}
       `}}/>
 
       <nav id="nav">
@@ -169,18 +170,34 @@ footer{background:var(--soil);padding:52px}
           </svg>
           <span className="nav-wm">SproutNet</span>
         </a>
-        <ul className="nav-links">
+        <ul className="nav-links sn-nav-links">
           <li><a href="/how-it-works">How It Works</a></li>
           <li><a href="/problems">Problems</a></li>
           <li><a href="/leaderboard">Leaderboard</a></li>
           <li><a href="#about">About</a></li>
         </ul>
-        <div className="nav-right">
+        <div className="nav-right sn-nav-actions">
           {!user && <a href="/login" className="btn-ghost">Log in</a>}
           <a href={user ? '/dashboard' : '/login/student'} className="btn-nav">
             {user ? 'Dashboard →' : 'Start Solving →'}
           </a>
         </div>
+        <details className="sn-mobile-menu">
+          <summary aria-label="Open navigation menu">
+            <span className="sn-menu-icon" aria-hidden="true"></span>
+            <span className="sn-menu-label">Menu</span>
+          </summary>
+          <div className="sn-mobile-panel">
+            <a href="/how-it-works">How It Works</a>
+            <a href="/problems">Problems</a>
+            <a href="/leaderboard">Leaderboard</a>
+            <a href="#about">About</a>
+            {!user && <a href="/login" className="sn-menu-ghost">Log in</a>}
+            <a href={user ? '/dashboard' : '/login/student'} className="sn-menu-primary">
+              {user ? 'Dashboard â†’' : 'Start Solving â†’'}
+            </a>
+          </div>
+        </details>
       </nav>
 
       <section className="hero">

@@ -16,7 +16,7 @@ export default function AdminOverviewPage() {
         </div>
         <h1 style={{
           fontFamily: 'Sora, sans-serif',
-          fontSize: 30,
+          fontSize: 'clamp(22px, 5vw, 30px)',
           fontWeight: 900,
           color: 'var(--text-primary)',
           letterSpacing: '-0.5px',
@@ -29,7 +29,7 @@ export default function AdminOverviewPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         <ActionCard href="/admin/problems" label="Problems" meta="moderation" desc="Approve/hold, edit, delete, view enrollments." />
         <ActionCard href="/admin/judging" label="Judging" meta="queue" desc="Stage 2 pending submissions in the queue." />
         <ActionCard href="/admin/analytics" label="Analytics" meta="metrics" desc="Live counts and domain breakdown." />

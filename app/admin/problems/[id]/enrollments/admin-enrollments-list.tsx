@@ -95,6 +95,7 @@ export default function AdminEnrollmentsList({ enrollments, problemId }: { enrol
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1.2fr 160px 160px 150px 220px',
+          minWidth: 780,
           gap: 10,
           padding: '12px 14px',
           background: 'var(--bg-hover)',
@@ -118,6 +119,7 @@ export default function AdminEnrollmentsList({ enrollments, problemId }: { enrol
             <div key={e.id} style={{
               display: 'grid',
               gridTemplateColumns: '1.2fr 160px 160px 150px 220px',
+              minWidth: 780,
               gap: 10,
               padding: '12px 14px',
               borderBottom: '1px solid var(--border-primary)',

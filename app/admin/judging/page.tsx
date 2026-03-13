@@ -90,7 +90,7 @@ export default async function AdminJudgingPage() {
         </div>
         <h1 style={{
           fontFamily: 'Sora, sans-serif',
-          fontSize: 28,
+          fontSize: 'clamp(22px, 4.5vw, 28px)',
           fontWeight: 950,
           color: 'var(--text-primary)',
           letterSpacing: '-0.6px',
@@ -130,6 +130,7 @@ export default async function AdminJudgingPage() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1.4fr 160px 140px 130px 170px 180px',
+            minWidth: 860,
             gap: 10,
             padding: '12px 14px',
             background: 'var(--bg-hover)',
@@ -156,6 +157,7 @@ export default async function AdminJudgingPage() {
                 <div key={sub.id} style={{
                   display: 'grid',
                   gridTemplateColumns: '1.4fr 160px 140px 130px 170px 180px',
+                  minWidth: 860,
                   gap: 10,
                   padding: '12px 14px',
                   borderBottom: '1px solid var(--border-primary)',

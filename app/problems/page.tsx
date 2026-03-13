@@ -45,8 +45,15 @@ export default async function ProblemsPage({
 
       {/* Nav */}
       <nav style={{
-        height: 66, padding: '0 52px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        minHeight: 66,
+        height: 'auto',
+        padding: '12px clamp(16px, 4vw, 52px)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        rowGap: 10,
+        columnGap: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
         background: 'rgba(250,248,244,0.94)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
@@ -60,7 +67,7 @@ export default async function ProblemsPage({
           </svg>
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
-        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+        <div className="sn-nav-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
           <Link href="/problems" style={{ fontSize: 14, fontWeight: 500, color: '#1C1410', textDecoration: 'none' }}>Problems</Link>
           <Link href="/leaderboard" style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38', textDecoration: 'none' }}>Leaderboard</Link>
           <Link href="/dashboard" style={{
@@ -69,9 +76,20 @@ export default async function ProblemsPage({
             borderRadius: 6, textDecoration: 'none'
           }}>Dashboard →</Link>
         </div>
+        <details className="sn-mobile-menu">
+          <summary aria-label="Open navigation menu">
+            <span className="sn-menu-icon" aria-hidden="true"></span>
+            <span className="sn-menu-label">Menu</span>
+          </summary>
+          <div className="sn-mobile-panel">
+            <Link href="/problems">Problems</Link>
+            <Link href="/leaderboard">Leaderboard</Link>
+            <Link href="/dashboard" className="sn-menu-primary">Dashboard â†’</Link>
+          </div>
+        </details>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
@@ -85,7 +103,7 @@ export default async function ProblemsPage({
           </div>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 48, fontWeight: 400,
+            fontSize: 'clamp(32px, 7vw, 48px)', fontWeight: 400,
             color: '#1C1410', letterSpacing: '-0.5px',
             marginBottom: 12
           }}>
@@ -139,7 +157,7 @@ export default async function ProblemsPage({
 
         {/* Problems grid */}
         {problems && problems.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
             {problems.map(problem => (
               <ProblemCard key={problem.id} problem={problem} />
             ))}
@@ -190,7 +208,7 @@ function ProblemCard({ problem }: { problem: {
         background: '#fff',
         border: '1.5px solid rgba(28,20,16,0.07)',
         borderRadius: 14,
-        padding: '28px',
+        padding: 'clamp(20px, 3vw, 28px)',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -247,7 +265,7 @@ function ProblemCard({ problem }: { problem: {
 
         {/* Footer stats */}
         <div style={{
-          display: 'flex', gap: 20,
+          display: 'flex', gap: 20, rowGap: 8, flexWrap: 'wrap',
           paddingTop: 14,
           borderTop: '1px solid rgba(28,20,16,0.06)'
         }}>
