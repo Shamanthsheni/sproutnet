@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
 
 type EnrolledProblem = {
   id: string
@@ -391,6 +392,10 @@ export default async function DashboardPage() {
                           }}>
                             {problem.hasSubmission ? 'Continue Solving →' : 'Start Solving →'}
                           </Link>
+                          <CancelEnrollmentButton
+                            problemId={problem.id}
+                            label="Cancel"
+                          />
                         </div>
                       </div>
                     </div>

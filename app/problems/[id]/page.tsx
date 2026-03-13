@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { decodeProblemThumbnailFallback } from '@/lib/problem-thumbnail'
+import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
 
 type Problem = {
   id: string
@@ -508,6 +509,7 @@ export default function ProblemDetailPage() {
 
             {user?.role === 'student' ? (
               isEnrolled ? (
+                <div style={{ display: 'grid', gap: 10 }}>
                 <Link
                   href={`/problems/${problem.id}/submit`}
                   style={{
@@ -527,6 +529,15 @@ export default function ProblemDetailPage() {
                 >
                   {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
                 </Link>
+                <CancelEnrollmentButton
+                  problemId={problem.id}
+                  kind="block"
+                  onCancelled={() => {
+                    setIsEnrolled(false)
+                    setHasSubmitted(false)
+                  }}
+                />
+                </div>
               ) : (
                 <div>
                   <button
