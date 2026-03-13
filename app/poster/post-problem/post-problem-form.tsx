@@ -4,6 +4,10 @@ import { useState, type ReactNode, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import {
+  PROBLEM_THUMBNAIL_ACCEPT,
+  getProblemThumbnailError,
+} from '@/lib/problem-thumbnail'
 
 const DOMAINS = [
   'AI & Data',
@@ -44,6 +48,46 @@ export default function PostProblemForm({ posterName }: Props) {
   const [scope, setScope] = useState('')
   const [constraints, setConstraints] = useState('')
   const [deliverables, setDeliverables] = useState('')
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState('')
+  const [thumbnailInputKey, setThumbnailInputKey] = useState(0)
+
+  async function handleThumbnailChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) {
+      setThumbnailFile(null)
+      setThumbnailPreview('')
+      return
+    }
+
+    const validationError = getProblemThumbnailError(file)
+    if (validationError) {
+      setError(validationError)
+      setThumbnailFile(null)
+      setThumbnailPreview('')
+      setThumbnailInputKey(prev => prev + 1)
+      e.target.value = ''
+      return
+    }
+
+    try {
+      const preview = await readFileAsDataUrl(file)
+      setError('')
+      setThumbnailFile(file)
+      setThumbnailPreview(preview)
+    } catch {
+      setError('Could not read the selected image. Please try another file.')
+      setThumbnailFile(null)
+      setThumbnailPreview('')
+      setThumbnailInputKey(prev => prev + 1)
+    }
+  }
+
+  function clearThumbnail() {
+    setThumbnailFile(null)
+    setThumbnailPreview('')
+    setThumbnailInputKey(prev => prev + 1)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -65,11 +109,42 @@ export default function PostProblemForm({ posterName }: Props) {
       return
     }
 
+    let thumbnailUrl: string | null = null
+    if (thumbnailFile) {
+      const formData = new FormData()
+      formData.append('file', thumbnailFile)
+
+      const uploadRes = await fetch('/api/problems/thumbnail', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text().catch(() => '')
+        let message = `Thumbnail upload failed (${uploadRes.status}).`
+        if (text) {
+          try {
+            const data = JSON.parse(text)
+            message = data?.error ?? message
+          } catch {
+            message = text
+          }
+        }
+        setError(message)
+        setLoading(false)
+        return
+      }
+
+      const uploadData = await uploadRes.json()
+      thumbnailUrl = typeof uploadData?.url === 'string' ? uploadData.url : null
+    }
+
     const payload = {
       title: title.trim(),
       domain,
       problem_type: problemType,
       status: 'open',
+      thumbnail_url: thumbnailUrl,
       reward_amount: problemType === 'industry_challenge' && rewardAmount ? Number(rewardAmount) : null,
       milestones: Number(milestones),
       deadline,
@@ -107,7 +182,12 @@ export default function PostProblemForm({ posterName }: Props) {
       return
     }
 
-    setSuccess('Problem posted successfully. You can track it from your dashboard.')
+    const data = await res.json().catch(() => null)
+    setSuccess(
+      typeof data?.warning === 'string' && data.warning
+        ? `${data.warning} Run the SQL in supabase/migrations/20260313_add_problem_thumbnail.sql to enable thumbnails.`
+        : 'Problem posted successfully. You can track it from your dashboard.'
+    )
     setShowPopup(true)
     setLoading(false)
     setTimeout(() => router.push('/poster/dashboard'), 1200)
@@ -183,7 +263,7 @@ export default function PostProblemForm({ posterName }: Props) {
                 textTransform: 'uppercase',
                 marginBottom: 10
               }}>
-                // upload complete
+                {'// upload complete'}
               </div>
               <div style={{
                 fontFamily: "'Instrument Serif', Georgia, serif",
@@ -260,6 +340,66 @@ export default function PostProblemForm({ posterName }: Props) {
               placeholder="Short, descriptive title"
               style={inputStyle}
             />
+          </Field>
+
+          <Field label="Thumbnail image (optional)">
+            <div style={{ display: 'grid', gap: 12 }}>
+              <input
+                key={thumbnailInputKey}
+                type="file"
+                accept={PROBLEM_THUMBNAIL_ACCEPT}
+                onChange={handleThumbnailChange}
+                style={inputStyle}
+              />
+              <div style={{ fontSize: 12, color: '#6A5F58' }}>
+                Add a JPG, PNG, WebP, or GIF image up to 5 MB for the problem preview card.
+              </div>
+              {thumbnailPreview && (
+                <div style={{
+                  border: '1.5px solid rgba(28,20,16,0.08)',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  background: '#FAF8F4'
+                }}>
+                  <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
+                    <img
+                      src={thumbnailPreview}
+                      alt="Problem thumbnail preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    padding: '10px 12px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span style={{ fontSize: 12, color: '#4A3F38' }}>
+                      {thumbnailFile?.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearThumbnail}
+                      style={{
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#1C1410',
+                        background: '#fff',
+                        border: '1px solid rgba(28,20,16,0.12)',
+                        borderRadius: 999,
+                        padding: '6px 12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </Field>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
@@ -398,7 +538,7 @@ export default function PostProblemForm({ posterName }: Props) {
               cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
             }}>
-              {loading ? 'Submitting...' : 'Submit for review'}
+              {loading ? (thumbnailFile ? 'Uploading image...' : 'Submitting...') : 'Submit for review'}
             </button>
           </div>
         </form>
@@ -434,4 +574,13 @@ const inputStyle: CSSProperties = {
 const textAreaStyle: CSSProperties = {
   ...inputStyle,
   resize: 'vertical',
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+    reader.onerror = () => reject(new Error('Could not read file.'))
+    reader.readAsDataURL(file)
+  })
 }
