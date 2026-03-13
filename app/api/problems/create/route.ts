@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  decodeProblemThumbnailFallback,
+  encodeProblemThumbnailFallback,
+  isMissingProblemThumbnailColumnError,
+  normalizeProblemThumbnailUrl,
+} from '@/lib/problem-thumbnail'
 
 type ProblemPayload = {
   title: string
   domain: string
   problem_type: string
   status?: string
+  thumbnail_url?: string | null
   reward_amount?: number | null
   milestones: number
   deadline: string
@@ -84,25 +91,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Missing or invalid fields: ${missing.join(', ')}` }, { status: 422 })
   }
 
+  const thumbnailUrl = payload.thumbnail_url == null
+    ? null
+    : normalizeProblemThumbnailUrl(payload.thumbnail_url)
+
+  if (payload.thumbnail_url != null && !thumbnailUrl) {
+    return NextResponse.json({ error: 'Invalid thumbnail_url' }, { status: 422 })
+  }
+
   const admin = createAdminClient()
-  const { error } = await admin
+  const insertData = {
+    title: payload.title,
+    domain: payload.domain,
+    problem_type: payload.problem_type,
+    status: payload.status ?? 'open',
+    reward_amount: payload.reward_amount ?? null,
+    thumbnail_url: thumbnailUrl,
+    milestones,
+    deadline: payload.deadline,
+    judging_deadline: payload.judging_deadline,
+    context: payload.context,
+    problem_stmt: payload.problem_stmt,
+    scope: payload.scope,
+    constraints: payload.constraints,
+    deliverables: payload.deliverables,
+    poster_id: user.id,
+  }
+
+  let warning: string | null = null
+  let { error } = await admin
     .from('problems')
-    .insert({
-      title: payload.title,
-      domain: payload.domain,
-      problem_type: payload.problem_type,
-      status: payload.status ?? 'open',
-      reward_amount: payload.reward_amount ?? null,
-      milestones,
-      deadline: payload.deadline,
-      judging_deadline: payload.judging_deadline,
-      context: payload.context,
-      problem_stmt: payload.problem_stmt,
-      scope: payload.scope,
-      constraints: payload.constraints,
-      deliverables: payload.deliverables,
-      poster_id: user.id,
-    })
+    .insert(insertData)
+
+  if (error && isMissingProblemThumbnailColumnError(error.message)) {
+    const fallbackInsertData = { ...insertData }
+    delete fallbackInsertData.thumbnail_url
+    fallbackInsertData.rejected_reason = encodeProblemThumbnailFallback(thumbnailUrl)
+    const retry = await admin.from('problems').insert(fallbackInsertData)
+    error = retry.error
+
+    if (!error && thumbnailUrl && decodeProblemThumbnailFallback(fallbackInsertData.rejected_reason) === thumbnailUrl) {
+      warning = 'Problem saved using temporary thumbnail storage because the database migration has not been applied yet.'
+    }
+  }
 
   if (error) {
     console.error('Problem insert failed:', {
@@ -117,5 +148,5 @@ export async function POST(req: Request) {
     )
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, warning })
 }
