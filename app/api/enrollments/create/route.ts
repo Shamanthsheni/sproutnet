@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { MAX_ACTIVE_ENROLLMENTS, syncCompletedEnrollments } from '@/lib/enrollment-progress'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+  const completedProblemIds = await syncCompletedEnrollments(admin, user.id)
+
+  if (completedProblemIds.includes(problemId)) {
+    return NextResponse.json({ error: 'You already completed this problem.' }, { status: 403 })
+  }
+
   const { data: existing } = await admin
     .from('enrollments')
     .select('id, status')
@@ -45,6 +52,33 @@ export async function POST(req: Request) {
     if (status === 'removed') {
       return NextResponse.json({ error: 'Enrollment removed by poster.' }, { status: 403 })
     }
+    if (status === 'completed') {
+      return NextResponse.json({ error: 'You already completed this problem.' }, { status: 403 })
+    }
+    if (status === 'active') {
+      return NextResponse.json({ ok: true })
+    }
+  }
+
+  const { count: activeEnrollmentCount, error: countError } = await admin
+    .from('enrollments')
+    .select('id', { count: 'exact', head: true })
+    .eq('student_id', user.id)
+    .eq('status', 'active')
+
+  if (countError) {
+    return NextResponse.json({ error: countError.message }, { status: 400 })
+  }
+
+  if ((activeEnrollmentCount ?? 0) >= MAX_ACTIVE_ENROLLMENTS) {
+    return NextResponse.json(
+      { error: `You can only work on ${MAX_ACTIVE_ENROLLMENTS} problems at a time. Finish one fully before enrolling in another.` },
+      { status: 403 }
+    )
+  }
+
+  if (existing && existing.length > 0) {
+    const status = existing[0]?.status
     if (status === 'cancelled') {
       const { error: reactivateError } = await admin
         .from('enrollments')
@@ -56,8 +90,9 @@ export async function POST(req: Request) {
       if (reactivateError) {
         return NextResponse.json({ error: reactivateError.message }, { status: 400 })
       }
+
+      return NextResponse.json({ ok: true })
     }
-    return NextResponse.json({ ok: true })
   }
 
   const { error } = await admin

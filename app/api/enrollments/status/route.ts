@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  MAX_ACTIVE_ENROLLMENTS,
+  getCompletedProblemIds,
+  syncCompletedEnrollments,
+} from '@/lib/enrollment-progress'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -33,24 +38,40 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
-  const [{ data: enrollment }, { data: submission }] = await Promise.all([
+  await syncCompletedEnrollments(admin, user.id)
+
+  const [{ data: enrollment }, { data: submission }, { count: activeEnrollmentCount }] = await Promise.all([
     admin
       .from('enrollments')
-      .select('id')
+      .select('id, status')
       .eq('problem_id', problemId)
       .eq('student_id', user.id)
-      .eq('status', 'active')
       .limit(1),
     admin
       .from('submissions')
-      .select('id')
+      .select('id, problem_id, milestone, problems(milestones)')
       .eq('problem_id', problemId)
+      .eq('student_id', user.id),
+    admin
+      .from('enrollments')
+      .select('id', { count: 'exact', head: true })
       .eq('student_id', user.id)
-      .limit(1),
+      .eq('status', 'active'),
   ])
 
+  const enrollmentStatus = enrollment?.[0]?.status ?? null
+  const completedProblemIds = getCompletedProblemIds((submission ?? []) as Array<{
+    problem_id: string | null
+    milestone: number | null
+    problems?: { milestones: number | null } | { milestones: number | null }[] | null
+  }>)
+  const isCompleted = enrollmentStatus === 'completed' || completedProblemIds.includes(problemId)
+
   return NextResponse.json({
-    enrolled: (enrollment?.length ?? 0) > 0,
+    enrolled: enrollmentStatus === 'active',
     hasSubmitted: (submission?.length ?? 0) > 0,
+    completed: isCompleted,
+    activeEnrollmentCount: activeEnrollmentCount ?? 0,
+    maxActiveEnrollments: MAX_ACTIVE_ENROLLMENTS,
   })
 }
