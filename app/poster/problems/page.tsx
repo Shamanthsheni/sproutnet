@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import PosterProblemsList from './poster-problems-list'
+import PosterProblemsList, { type ProblemRow } from './poster-problems-list'
 
 export default async function PosterProblemsPage() {
   const supabase = await createClient()
@@ -97,7 +97,7 @@ export default async function PosterProblemsPage() {
           </Link>
         </div>
 
-        <PosterProblemsList problems={(problems ?? []) as any} />
+        <PosterProblemsList problems={(problems ?? []) as ProblemRow[]} />
       </div>
     </div>
   )

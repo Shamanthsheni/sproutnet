@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ProblemCard, { type ProblemCardData } from './problem-card'
 import {
@@ -21,6 +21,10 @@ const DOMAIN_ICONS: Record<string, string> = {
   'Civic Technology': '🏛',
 }
 
+type ProblemFallbackRow = Omit<ProblemCardData, 'thumbnail_url'> & {
+  rejected_reason?: string | null
+}
+
 export default async function ProblemsPage({
   searchParams,
 }: {
@@ -30,7 +34,7 @@ export default async function ProblemsPage({
   const selectedDomain = params.domain || 'All'
   const selectedType = params.type || 'all'
 
-  const supabase = createAdminClient()
+  const supabase = await createClient()
 
   function buildProblemsQuery(columns: string) {
     let query = supabase
@@ -49,15 +53,29 @@ export default async function ProblemsPage({
     return query
   }
 
-  let { data: problems, error } = await buildProblemsQuery('id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context')
+  let problems: ProblemCardData[] = []
+  let error: { message: string } | null = null
+
+  const initialResult = await buildProblemsQuery(
+    'id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context'
+  )
+
+  error = initialResult.error
+  if (!error) {
+    problems = (initialResult.data ?? []) as unknown as ProblemCardData[]
+  }
 
   if (error && isMissingProblemThumbnailColumnError(error.message)) {
-    const fallback = await buildProblemsQuery('id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason')
+    const fallback = await buildProblemsQuery(
+      'id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason'
+    )
     error = fallback.error
-    problems = (fallback.data ?? []).map(problem => ({
-      ...problem,
-      thumbnail_url: decodeProblemThumbnailFallback(problem.rejected_reason),
-    }))
+    if (!error) {
+      problems = ((fallback.data ?? []) as unknown as ProblemFallbackRow[]).map(problem => ({
+        ...problem,
+        thumbnail_url: decodeProblemThumbnailFallback(problem.rejected_reason),
+      }))
+    }
   }
 
   if (error) {
@@ -221,7 +239,7 @@ export default async function ProblemsPage({
         ) : problems && problems.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
             {problems.map(problem => (
-              <ProblemCard key={problem.id} problem={problem as ProblemCardData} />
+              <ProblemCard key={problem.id} problem={problem} />
             ))}
           </div>
         ) : (

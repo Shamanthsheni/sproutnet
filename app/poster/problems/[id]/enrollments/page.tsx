@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import PosterEnrollmentsList from './poster-enrollments-list'
+import PosterEnrollmentsList, { type EnrollmentRow } from './poster-enrollments-list'
 
 export default async function PosterEnrollmentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -97,7 +97,7 @@ export default async function PosterEnrollmentsPage({ params }: { params: Promis
           </p>
         </div>
 
-        <PosterEnrollmentsList enrollments={(enrollments ?? []) as any} problemId={id} />
+        <PosterEnrollmentsList enrollments={(enrollments ?? []) as unknown as EnrollmentRow[]} problemId={id} />
       </div>
     </div>
   )

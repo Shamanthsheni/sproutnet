@@ -124,13 +124,17 @@ export async function POST(req: Request) {
     .insert(insertData)
 
   if (error && isMissingProblemThumbnailColumnError(error.message)) {
-    const fallbackInsertData = { ...insertData }
-    delete fallbackInsertData.thumbnail_url
-    fallbackInsertData.rejected_reason = encodeProblemThumbnailFallback(thumbnailUrl)
-    const retry = await admin.from('problems').insert(fallbackInsertData)
+    const fallbackInsertData = Object.fromEntries(
+      Object.entries(insertData).filter(([key]) => key !== 'thumbnail_url')
+    )
+    const retryPayload = {
+      ...fallbackInsertData,
+      rejected_reason: encodeProblemThumbnailFallback(thumbnailUrl),
+    }
+    const retry = await admin.from('problems').insert(retryPayload)
     error = retry.error
 
-    if (!error && thumbnailUrl && decodeProblemThumbnailFallback(fallbackInsertData.rejected_reason) === thumbnailUrl) {
+    if (!error && thumbnailUrl && decodeProblemThumbnailFallback(retryPayload.rejected_reason) === thumbnailUrl) {
       warning = 'Problem saved using temporary thumbnail storage because the database migration has not been applied yet.'
     }
   }
