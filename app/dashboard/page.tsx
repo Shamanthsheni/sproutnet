@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
+import { MAX_ACTIVE_ENROLLMENTS, syncCompletedEnrollments } from '@/lib/enrollment-progress'
 
 type EnrolledProblem = {
   id: string
@@ -35,6 +36,8 @@ export default async function DashboardPage() {
   let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean }> = []
 
   if (isStudent) {
+    await syncCompletedEnrollments(admin, user.id)
+
     const { data: enrollmentRows } = await admin
       .from('enrollments')
       .select('problem_id, created_at')
@@ -219,6 +222,9 @@ export default async function DashboardPage() {
                 }}>
                   Keep building where you left off
                 </h2>
+                <div style={{ fontSize: 13, color: '#7A7068', marginTop: 6 }}>
+                  You can keep up to {MAX_ACTIVE_ENROLLMENTS} active problem enrollments at a time.
+                </div>
               </div>
 
               <Link href="/problems" style={{

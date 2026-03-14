@@ -73,6 +73,7 @@ export default function ProblemDetailPage() {
   const [activeSection, setActiveSection] = useState('context')
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [isEnrolled, setIsEnrolled] = useState(false)
+  const [isCompleted, setIsCompleted] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState('')
   const [nowMs] = useState(() => Date.now())
@@ -114,9 +115,11 @@ export default function ProblemDetailPage() {
             const statusData = await statusRes.json()
             setIsEnrolled(Boolean(statusData?.enrolled))
             setHasSubmitted(Boolean(statusData?.hasSubmitted))
+            setIsCompleted(Boolean(statusData?.completed))
           } else {
             setIsEnrolled(false)
             setHasSubmitted(false)
+            setIsCompleted(false)
           }
         }
       }
@@ -159,6 +162,7 @@ export default function ProblemDetailPage() {
     })
     if (res.ok) {
       setIsEnrolled(true)
+      setIsCompleted(false)
       router.push(`/problems/${id}/submit`)
     } else {
       const text = await res.text().catch(() => '')
@@ -508,11 +512,38 @@ export default function ProblemDetailPage() {
               fontSize: 22, color: '#FAF8F4',
               lineHeight: 1.2, marginBottom: 20
             }}>
-              {hasSubmitted ? 'You\'ve started this.' : 'Start solving this problem.'}
+              {isCompleted ? 'You finished this problem.' : hasSubmitted ? 'You\'ve started this.' : 'Start solving this problem.'}
             </div>
 
             {user?.role === 'student' ? (
-              isEnrolled ? (
+              isCompleted ? (
+                <div style={{
+                  display: 'grid',
+                  gap: 10,
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
+                  <div style={{
+                    textAlign: 'center',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#2D6A4F',
+                    background: '#EAF4EE',
+                    border: '1px solid rgba(45,106,79,0.15)',
+                    borderRadius: 8,
+                    padding: '14px',
+                  }}>
+                    Problem completed
+                  </div>
+                  <div style={{
+                    fontSize: 12,
+                    color: 'rgba(250,248,244,0.7)',
+                    textAlign: 'center',
+                    lineHeight: 1.6,
+                  }}>
+                    You have already fully submitted this problem and can unlock a new enrollment slot.
+                  </div>
+                </div>
+              ) : isEnrolled ? (
                 <div style={{ display: 'grid', gap: 10 }}>
                 <Link
                   href={`/problems/${problem.id}/submit`}
@@ -539,6 +570,7 @@ export default function ProblemDetailPage() {
                   onCancelled={() => {
                     setIsEnrolled(false)
                     setHasSubmitted(false)
+                    setIsCompleted(false)
                   }}
                 />
                 </div>
