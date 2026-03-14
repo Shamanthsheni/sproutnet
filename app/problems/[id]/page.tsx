@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { decodeProblemThumbnailFallback } from '@/lib/problem-thumbnail'
+import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
 
 type Problem = {
   id: string
@@ -11,6 +13,7 @@ type Problem = {
   domain: string
   problem_type: string
   status: string
+  thumbnail_url: string | null
   reward_amount: number | null
   context: string
   problem_stmt: string
@@ -23,6 +26,7 @@ type Problem = {
   submission_count: number
   judge_type: string
   poster_id: string
+  rejected_reason?: string | null
 }
 
 type Comment = {
@@ -70,6 +74,7 @@ export default function ProblemDetailPage() {
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState('')
+  const [nowMs] = useState(() => Date.now())
 
   useEffect(() => {
     async function load() {
@@ -81,7 +86,10 @@ export default function ProblemDetailPage() {
         .select('*')
         .eq('id', id)
         .single()
-      setProblem(prob)
+      setProblem(prob ? {
+        ...prob,
+        thumbnail_url: prob.thumbnail_url ?? decodeProblemThumbnailFallback(prob.rejected_reason),
+      } : null)
 
       // Load current user
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -95,22 +103,20 @@ export default function ProblemDetailPage() {
 
         // Check if student already submitted
         if (profile?.role === 'student') {
-          const { data: enroll } = await supabase
-            .from('enrollments')
-            .select('id')
-            .eq('problem_id', id)
-            .eq('student_id', authUser.id)
-            .eq('status', 'active')
-            .limit(1)
-          setIsEnrolled((enroll?.length ?? 0) > 0)
+          const statusRes = await fetch('/api/enrollments/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problem_id: id }),
+          })
 
-          const { data: sub } = await supabase
-            .from('submissions')
-            .select('id')
-            .eq('problem_id', id)
-            .eq('student_id', authUser.id)
-            .limit(1)
-          setHasSubmitted((sub?.length ?? 0) > 0)
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            setIsEnrolled(Boolean(statusData?.enrolled))
+            setHasSubmitted(Boolean(statusData?.hasSubmitted))
+          } else {
+            setIsEnrolled(false)
+            setHasSubmitted(false)
+          }
         }
       }
 
@@ -152,6 +158,7 @@ export default function ProblemDetailPage() {
     })
     if (res.ok) {
       setIsEnrolled(true)
+      router.push(`/problems/${id}/submit`)
     } else {
       const text = await res.text().catch(() => '')
       let message = `Request failed (${res.status}).`
@@ -185,7 +192,7 @@ export default function ProblemDetailPage() {
   )
 
   const isIndustry = problem.problem_type === 'industry_challenge'
-  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - nowMs) / (1000 * 60 * 60 * 24))
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
@@ -286,6 +293,24 @@ export default function ProblemDetailPage() {
           }}>
             {problem.title}
           </h1>
+
+          {problem.thumbnail_url && (
+            <div style={{
+              background: '#fff',
+              border: '1.5px solid rgba(28,20,16,0.07)',
+              borderRadius: 16,
+              overflow: 'hidden',
+              marginBottom: 28
+            }}>
+              <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
+                <img
+                  src={problem.thumbnail_url}
+                  alt={`${problem.title} thumbnail`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Section tabs */}
           <div style={{
@@ -472,7 +497,7 @@ export default function ProblemDetailPage() {
               color: 'rgba(250,248,244,0.4)', letterSpacing: '0.1em',
               textTransform: 'uppercase', marginBottom: 14
             }}>
-              // ready to build?
+              {'// ready to build?'}
             </div>
             <div style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
@@ -484,18 +509,35 @@ export default function ProblemDetailPage() {
 
             {user?.role === 'student' ? (
               isEnrolled ? (
-                <button
-                  onClick={() => router.push(`/problems/${problem.id}/submit`)}
+                <div style={{ display: 'grid', gap: 10 }}>
+                <Link
+                  href={`/problems/${problem.id}/submit`}
                   style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 15, fontWeight: 600,
-                    color: '#1C1410', background: '#F4A723',
-                    border: 'none', borderRadius: 8,
-                    padding: '14px', cursor: 'pointer'
+                    display: 'block',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    textAlign: 'center',
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#1C1410',
+                    background: '#F4A723',
+                    borderRadius: 8,
+                    padding: '14px',
+                    textDecoration: 'none'
                   }}
                 >
                   {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
-                </button>
+                </Link>
+                <CancelEnrollmentButton
+                  problemId={problem.id}
+                  kind="block"
+                  onCancelled={() => {
+                    setIsEnrolled(false)
+                    setHasSubmitted(false)
+                  }}
+                />
+                </div>
               ) : (
                 <div>
                   <button
@@ -536,11 +578,38 @@ export default function ProblemDetailPage() {
                 Sign in to Solve →
               </Link>
             ) : (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-                color: 'rgba(250,248,244,0.4)', textAlign: 'center'
-              }}>
-                Only students can submit solutions.
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 13,
+                  color: 'rgba(250,248,244,0.7)',
+                  textAlign: 'center',
+                  lineHeight: 1.6
+                }}>
+                  You&apos;re signed in as a {user.role} account. Enroll is only available for student accounts.
+                </div>
+                <Link href="/login/student" style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: '#1C1410',
+                  background: '#F4A723',
+                  borderRadius: 8,
+                  padding: '14px',
+                  textDecoration: 'none'
+                }}>
+                  Switch to Student Login →
+                </Link>
+                <div style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 12,
+                  color: 'rgba(250,248,244,0.45)',
+                  textAlign: 'center'
+                }}>
+                  Student accounts can enroll and submit solutions.
+                </div>
               </div>
             )}
           </div>

@@ -1,9 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import {
+  PROBLEM_PROGRESS_ACCEPT,
+  getProblemProgressUploadError,
+  parseProgressUploads,
+  serializeProgressUploads,
+  type ProgressUploadItem,
+} from '@/lib/problem-progress'
 
 type Problem = {
   id: string
@@ -57,12 +64,14 @@ export default function SubmitPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingFiles, setUploadingFiles] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   const [selectedMilestone, setSelectedMilestone] = useState(1)
   const [stage, setStage] = useState<'draft' | 'full'>('draft')
   const [existing, setExisting] = useState<ExistingSubmission | null>(null)
+  const [progressFiles, setProgressFiles] = useState<ProgressUploadItem[]>([])
 
   // Form state
   const [fields, setFields] = useState<Record<string, string>>({
@@ -74,6 +83,40 @@ export default function SubmitPage() {
     f_risks: '',
     f_implementation: '',
   })
+
+  const loadSubmission = useCallback(async (supabase: ReturnType<typeof createClient>, userId: string, milestone: number) => {
+    const { data } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('problem_id', problemId)
+      .eq('student_id', userId)
+      .eq('milestone', milestone)
+      .single()
+
+    if (data) {
+      const parsedImplementation = parseProgressUploads(data.f_implementation ?? '')
+      setExisting(data as ExistingSubmission)
+      setStage(data.stage as 'draft' | 'full')
+      setProgressFiles(parsedImplementation.files)
+      setFields({
+        f_understanding: data.f_understanding ?? '',
+        f_solution: data.f_solution ?? '',
+        f_impact: data.f_impact ?? '',
+        f_rootcause: data.f_rootcause ?? '',
+        f_feasibility: data.f_feasibility ?? '',
+        f_risks: data.f_risks ?? '',
+        f_implementation: parsedImplementation.text,
+      })
+    } else {
+      setExisting(null)
+      setStage('draft')
+      setProgressFiles([])
+      setFields({
+        f_understanding: '', f_solution: '', f_impact: '',
+        f_rootcause: '', f_feasibility: '', f_risks: '', f_implementation: '',
+      })
+    }
+  }, [problemId])
 
   useEffect(() => {
     async function load() {
@@ -94,14 +137,19 @@ export default function SubmitPage() {
       }
       setUser(profile)
 
-      const { data: enroll } = await supabase
-        .from('enrollments')
-        .select('id')
-        .eq('problem_id', problemId)
-        .eq('student_id', authUser.id)
-        .eq('status', 'active')
-        .limit(1)
-      if (!enroll || enroll.length === 0) {
+      const statusRes = await fetch('/api/enrollments/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problem_id: problemId }),
+      })
+
+      if (!statusRes.ok) {
+        router.push(`/problems/${problemId}`)
+        return
+      }
+
+      const statusData = await statusRes.json()
+      if (!statusData?.enrolled) {
         router.push(`/problems/${problemId}`)
         return
       }
@@ -114,42 +162,11 @@ export default function SubmitPage() {
       setProblem(prob)
 
       // Load existing submission for milestone 1
-      await loadSubmission(supabase, authUser.id, 1, prob?.milestones ?? 3)
+      await loadSubmission(supabase, authUser.id, 1)
       setLoading(false)
     }
     load()
-  }, [problemId, router])
-
-  async function loadSubmission(supabase: ReturnType<typeof createClient>, userId: string, milestone: number, totalMilestones: number) {
-    const { data } = await supabase
-      .from('submissions')
-      .select('*')
-      .eq('problem_id', problemId)
-      .eq('student_id', userId)
-      .eq('milestone', milestone)
-      .single()
-
-    if (data) {
-      setExisting(data as ExistingSubmission)
-      setStage(data.stage as 'draft' | 'full')
-      setFields({
-        f_understanding: data.f_understanding ?? '',
-        f_solution: data.f_solution ?? '',
-        f_impact: data.f_impact ?? '',
-        f_rootcause: data.f_rootcause ?? '',
-        f_feasibility: data.f_feasibility ?? '',
-        f_risks: data.f_risks ?? '',
-        f_implementation: data.f_implementation ?? '',
-      })
-    } else {
-      setExisting(null)
-      setStage('draft')
-      setFields({
-        f_understanding: '', f_solution: '', f_impact: '',
-        f_rootcause: '', f_feasibility: '', f_risks: '', f_implementation: '',
-      })
-    }
-  }
+  }, [loadSubmission, problemId, router])
 
   async function handleMilestoneChange(m: number) {
     setSelectedMilestone(m)
@@ -157,8 +174,61 @@ export default function SubmitPage() {
     const supabase = createClient()
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (authUser && problem) {
-      await loadSubmission(supabase, authUser.id, m, problem.milestones)
+      await loadSubmission(supabase, authUser.id, m)
     }
+  }
+
+  async function handleProgressUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const validationError = getProblemProgressUploadError(file)
+    if (validationError) {
+      setError(validationError)
+      e.target.value = ''
+      return
+    }
+
+    setUploadingFiles(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('problem_id', problemId)
+    formData.append('file', file)
+
+    const res = await fetch('/api/submissions/progress-upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      let message = `Progress upload failed (${res.status}).`
+      if (text) {
+        try {
+          const data = JSON.parse(text)
+          message = data?.error ?? message
+        } catch {
+          message = text
+        }
+      }
+      setError(message)
+      setUploadingFiles(false)
+      e.target.value = ''
+      return
+    }
+
+    const data = await res.json()
+    if (typeof data?.url === 'string' && typeof data?.name === 'string') {
+      setProgressFiles(prev => [...prev, { name: data.name, url: data.url }])
+    }
+
+    setUploadingFiles(false)
+    e.target.value = ''
+  }
+
+  function removeProgressFile(url: string) {
+    setProgressFiles(prev => prev.filter(file => file.url !== url))
   }
 
   async function saveDraft() {
@@ -180,6 +250,7 @@ export default function SubmitPage() {
       f_understanding: fields.f_understanding,
       f_solution: fields.f_solution,
       f_impact: fields.f_impact,
+      f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
     }
 
     if (existing) {
@@ -220,7 +291,7 @@ export default function SubmitPage() {
       f_rootcause: fields.f_rootcause,
       f_feasibility: fields.f_feasibility,
       f_risks: fields.f_risks,
-      f_implementation: fields.f_implementation,
+      f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
     }).eq('id', existing.id)
 
     setSaved(true)
@@ -300,10 +371,10 @@ export default function SubmitPage() {
         <div style={{ marginBottom: 36 }}>
           <div style={{
             fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-            color: '#2D6A4F', letterSpacing: '0.1em',
-            textTransform: 'uppercase', marginBottom: 10
-          }}>
-            // submitting a solution
+          color: '#2D6A4F', letterSpacing: '0.1em',
+          textTransform: 'uppercase', marginBottom: 10
+        }}>
+            {'// submitting a solution'}
           </div>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
@@ -369,6 +440,108 @@ export default function SubmitPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div style={{
+          background: '#fff',
+          border: '1.5px solid rgba(28,20,16,0.07)',
+          borderRadius: 12,
+          padding: '22px 22px',
+          marginBottom: 28
+        }}>
+          <div style={{
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 11,
+            color: '#2D6A4F',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: 10
+          }}>
+            {'// progress uploads'}
+          </div>
+          <div style={{
+            fontFamily: 'Sora, sans-serif',
+            fontSize: 16,
+            fontWeight: 600,
+            color: '#1C1410',
+            marginBottom: 8
+          }}>
+            Upload files that show your progress
+          </div>
+          <p style={{ fontSize: 13, color: '#6A5F58', marginBottom: 14, lineHeight: 1.6 }}>
+            Add PDFs, docs, sheets, slides, ZIPs, or images that show how your solution is evolving.
+          </p>
+          <input
+            type="file"
+            accept={PROBLEM_PROGRESS_ACCEPT}
+            onChange={handleProgressUpload}
+            disabled={uploadingFiles}
+            style={{
+              width: '100%',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: 14,
+              color: '#1C1410',
+              background: '#FAF8F4',
+              border: '1.5px solid rgba(28,20,16,0.12)',
+              borderRadius: 8,
+              padding: '11px 14px',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+          <div style={{ fontSize: 12, color: '#9CA3A0', marginTop: 8 }}>
+            {uploadingFiles ? 'Uploading file...' : `${progressFiles.length} file${progressFiles.length === 1 ? '' : 's'} attached to this milestone.`}
+          </div>
+
+          {progressFiles.length > 0 && (
+            <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+              {progressFiles.map(file => (
+                <div key={file.url} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '12px 14px',
+                  background: '#FAF8F4',
+                  borderRadius: 10,
+                  border: '1px solid rgba(28,20,16,0.06)',
+                  flexWrap: 'wrap'
+                }}>
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: '#2D6A4F',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    {file.name}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => removeProgressFile(file.url)}
+                    style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#1C1410',
+                      background: '#fff',
+                      border: '1px solid rgba(28,20,16,0.12)',
+                      borderRadius: 999,
+                      padding: '6px 12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Error */}

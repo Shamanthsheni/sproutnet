@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  encodeProblemThumbnailFallback,
+  isMissingProblemThumbnailColumnError,
+  normalizeProblemThumbnailUrl,
+} from '@/lib/problem-thumbnail'
 
 type ProblemPayload = {
   id: string
   title: string
   domain: string
   problem_type: string
+  thumbnail_url?: string | null
   reward_amount?: number | null
   milestones: number
   deadline: string
@@ -77,6 +83,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Judging deadline must be on or after the submission deadline.' }, { status: 422 })
   }
 
+  const shouldUpdateThumbnail = Object.prototype.hasOwnProperty.call(payload, 'thumbnail_url')
+  const thumbnailUrl = payload.thumbnail_url == null
+    ? null
+    : normalizeProblemThumbnailUrl(payload.thumbnail_url)
+
+  if (shouldUpdateThumbnail && payload.thumbnail_url != null && !thumbnailUrl) {
+    return NextResponse.json({ error: 'Invalid thumbnail_url' }, { status: 422 })
+  }
+
   const admin = createAdminClient()
   const { data: problem } = await admin
     .from('problems')
@@ -88,27 +103,50 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const { error } = await admin
+  const updateData: Record<string, unknown> = {
+    title: payload.title,
+    domain: payload.domain,
+    problem_type: payload.problem_type,
+    reward_amount: payload.reward_amount ?? null,
+    milestones,
+    deadline: payload.deadline,
+    judging_deadline: payload.judging_deadline,
+    context: payload.context,
+    problem_stmt: payload.problem_stmt,
+    scope: payload.scope,
+    constraints: payload.constraints,
+    deliverables: payload.deliverables,
+  }
+
+  if (shouldUpdateThumbnail) {
+    updateData.thumbnail_url = thumbnailUrl
+  }
+
+  let warning: string | null = null
+  let { error } = await admin
     .from('problems')
-    .update({
-      title: payload.title,
-      domain: payload.domain,
-      problem_type: payload.problem_type,
-      reward_amount: payload.reward_amount ?? null,
-      milestones,
-      deadline: payload.deadline,
-      judging_deadline: payload.judging_deadline,
-      context: payload.context,
-      problem_stmt: payload.problem_stmt,
-      scope: payload.scope,
-      constraints: payload.constraints,
-      deliverables: payload.deliverables,
-    })
+    .update(updateData)
     .eq('id', payload.id)
+
+  if (error && shouldUpdateThumbnail && isMissingProblemThumbnailColumnError(error.message)) {
+    const fallbackUpdateData = { ...updateData }
+    delete fallbackUpdateData.thumbnail_url
+    fallbackUpdateData.rejected_reason = encodeProblemThumbnailFallback(thumbnailUrl)
+    const retry = await admin
+      .from('problems')
+      .update(fallbackUpdateData)
+      .eq('id', payload.id)
+
+    error = retry.error
+
+    if (!error && thumbnailUrl) {
+      warning = 'Problem updated using temporary thumbnail storage because the database migration has not been applied yet.'
+    }
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, warning })
 }

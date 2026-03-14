@@ -40,35 +40,28 @@ export async function POST(req: Request) {
     .eq('student_id', user.id)
     .limit(1)
 
-  if (existing && existing.length > 0) {
-    const status = existing[0]?.status
-    if (status === 'removed') {
-      return NextResponse.json({ error: 'Enrollment removed by poster.' }, { status: 403 })
-    }
-    if (status === 'cancelled') {
-      const { error: reactivateError } = await admin
-        .from('enrollments')
-        .update({ status: 'active' })
-        .eq('id', existing[0].id)
-        .eq('problem_id', problemId)
-        .eq('student_id', user.id)
+  if (!existing || existing.length === 0) {
+    return NextResponse.json({ error: 'Enrollment not found.' }, { status: 404 })
+  }
 
-      if (reactivateError) {
-        return NextResponse.json({ error: reactivateError.message }, { status: 400 })
-      }
-    }
+  const status = existing[0]?.status
+  if (status === 'removed') {
+    return NextResponse.json({ error: 'Enrollment already removed by poster.' }, { status: 403 })
+  }
+
+  if (status === 'cancelled') {
     return NextResponse.json({ ok: true })
   }
 
   const { error } = await admin
     .from('enrollments')
-    .insert({ problem_id: problemId, student_id: user.id, status: 'active' })
+    .update({ status: 'cancelled' })
+    .eq('id', existing[0].id)
+    .eq('student_id', user.id)
+    .eq('problem_id', problemId)
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message, code: error.code, details: error.details, hint: error.hint },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
   return NextResponse.json({ ok: true })
