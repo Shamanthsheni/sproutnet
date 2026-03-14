@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function PosterDashboardPage() {
@@ -41,7 +42,7 @@ export default async function PosterDashboardPage() {
         top: 0,
         zIndex: 100
       }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
             <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
             <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
@@ -51,7 +52,7 @@ export default async function PosterDashboardPage() {
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>
             SproutNet
           </span>
-        </a>
+        </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', rowGap: 8 }}>
           <span style={{
             fontFamily: 'JetBrains Mono, monospace',
@@ -122,7 +123,7 @@ function ActionCard({ href, icon, title, desc }: {
   desc: string
 }) {
   return (
-    <a href={href} style={{
+    <Link href={href} style={{
       background: '#fff',
       border: '1.5px solid rgba(28,20,16,0.07)',
       borderRadius: 12,
@@ -143,6 +144,6 @@ function ActionCard({ href, icon, title, desc }: {
       <div style={{ fontSize: 13, color: '#4A3F38', fontWeight: 300, lineHeight: 1.5 }}>
         {desc}
       </div>
-    </a>
+    </Link>
   )
 }

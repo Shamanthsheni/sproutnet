@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -20,7 +20,7 @@ const ORG_TYPES = ['Startup', 'NGO / Non-profit', 'Company', 'Government Body', 
 function JoinContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [userType, setUserType] = useState<UserType>(null)
+  const [selectedUserType, setSelectedUserType] = useState<UserType>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,9 +32,7 @@ function JoinContent() {
   const [city, setCity] = useState('')
   const [orgType, setOrgType] = useState('')
 
-  useEffect(() => {
-    if (searchParams.get('role') === 'poster') setUserType('poster')
-  }, [searchParams])
+  const userType = searchParams.get('role') === 'poster' ? 'poster' : selectedUserType
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -142,7 +140,7 @@ function JoinContent() {
         {!userType && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button
-              onClick={() => setUserType('student')}
+              onClick={() => setSelectedUserType('student')}
               style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
               onMouseEnter={e => { (e.currentTarget).style.borderColor = '#2D6A4F'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
               onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(28,20,16,0.1)'; (e.currentTarget).style.transform = 'translateY(0)' }}
@@ -156,7 +154,7 @@ function JoinContent() {
             </button>
 
             <button
-              onClick={() => setUserType('poster')}
+              onClick={() => setSelectedUserType('poster')}
               style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
               onMouseEnter={e => { (e.currentTarget).style.borderColor = '#F4A723'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
               onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(28,20,16,0.1)'; (e.currentTarget).style.transform = 'translateY(0)' }}
@@ -180,7 +178,7 @@ function JoinContent() {
         {userType && (
           <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '36px 40px', boxShadow: '0 4px 24px rgba(28,20,16,0.07)' }}>
             <button
-              onClick={() => { setUserType(null); setError('') }}
+              onClick={() => { setSelectedUserType(null); setError('') }}
               style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#9CA3A0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}
             >
               ← Back

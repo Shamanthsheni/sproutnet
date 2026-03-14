@@ -69,7 +69,7 @@ export default async function LeaderboardPage() {
           <div className="sn-mobile-panel">
             <Link href="/problems">Problems</Link>
             <Link href="/leaderboard">Leaderboard</Link>
-            <Link href="/dashboard" className="sn-menu-primary">Dashboard â†’</Link>
+            <Link href="/dashboard" className="sn-menu-primary">Dashboard →</Link>
           </div>
         </details>
       </nav>
@@ -84,7 +84,7 @@ export default async function LeaderboardPage() {
             letterSpacing: '0.1em', textTransform: 'uppercase',
             marginBottom: 12
           }}>
-            // season 1 · 2026
+            {'// season 1 · 2026'}
           </div>
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",

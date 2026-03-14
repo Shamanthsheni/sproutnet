@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-page-custom-font */
+
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
-        <style dangerouslySetInnerHTML={{__html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
           html { scroll-behavior: smooth; }
           body {
@@ -111,7 +115,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }
             .sn-mobile-menu { display: block; }
           }
-        `}} />
+        `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

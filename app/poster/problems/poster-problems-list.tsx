@@ -1,9 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
 
-type ProblemRow = {
+export type ProblemRow = {
   id: string
   title: string
   domain: string
@@ -20,9 +20,7 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
   const [items, setItems] = useState(problems)
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  const hasItems = useMemo(() => items.length > 0, [items])
-
-  async function updateStatus(id: string, status: string) {
+  async function updateStatus(id: string, status: ProblemRow['status']) {
     setBusyId(id)
     const res = await fetch('/api/problems/status', {
       method: 'POST',
@@ -49,7 +47,7 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
     setBusyId(null)
   }
 
-  if (!hasItems) {
+  if (items.length === 0) {
     return (
       <div style={{
         textAlign: 'center', padding: '80px 24px',
@@ -125,7 +123,7 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
               borderTop: '1px solid rgba(28,20,16,0.06)',
               paddingTop: 12
             }}>
-              <a href={`/poster/problems/${problem.id}/enrollments`} style={{
+              <Link href={`/poster/problems/${problem.id}/enrollments`} style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: 13,
                 fontWeight: 600,
@@ -137,8 +135,8 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
                 background: 'rgba(28,20,16,0.02)'
               }}>
                 Enrolled
-              </a>
-              <a href={`/poster/problems/${problem.id}/edit`} style={{
+              </Link>
+              <Link href={`/poster/problems/${problem.id}/edit`} style={{
                 fontFamily: 'DM Sans, sans-serif',
                 fontSize: 13,
                 fontWeight: 600,
@@ -150,7 +148,7 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
                 background: 'rgba(28,20,16,0.02)'
               }}>
                 Edit
-              </a>
+              </Link>
               <button
                 type="button"
                 disabled={isBusy}

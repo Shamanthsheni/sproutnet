@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -160,7 +161,7 @@ footer{background:var(--soil);padding:52px}
       `}}/>
 
       <nav id="nav">
-        <a href="/" className="nav-brand">
+        <Link href="/" className="nav-brand">
           <svg className="logo-svg" viewBox="0 0 34 34" fill="none">
             <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
             <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
@@ -169,18 +170,18 @@ footer{background:var(--soil);padding:52px}
             <line x1="11" y1="28.5" x2="23" y2="28.5" stroke="rgba(250,248,244,0.18)" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
           <span className="nav-wm">SproutNet</span>
-        </a>
+        </Link>
         <ul className="nav-links sn-nav-links">
-          <li><a href="/how-it-works">How It Works</a></li>
-          <li><a href="/problems">Problems</a></li>
-          <li><a href="/leaderboard">Leaderboard</a></li>
+          <li><Link href="/how-it-works">How It Works</Link></li>
+          <li><Link href="/problems">Problems</Link></li>
+          <li><Link href="/leaderboard">Leaderboard</Link></li>
           <li><a href="#about">About</a></li>
         </ul>
         <div className="nav-right sn-nav-actions">
-          {!user && <a href="/login" className="btn-ghost">Log in</a>}
-          <a href={user ? '/dashboard' : '/login/student'} className="btn-nav">
+          {!user && <Link href="/login" className="btn-ghost">Log in</Link>}
+          <Link href={user ? '/dashboard' : '/login/student'} className="btn-nav">
             {user ? 'Dashboard →' : 'Start Solving →'}
-          </a>
+          </Link>
         </div>
         <details className="sn-mobile-menu">
           <summary aria-label="Open navigation menu">
@@ -188,14 +189,14 @@ footer{background:var(--soil);padding:52px}
             <span className="sn-menu-label">Menu</span>
           </summary>
           <div className="sn-mobile-panel">
-            <a href="/how-it-works">How It Works</a>
-            <a href="/problems">Problems</a>
-            <a href="/leaderboard">Leaderboard</a>
+            <Link href="/how-it-works">How It Works</Link>
+            <Link href="/problems">Problems</Link>
+            <Link href="/leaderboard">Leaderboard</Link>
             <a href="#about">About</a>
-            {!user && <a href="/login" className="sn-menu-ghost">Log in</a>}
-            <a href={user ? '/dashboard' : '/login/student'} className="sn-menu-primary">
-              {user ? 'Dashboard â†’' : 'Start Solving â†’'}
-            </a>
+            {!user && <Link href="/login" className="sn-menu-ghost">Log in</Link>}
+            <Link href={user ? '/dashboard' : '/login/student'} className="sn-menu-primary">
+              {user ? 'Dashboard →' : 'Start Solving →'}
+            </Link>
           </div>
         </details>
       </nav>
@@ -209,8 +210,8 @@ footer{background:var(--soil);padding:52px}
           </p>
 
           <div className="hero-ctas a3">
-            <a href="/login/student" className="btn-hp">Start Solving →</a>
-            <a href="/problems" className="btn-hs">See Open Problems</a>
+            <Link href="/login/student" className="btn-hp">Start Solving →</Link>
+            <Link href="/problems" className="btn-hs">See Open Problems</Link>
           </div>
 
           <div className="poster-bar a3">
@@ -218,7 +219,7 @@ footer{background:var(--soil);padding:52px}
               <span className="poster-bar-label">For organisations &amp; NGOs</span>
               <span className="poster-bar-text"><strong>Have a real problem to solve?</strong> Post your challenge, get structured solutions from India&apos;s sharpest students.</span>
             </div>
-            <a href="/login/poster" className="btn-post">Post a Problem →</a>
+            <Link href="/login/poster" className="btn-post">Post a Problem →</Link>
           </div>
 
           <div className="hero-trust a4">
@@ -241,7 +242,7 @@ footer{background:var(--soil);padding:52px}
 
       <div className="reality">
         <div className="r-inner">
-          <div className="r-label">// why this exists</div>
+          <div className="r-label">{'// why this exists'}</div>
           <div className="r-item"><div className="r-num">01</div><div className="r-text">Exams test memory. SproutNet tests <em>judgment.</em></div></div>
           <div className="r-item"><div className="r-num">02</div><div className="r-text">Assignments have right answers. <em>Real problems don&apos;t.</em></div></div>
           <div className="r-item"><div className="r-num">03</div><div className="r-text">You&apos;ve been trained to study India. Now <em>help fix it.</em></div></div>
@@ -250,7 +251,7 @@ footer{background:var(--soil);padding:52px}
 
       <section id="about">
         <div className="si-wrap">
-          <div className="s-label rv">// what this is</div>
+          <div className="s-label rv">{'// what this is'}</div>
           <h2 className="s-title rv d1">Not another hackathon.</h2>
           <p className="s-sub rv d2">Three things make SproutNet different from every competition you&apos;ve seen.</p>
           <div className="what-grid">
@@ -263,7 +264,7 @@ footer{background:var(--soil);padding:52px}
 
       <section className="hiw" id="how-it-works">
         <div className="si-wrap">
-          <div className="s-label rv">// the process</div>
+          <div className="s-label rv">{'// the process'}</div>
           <h2 className="s-title rv d1">Simple. Serious. Structured.</h2>
           <div className="hiw-grid">
             <div className="hiw-step rv d1"><div className="step-dot"><div className="step-n">01</div></div><div className="step-t">Browse real problems</div><div className="step-d">Vetted, fully scoped. Each one matters to someone real.</div></div>
@@ -271,13 +272,13 @@ footer{background:var(--soil);padding:52px}
             <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">03</div></div><div className="step-t">Get evaluated fairly</div><div className="step-d">Blind review. 5 clear criteria. No favouritism.</div></div>
             <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">04</div></div><div className="step-t">See your thinking matter</div><div className="step-d">Your rank, your badges, your Builder Score.</div></div>
           </div>
-          <a href="/problems" className="hiw-cta rv">See open problems →</a>
+          <Link href="/problems" className="hiw-cta rv">See open problems →</Link>
         </div>
       </section>
 
       <section className="domains">
         <div className="si-wrap">
-          <div className="s-label rv">// problem domains</div>
+          <div className="s-label rv">{'// problem domains'}</div>
           <h2 className="s-title rv d1">What kind of problems?<br/>Indian ones.</h2>
           <p className="s-sub rv d2">Eight starting domains. Every real Indian problem fits somewhere.</p>
           <div className="domain-mosaic rv d1">
@@ -296,7 +297,7 @@ footer{background:var(--soil);padding:52px}
       <div className="thinking">
         <div className="th-inner">
           <div>
-            <div className="th-label">// the framework</div>
+            <div className="th-label">{'// the framework'}</div>
             <h2 className="th-title">We won&apos;t let you submit a <em>half-baked idea.</em></h2>
             <p className="th-sub">Every submission has 7 mandatory fields. You&apos;ll think harder than you ever have.</p>
             <p className="th-note">&quot;Most students have never been asked to think this completely. You&apos;ll leave knowing you did.&quot;</p>
@@ -321,7 +322,7 @@ footer{background:var(--soil);padding:52px}
         <div className="cl-inner">
           <h2 className="cl-title">You don&apos;t need experience.<br/>You need <em>curiosity.</em></h2>
           <p className="cl-sub">No prior experience required. No branch restrictions. The only requirement is that you take it seriously.</p>
-          <a href="/join" className="btn-cl">Create Your Account →</a>
+          <Link href="/join" className="btn-cl">Create Your Account →</Link>
           <p className="cl-fine">Verified student identities only · Season 1 now open</p>
         </div>
       </div>
@@ -341,10 +342,10 @@ footer{background:var(--soil);padding:52px}
             <div className="ft-tl">Structured thinking for real India.</div>
           </div>
           <div className="ft-links">
-            <a href="/how-it-works">How It Works</a>
-            <a href="/problems">Problems</a>
-            <a href="/leaderboard">Leaderboard</a>
-            <a href="/login">Sign in</a>
+            <Link href="/how-it-works">How It Works</Link>
+            <Link href="/problems">Problems</Link>
+            <Link href="/leaderboard">Leaderboard</Link>
+            <Link href="/login">Sign in</Link>
           </div>
           <div className="ft-copy">© 2026 SproutNet</div>
         </div>

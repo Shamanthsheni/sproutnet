@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import './admin.css'
 import AdminSidebarLinks from './admin-sidebar-links'
@@ -31,9 +32,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           borderRight: '1px solid var(--border-primary)',
           background: 'var(--bg-surface)',
           padding: 'clamp(16px, 3vw, 22px) clamp(14px, 3vw, 18px)',
-          position: 'var(--admin-aside-position, sticky)' as any,
+          position: 'var(--admin-aside-position, sticky)' as CSSProperties['position'],
           top: 0,
-          height: 'var(--admin-aside-height, 100vh)' as any,
+          height: 'var(--admin-aside-height, 100vh)',
           overflowY: 'auto'
         }}>
           <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 18 }}>

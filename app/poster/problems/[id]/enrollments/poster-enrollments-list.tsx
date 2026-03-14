@@ -10,6 +10,8 @@ type EnrollmentRow = {
   users?: { name: string; dept: string; year: string } | null
 }
 
+export type { EnrollmentRow }
+
 export default function PosterEnrollmentsList({ enrollments, problemId }: { enrollments: EnrollmentRow[]; problemId: string }) {
   const [items, setItems] = useState(enrollments)
   const [busyId, setBusyId] = useState<string | null>(null)

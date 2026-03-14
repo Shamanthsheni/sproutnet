@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -302,11 +303,14 @@ export default function ProblemDetailPage() {
               overflow: 'hidden',
               marginBottom: 28
             }}>
-              <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
-                <img
+              <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7', position: 'relative' }}>
+                <Image
                   src={problem.thumbnail_url}
                   alt={`${problem.title} thumbnail`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 66vw"
+                  style={{ objectFit: 'cover', display: 'block' }}
                 />
               </div>
             </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -49,11 +50,14 @@ export default function ProblemCard({ problem }: { problem: ProblemCardData }) {
         cursor: 'pointer',
       }}>
         {problem.thumbnail_url && (
-          <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
-            <img
+          <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7', position: 'relative' }}>
+            <Image
               src={problem.thumbnail_url}
               alt={`${problem.title} thumbnail`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              fill
+              unoptimized
+              sizes="(max-width: 768px) 100vw, 33vw"
+              style={{ objectFit: 'cover', display: 'block' }}
             />
           </div>
         )}

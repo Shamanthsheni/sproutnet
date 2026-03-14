@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function HowItWorksPage() {
   return (
     <>
@@ -90,7 +92,7 @@ footer{background:var(--soil);padding:52px}
 
       <div className="hiw-page">
         <nav className="hiw-nav">
-          <a href="/" className="nav-brand">
+          <Link href="/" className="nav-brand">
             <svg className="logo-svg" viewBox="0 0 34 34" fill="none">
               <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
               <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
@@ -99,16 +101,16 @@ footer{background:var(--soil);padding:52px}
               <line x1="11" y1="28.5" x2="23" y2="28.5" stroke="rgba(250,248,244,0.18)" strokeWidth="1.2" strokeLinecap="round"/>
             </svg>
             <span className="nav-wm">SproutNet</span>
-          </a>
+          </Link>
           <ul className="nav-links sn-nav-links">
-            <li><a href="/how-it-works" className="active">How It Works</a></li>
-            <li><a href="/problems">Problems</a></li>
-            <li><a href="/leaderboard">Leaderboard</a></li>
-            <li><a href="/#about">About</a></li>
+            <li><Link href="/how-it-works" className="active">How It Works</Link></li>
+            <li><Link href="/problems">Problems</Link></li>
+            <li><Link href="/leaderboard">Leaderboard</Link></li>
+            <li><Link href="/#about">About</Link></li>
           </ul>
           <div className="nav-right sn-nav-actions">
-            <a href="/login" className="btn-ghost">Log in</a>
-            <a href="/login/student" className="btn-nav">Start Solving &rarr;</a>
+            <Link href="/login" className="btn-ghost">Log in</Link>
+            <Link href="/login/student" className="btn-nav">Start Solving &rarr;</Link>
           </div>
           <details className="sn-mobile-menu">
             <summary aria-label="Open navigation menu">
@@ -116,12 +118,12 @@ footer{background:var(--soil);padding:52px}
               <span className="sn-menu-label">Menu</span>
             </summary>
             <div className="sn-mobile-panel">
-              <a href="/how-it-works">How It Works</a>
-              <a href="/problems">Problems</a>
-              <a href="/leaderboard">Leaderboard</a>
-              <a href="/#about">About</a>
-              <a href="/login" className="sn-menu-ghost">Log in</a>
-              <a href="/login/student" className="sn-menu-primary">Start Solving &rarr;</a>
+              <Link href="/how-it-works">How It Works</Link>
+              <Link href="/problems">Problems</Link>
+              <Link href="/leaderboard">Leaderboard</Link>
+              <Link href="/#about">About</Link>
+              <Link href="/login" className="sn-menu-ghost">Log in</Link>
+              <Link href="/login/student" className="sn-menu-primary">Start Solving &rarr;</Link>
             </div>
           </details>
         </nav>
@@ -186,7 +188,7 @@ footer{background:var(--soil);padding:52px}
               </div>
             </div>
 
-            <div className="hiw-quote">"Most hackathon problems are invented for the event. Every SproutNet problem belongs to someone who actually needs it solved."</div>
+            <div className="hiw-quote">&quot;Most hackathon problems are invented for the event. Every SproutNet problem belongs to someone who actually needs it solved.&quot;</div>
           </div>
         </section>
 
@@ -210,7 +212,7 @@ footer{background:var(--soil);padding:52px}
               <div className="card dark">
                 <div className="field-tag">Field 3</div>
                 <div className="card-title">Proposed Solution</div>
-                <p className="card-body">What do you propose? Be specific. Not "an app" -- what kind, for whom, doing what exactly? Describe the mechanism, not just the idea.</p>
+                <p className="card-body">What do you propose? Be specific. Not &quot;an app&quot; -- what kind, for whom, doing what exactly? Describe the mechanism, not just the idea.</p>
               </div>
               <div className="card dark">
                 <div className="field-tag">Field 4</div>
@@ -234,7 +236,7 @@ footer{background:var(--soil);padding:52px}
               </div>
             </div>
 
-            <div className="hiw-quote">"Most students have never been asked to think this completely. Every field is there for a reason. If you find yourself struggling with one -- that&apos;s the point."</div>
+            <div className="hiw-quote">&quot;Most students have never been asked to think this completely. Every field is there for a reason. If you find yourself struggling with one -- that&apos;s the point.&quot;</div>
           </div>
         </section>
 
@@ -277,7 +279,7 @@ footer{background:var(--soil);padding:52px}
               <div className="score-body">Your average score across all five criteria is multiplied by 10 and adjusted for milestones completed. The formula rewards both quality and consistency -- a string of good submissions matters more than one exceptional one.</div>
             </div>
 
-            <div className="hiw-quote">"A single outstanding submission will not outrank someone who thinks carefully across five problems. Consistency is the skill we are measuring."</div>
+            <div className="hiw-quote">&quot;A single outstanding submission will not outrank someone who thinks carefully across five problems. Consistency is the skill we are measuring.&quot;</div>
           </div>
         </section>
 
@@ -377,8 +379,8 @@ footer{background:var(--soil);padding:52px}
           <div className="closing-inner">
             <h2 className="closing-title">You understand how it works. Now use it.</h2>
             <div className="cta-row">
-              <a href="/login/student" className="btn-primary">Start Solving &rarr;</a>
-              <a href="/problems" className="btn-secondary">See Open Problems</a>
+              <Link href="/login/student" className="btn-primary">Start Solving &rarr;</Link>
+              <Link href="/problems" className="btn-secondary">See Open Problems</Link>
             </div>
             <p className="closing-fine">Phase 1 open to @jyothyit.ac.in students.</p>
           </div>
@@ -399,10 +401,10 @@ footer{background:var(--soil);padding:52px}
               <div className="ft-tl">Structured thinking for real India.</div>
             </div>
             <div className="ft-links">
-              <a href="/how-it-works">How It Works</a>
-              <a href="/problems">Problems</a>
-              <a href="/leaderboard">Leaderboard</a>
-              <a href="/login">Sign in</a>
+              <Link href="/how-it-works">How It Works</Link>
+              <Link href="/problems">Problems</Link>
+              <Link href="/leaderboard">Leaderboard</Link>
+              <Link href="/login">Sign in</Link>
             </div>
             <div className="ft-copy">(c) 2026 SproutNet</div>
           </div>

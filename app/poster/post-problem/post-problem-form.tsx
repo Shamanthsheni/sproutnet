@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, type ReactNode, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -361,11 +362,14 @@ export default function PostProblemForm({ posterName }: Props) {
                   overflow: 'hidden',
                   background: '#FAF8F4'
                 }}>
-                  <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7' }}>
-                    <img
+                  <div style={{ aspectRatio: '16 / 9', background: '#F3EEE7', position: 'relative' }}>
+                    <Image
                       src={thumbnailPreview}
                       alt="Problem thumbnail preview"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      style={{ objectFit: 'cover', display: 'block' }}
                     />
                   </div>
                   <div style={{
