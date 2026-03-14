@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { syncCompletedEnrollments } from '@/lib/enrollment-progress'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -33,6 +34,8 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+  await syncCompletedEnrollments(admin, user.id)
+
   const { data: existing } = await admin
     .from('enrollments')
     .select('id, status')
@@ -48,9 +51,26 @@ export async function POST(req: Request) {
   if (status === 'removed') {
     return NextResponse.json({ error: 'Enrollment already removed by poster.' }, { status: 403 })
   }
+  if (status === 'completed') {
+    return NextResponse.json({ error: 'This problem is already completed.' }, { status: 400 })
+  }
 
   if (status === 'cancelled') {
     return NextResponse.json({ ok: true })
+  }
+
+  const { data: submission } = await admin
+    .from('submissions')
+    .select('id')
+    .eq('problem_id', problemId)
+    .eq('student_id', user.id)
+    .limit(1)
+
+  if ((submission?.length ?? 0) > 0) {
+    return NextResponse.json(
+      { error: 'You already started this problem. Finish the full submission before moving to another one.' },
+      { status: 403 }
+    )
   }
 
   const { error } = await admin
