@@ -56,26 +56,31 @@ export default async function ProblemsPage({
   let problems: ProblemCardData[] = []
   let error: { message: string } | null = null
 
-  const initialResult = await buildProblemsQuery(
-    'id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context'
-  )
-
-  error = initialResult.error
-  if (!error) {
-    problems = (initialResult.data ?? []) as unknown as ProblemCardData[]
-  }
-
-  if (error && isMissingProblemThumbnailColumnError(error.message)) {
-    const fallback = await buildProblemsQuery(
-      'id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason'
+  try {
+    const initialResult = await buildProblemsQuery(
+      'id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context'
     )
-    error = fallback.error
+
+    error = initialResult.error
     if (!error) {
-      problems = ((fallback.data ?? []) as unknown as ProblemFallbackRow[]).map(problem => ({
-        ...problem,
-        thumbnail_url: decodeProblemThumbnailFallback(problem.rejected_reason),
-      }))
+      problems = (initialResult.data ?? []) as unknown as ProblemCardData[]
     }
+
+    if (error && isMissingProblemThumbnailColumnError(error.message)) {
+      const fallback = await buildProblemsQuery(
+        'id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason'
+      )
+      error = fallback.error
+      if (!error) {
+        problems = ((fallback.data ?? []) as unknown as ProblemFallbackRow[]).map(problem => ({
+          ...problem,
+          thumbnail_url: decodeProblemThumbnailFallback(problem.rejected_reason),
+        }))
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Network request failed.'
+    error = { message }
   }
 
   if (error) {
@@ -111,6 +116,7 @@ export default async function ProblemsPage({
         </Link>
         <div className="sn-nav-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
           <Link href="/problems" style={{ fontSize: 14, fontWeight: 500, color: '#1C1410', textDecoration: 'none' }}>Problems</Link>
+          <Link href="/blogs" style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38', textDecoration: 'none' }}>Blogs</Link>
           <Link href="/leaderboard" style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38', textDecoration: 'none' }}>Leaderboard</Link>
           <Link href="/dashboard" style={{
             fontSize: 14,
@@ -131,6 +137,7 @@ export default async function ProblemsPage({
           </summary>
           <div className="sn-mobile-panel">
             <Link href="/problems">Problems</Link>
+            <Link href="/blogs">Blogs</Link>
             <Link href="/leaderboard">Leaderboard</Link>
             <Link href="/dashboard" className="sn-menu-primary">Dashboard →</Link>
           </div>

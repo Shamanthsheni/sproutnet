@@ -106,6 +106,7 @@ export default async function PosterDashboardPage() {
 
         {/* Quick actions */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+          <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Join the public feed to share insights and answer questions." />
           <ActionCard href="/poster/post-problem" icon="✏️" title="Post a Problem" desc="Create a new problem statement for students." />
           <ActionCard href="/poster/problems" icon="📋" title="My Problems" desc="Manage problems you have posted." />
           <ActionCard href="/poster/solutions" icon="📬" title="Student Solutions" desc="View solutions submitted by registered students." />

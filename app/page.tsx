@@ -174,6 +174,7 @@ footer{background:var(--soil);padding:52px}
         <ul className="nav-links sn-nav-links">
           <li><Link href="/how-it-works">How It Works</Link></li>
           <li><Link href="/problems">Problems</Link></li>
+          <li><Link href="/blogs">Blogs</Link></li>
           <li><Link href="/leaderboard">Leaderboard</Link></li>
           <li><a href="#about">About</a></li>
         </ul>
@@ -191,6 +192,7 @@ footer{background:var(--soil);padding:52px}
           <div className="sn-mobile-panel">
             <Link href="/how-it-works">How It Works</Link>
             <Link href="/problems">Problems</Link>
+            <Link href="/blogs">Blogs</Link>
             <Link href="/leaderboard">Leaderboard</Link>
             <a href="#about">About</a>
             {!user && <Link href="/login" className="sn-menu-ghost">Log in</Link>}

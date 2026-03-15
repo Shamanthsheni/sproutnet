@@ -416,6 +416,7 @@ export default async function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {isStudent && (
             <>
+              <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Share knowledge, ask doubts, and join the community feed." />
               <ActionCard href="/problems" icon="🔍" title="Browse Problems" desc="See all open problems across 8 domains." />
               <ActionCard href="/leaderboard" icon="🏆" title="Leaderboard" desc="See where you stand this season." />
               <ActionCard href={`/profile/${profile.profile_slug}`} icon="👤" title="Your Profile" desc="View your public builder profile." />
@@ -423,6 +424,7 @@ export default async function DashboardPage() {
           )}
           {isAdmin && (
             <>
+              <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Read and join the shared community feed." />
               <ActionCard href="/admin/problems" icon="✅" title="Approve Problems" desc="Review and approve pending problem posts." />
               <ActionCard href="/admin/judging" icon="⚖️" title="Judge Submissions" desc="Score submissions assigned to admin." />
               <ActionCard href="/admin/analytics" icon="📊" title="Analytics" desc="Platform-wide stats and domain breakdown." />
