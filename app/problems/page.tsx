@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import ProblemCard, { type ProblemCardData } from './problem-card'
 import {
@@ -34,7 +34,7 @@ export default async function ProblemsPage({
   const selectedDomain = params.domain || 'All'
   const selectedType = params.type || 'all'
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   function buildProblemsQuery(columns: string) {
     let query = supabase

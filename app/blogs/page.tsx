@@ -163,21 +163,51 @@ export default async function BlogsPage() {
               maxWidth: 620,
             }}>
               Blogs is the open feed for builder notes, lessons learned, sharp questions, and community help.
-              Every post lands in one shared stream so other users can read, like, and comment.
+              Read the full feed and comments without logging in. To publish, like, or comment, sign in.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 18 }}>
-              <Link href="/blogs/manage" style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#1C1410',
-                background: '#F4A723',
-                padding: '10px 18px',
-                borderRadius: 10,
-                textDecoration: 'none',
-              }}>
-                Write and manage posts
-              </Link>
+              {viewer ? (
+                <Link href="/blogs/manage" style={{
+                  fontFamily: 'DM Sans, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#1C1410',
+                  background: '#F4A723',
+                  padding: '10px 18px',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                }}>
+                  Write and manage posts
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: '#1C1410',
+                    background: '#F4A723',
+                    padding: '10px 18px',
+                    borderRadius: 10,
+                    textDecoration: 'none',
+                  }}>
+                    Log in to post
+                  </Link>
+                  <Link href="/join" style={{
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#FAF8F4',
+                    background: 'rgba(250,248,244,0.18)',
+                    border: '1px solid rgba(250,248,244,0.35)',
+                    padding: '10px 18px',
+                    borderRadius: 10,
+                    textDecoration: 'none',
+                  }}>
+                    Create account
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
