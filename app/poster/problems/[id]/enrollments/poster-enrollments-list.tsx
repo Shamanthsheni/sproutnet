@@ -10,7 +10,13 @@ type EnrollmentRow = {
   users?: { name: string; dept: string; year: string } | null
 }
 
-export default function PosterEnrollmentsList({ enrollments, problemId }: { enrollments: EnrollmentRow[]; problemId: string }) {
+export default function PosterEnrollmentsList({
+  enrollments,
+  problemId,
+}: {
+  enrollments: EnrollmentRow[]
+  problemId: string
+}) {
   const [items, setItems] = useState(enrollments)
   const [busyId, setBusyId] = useState<string | null>(null)
 
@@ -23,86 +29,74 @@ export default function PosterEnrollmentsList({ enrollments, problemId }: { enro
       body: JSON.stringify({ enrollment_id: id, problem_id: problemId }),
     })
     if (res.ok) {
-      setItems(prev => prev.filter(e => e.id !== id))
+      setItems((prev) => prev.filter((enrollment) => enrollment.id !== id))
     }
     setBusyId(null)
   }
 
   if (items.length === 0) {
     return (
-      <div style={{
-        textAlign: 'center', padding: '80px 24px',
-        background: '#fff', borderRadius: 12,
-        border: '1.5px solid rgba(28,20,16,0.07)'
-      }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
-        <div style={{
-          fontFamily: 'Sora, sans-serif',
-          fontSize: 18, fontWeight: 600,
-          color: '#1C1410', marginBottom: 8
-        }}>
-          No enrollments yet
-        </div>
-        <div style={{ fontSize: 14, color: '#9CA3A0' }}>
-          Students will appear here after they enroll.
-        </div>
+      <div className="sn-empty sn-stack-sm">
+        <div className="sn-section-label">No enrollments yet</div>
+        <h3 className="sn-card-title">Students have not joined this brief.</h3>
+        <p className="sn-card-copy">Active enrollments will appear here after students opt into the problem.</p>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      {items.map(enroll => (
-        <div key={enroll.id} style={{
-          background: '#fff',
-          border: '1.5px solid rgba(28,20,16,0.07)',
-          borderRadius: 12,
-          padding: '18px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
-          rowGap: 12,
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: '#2D6A4F', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontFamily: 'Sora, sans-serif',
-              fontSize: 12, fontWeight: 700
-            }}>
-              {enroll.users?.name?.charAt(0) ?? '?'}
-            </div>
-            <div>
-              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, color: '#1C1410' }}>
-                {enroll.users?.name ?? 'Student'}
-              </div>
-              <div style={{ fontSize: 12, color: '#9CA3A0' }}>
-                {(enroll.users?.dept ?? 'Department')} · {(enroll.users?.year ?? 'Year')}
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            disabled={busyId === enroll.id}
-            onClick={() => removeEnrollment(enroll.id)}
+    <div className="sn-stack-md">
+      {items.map((enrollment) => (
+        <article key={enrollment.id} className="sn-card">
+          <div
             style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: 13,
-              fontWeight: 600,
-              color: '#DC2626',
-              background: 'rgba(220,38,38,0.08)',
-              border: '1px solid rgba(220,38,38,0.2)',
-              borderRadius: 8,
-              padding: '6px 12px',
-              cursor: busyId === enroll.id ? 'not-allowed' : 'pointer'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+              flexWrap: 'wrap',
             }}
           >
-            Remove
-          </button>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div
+                className="sn-avatar"
+                style={{ background: 'linear-gradient(135deg, var(--sn-brand), var(--sn-brand-dark))' }}
+              >
+                {enrollment.users?.name?.charAt(0) ?? '?'}
+              </div>
+
+              <div className="sn-stack-sm" style={{ gap: 4 }}>
+                <strong className="sn-inline-heading" style={{ fontSize: 16 }}>
+                  {enrollment.users?.name ?? 'Student'}
+                </strong>
+                <span className="sn-card-copy">
+                  {(enrollment.users?.dept ?? 'Department')} · {(enrollment.users?.year ?? 'Year')}
+                </span>
+                <span className="sn-meta">
+                  Enrolled{' '}
+                  {new Date(enrollment.created_at).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={busyId === enrollment.id}
+              onClick={() => removeEnrollment(enrollment.id)}
+              className="sn-btn sn-btn-danger"
+              style={{
+                opacity: busyId === enrollment.id ? 0.65 : 1,
+                cursor: busyId === enrollment.id ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        </article>
       ))}
     </div>
   )

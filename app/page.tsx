@@ -35,17 +35,25 @@ export default async function LandingPage() {
 
       <section className="sn-hero">
         <div className="sn-container sn-hero-grid">
-          <div className="sn-stack-lg sn-fade-up">
+          <div className="sn-stack-lg">
             <span className="sn-eyebrow">
               <span className="sn-eyebrow-dot" />
               SproutNet for serious problem solvers
             </span>
 
             <div className="sn-stack-sm">
-              <h1 className="sn-hero-title">
-                We <span className="sn-highlight">Accelerate</span>
-                <br />
-                structured problem solving.
+              <h1 className="sn-hero-title sn-hero-title-animated">
+                <span className="sn-hero-line">
+                  <span className="sn-hero-word sn-hero-word-1">We</span>{' '}
+                  <span className="sn-highlight sn-highlight-hero sn-hero-word sn-hero-word-2">Accelerate</span>
+                </span>
+                <span className="sn-hero-line">
+                  <span className="sn-hero-word sn-hero-word-3">structured</span>
+                </span>
+                <span className="sn-hero-line">
+                  <span className="sn-hero-word sn-hero-word-4">problem</span>{' '}
+                  <span className="sn-hero-word sn-hero-word-5">solving.</span>
+                </span>
               </h1>
               <p className="sn-hero-copy">
                 Explore real problems, submit serious solutions, and build public credibility through a challenge marketplace designed for students, organisations, and universities.
@@ -62,7 +70,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <aside className="sn-hero-panel sn-fade-up sn-fade-up-delay-1">
+          <aside className="sn-hero-panel">
             <div className="sn-panel-label">Marketplace overview</div>
             <h2 className="sn-panel-title">The challenge flow is clear from the first screen.</h2>
             <p className="sn-panel-copy">
@@ -141,7 +149,7 @@ export default async function LandingPage() {
             {(featuredProblems ?? []).map((problem) => (
               <Link key={problem.id} href={`/problems/${problem.id}`} style={{ textDecoration: 'none' }}>
                 <article className="sn-card sn-stack-md">
-                  <div style={{ height: 240, borderRadius: 18, background: 'linear-gradient(135deg, var(--sn-brand-soft), #d8f2ff)', border: '1px solid var(--sn-line)' }} />
+                  <div style={{ height: 240, borderRadius: 18, background: 'linear-gradient(135deg, var(--sn-brand-soft), #dff5e5)', border: '1px solid var(--sn-line)' }} />
                   <div className="sn-badge-row" style={{ marginTop: 0 }}>
                     <span className="sn-pill sn-pill-brand">{problem.domain}</span>
                     <span className={problem.problem_type === 'industry_challenge' ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>

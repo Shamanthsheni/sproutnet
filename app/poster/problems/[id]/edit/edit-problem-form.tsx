@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { SectionIntro, SiteFooter } from '@/app/ui/site-shell'
 import { createClient } from '@/lib/supabase/client'
+import { PosterHeader } from '@/app/poster/ui/poster-shell'
 
 const DOMAINS = [
   'AI & Data',
@@ -58,7 +60,7 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
   const [constraints, setConstraints] = useState(problem.constraints)
   const [deliverables, setDeliverables] = useState(problem.deliverables)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -71,7 +73,9 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
     }
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
       router.push('/login/poster')
@@ -126,257 +130,174 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/poster/problems" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
-          <span style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 11,
-            color: '#2D6A4F',
-            background: '#EAF4EE',
-            padding: '4px 12px',
-            borderRadius: 999,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em'
-          }}>
-            Poster
-          </span>
-          <span style={{ fontSize: 14, color: '#4A3F38' }}>{posterName}</span>
-        </div>
-      </nav>
+    <div className="sn-page">
+      <PosterHeader currentPath={`/poster/problems/${problem.id}/edit`} posterName={posterName} />
 
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
-        {showPopup && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(28,20,16,0.35)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              width: 'min(420px, 92vw)',
-              background: '#fff',
-              borderRadius: 16,
-              padding: '28px 26px',
-              border: '1.5px solid rgba(28,20,16,0.08)',
-              boxShadow: '0 20px 60px rgba(28,20,16,0.2)'
-            }}>
-              <div style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 11,
-                color: '#2D6A4F',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                marginBottom: 10
-              }}>
-                // updated
-              </div>
-              <div style={{
-                fontFamily: "'Instrument Serif', Georgia, serif",
-                fontSize: 26,
-                color: '#1C1410',
-                marginBottom: 10
-              }}>
-                Problem updated.
-              </div>
-              <p style={{ fontSize: 14, color: '#4A3F38', fontWeight: 300, marginBottom: 18 }}>
-                Your changes are saved. Redirecting to your problems.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowPopup(false)}
-                style={{
-                  fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: '#1C1410',
-                  background: '#F4A723',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 18px',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
-                }}
-              >
+      {showPopup ? (
+        <div className="sn-modal-backdrop">
+          <div className="sn-modal-card sn-stack-md">
+            <div className="sn-section-label">Updated</div>
+            <h2 className="sn-card-title">Problem updated.</h2>
+            <p className="sn-card-copy">Your changes are saved. Redirecting to your problems list.</p>
+            <div className="sn-cta-row" style={{ marginTop: 4 }}>
+              <button type="button" onClick={() => setShowPopup(false)} className="sn-btn sn-btn-primary">
                 Okay
               </button>
             </div>
           </div>
-        )}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 'clamp(28px, 6vw, 38px)',
-            fontWeight: 400,
-            color: '#1C1410',
-            letterSpacing: '-0.5px',
-            marginBottom: 8
-          }}>
-            Edit problem
-          </h1>
-          <p style={{ fontSize: 16, color: '#4A3F38', fontWeight: 300 }}>
-            Update the problem details for students.
-          </p>
         </div>
+      ) : null}
 
-        <form onSubmit={handleSubmit} style={{
-          background: '#fff',
-          border: '1.5px solid rgba(28,20,16,0.07)',
-          borderRadius: 14,
-          padding: 'clamp(22px, 3vw, 32px)',
-          display: 'grid',
-          gap: 18
-        }}>
-          {error && (
-            <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#DC2626' }}>
-              {error}
+      <section className="sn-section">
+        <div className="sn-container sn-side-layout">
+          <div className="sn-stack-lg">
+            <SectionIntro
+              label="Problem editor"
+              title={
+                <>
+                  Refine this <em>problem.</em>
+                </>
+              }
+              copy="Update the challenge details students use to understand scope, constraints, and expected deliverables."
+            />
+
+            <form onSubmit={handleSubmit} className="sn-card sn-stack-md">
+              {error ? <div className="sn-alert">{error}</div> : null}
+              {success ? <div className="sn-alert-success">{success}</div> : null}
+
+              <Field label="Problem title">
+                <input value={title} onChange={(e) => setTitle(e.target.value)} required className="sn-input" />
+              </Field>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                <Field label="Domain">
+                  <select value={domain} onChange={(e) => setDomain(e.target.value)} className="sn-select">
+                    {DOMAINS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Problem type">
+                  <select value={problemType} onChange={(e) => setProblemType(e.target.value)} className="sn-select">
+                    {PROBLEM_TYPES.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              {problemType === 'industry_challenge' ? (
+                <Field label="Reward amount (INR)">
+                  <input
+                    type="number"
+                    min="0"
+                    value={rewardAmount}
+                    onChange={(e) => setRewardAmount(e.target.value)}
+                    className="sn-input"
+                  />
+                </Field>
+              ) : null}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                <Field label="Milestones">
+                  <input
+                    type="number"
+                    min="1"
+                    max="7"
+                    value={milestones}
+                    onChange={(e) => setMilestones(e.target.value)}
+                    className="sn-input"
+                  />
+                </Field>
+
+                <Field label="Submission deadline">
+                  <input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    required
+                    className="sn-input"
+                  />
+                </Field>
+
+                <Field label="Judging deadline">
+                  <input
+                    type="date"
+                    value={judgingDeadline}
+                    onChange={(e) => setJudgingDeadline(e.target.value)}
+                    required
+                    className="sn-input"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Background & context">
+                <textarea value={context} onChange={(e) => setContext(e.target.value)} required rows={4} className="sn-textarea" />
+              </Field>
+
+              <Field label="Problem statement">
+                <textarea value={problemStmt} onChange={(e) => setProblemStmt(e.target.value)} required rows={4} className="sn-textarea" />
+              </Field>
+
+              <Field label="Scope">
+                <textarea value={scope} onChange={(e) => setScope(e.target.value)} required rows={3} className="sn-textarea" />
+              </Field>
+
+              <Field label="Constraints">
+                <textarea value={constraints} onChange={(e) => setConstraints(e.target.value)} required rows={3} className="sn-textarea" />
+              </Field>
+
+              <Field label="Deliverables">
+                <textarea value={deliverables} onChange={(e) => setDeliverables(e.target.value)} required rows={3} className="sn-textarea" />
+              </Field>
+
+              <div className="sn-cta-row" style={{ marginTop: 4, justifyContent: 'flex-end' }}>
+                <Link href="/poster/problems" className="sn-btn sn-btn-light">
+                  Cancel
+                </Link>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="sn-btn sn-btn-primary"
+                  style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+                >
+                  {loading ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <aside className="sn-sidebar-card sn-stack-md">
+            <div className="sn-section-label">Revision checklist</div>
+            <h2 className="sn-card-title">Keep the brief clear as it evolves.</h2>
+            <ul className="sn-list">
+              <li>Update context when the challenge conditions change.</li>
+              <li>Keep scope and constraints precise so students do not guess.</li>
+              <li>Review deadlines before republishing a held brief.</li>
+            </ul>
+            <div className="sn-surface sn-stack-sm">
+              <div className="sn-section-label">Status reminder</div>
+              <p className="sn-card-copy">You can save changes here and then switch the brief between live and on hold from the problems list.</p>
             </div>
-          )}
-          {success && (
-            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 8, padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#16A34A' }}>
-              {success}
-            </div>
-          )}
+          </aside>
+        </div>
+      </section>
 
-          <Field label="Problem title">
-            <input value={title} onChange={e => setTitle(e.target.value)} required style={inputStyle} />
-          </Field>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-            <Field label="Domain">
-              <select value={domain} onChange={e => setDomain(e.target.value)} style={inputStyle}>
-                {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </Field>
-            <Field label="Problem type">
-              <select value={problemType} onChange={e => setProblemType(e.target.value)} style={inputStyle}>
-                {PROBLEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </Field>
-          </div>
-
-          {problemType === 'industry_challenge' && (
-            <Field label="Reward amount (INR)">
-              <input type="number" min="0" value={rewardAmount} onChange={e => setRewardAmount(e.target.value)} style={inputStyle} />
-            </Field>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            <Field label="Milestones">
-              <input type="number" min="1" max="7" value={milestones} onChange={e => setMilestones(e.target.value)} style={inputStyle} />
-            </Field>
-            <Field label="Submission deadline">
-              <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} required style={inputStyle} />
-            </Field>
-            <Field label="Judging deadline">
-              <input type="date" value={judgingDeadline} onChange={e => setJudgingDeadline(e.target.value)} required style={inputStyle} />
-            </Field>
-          </div>
-
-          <Field label="Background & context">
-            <textarea value={context} onChange={e => setContext(e.target.value)} required rows={4} style={textAreaStyle} />
-          </Field>
-
-          <Field label="Problem statement">
-            <textarea value={problemStmt} onChange={e => setProblemStmt(e.target.value)} required rows={4} style={textAreaStyle} />
-          </Field>
-
-          <Field label="Scope">
-            <textarea value={scope} onChange={e => setScope(e.target.value)} required rows={3} style={textAreaStyle} />
-          </Field>
-
-          <Field label="Constraints">
-            <textarea value={constraints} onChange={e => setConstraints(e.target.value)} required rows={3} style={textAreaStyle} />
-          </Field>
-
-          <Field label="Deliverables">
-            <textarea value={deliverables} onChange={e => setDeliverables(e.target.value)} required rows={3} style={textAreaStyle} />
-          </Field>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap', rowGap: 10 }}>
-            <Link href="/poster/problems" style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 14,
-              color: '#4A3F38',
-              textDecoration: 'none',
-              padding: '12px 18px',
-              borderRadius: 8,
-              border: '1px solid rgba(28,20,16,0.12)'
-            }}>
-              Cancel
-            </Link>
-            <button type="submit" disabled={loading} style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#1C1410',
-              background: loading ? '#F9C05A' : '#F4A723',
-              border: 'none',
-              borderRadius: 8,
-              padding: '12px 22px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
-            }}>
-              {loading ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
-        </form>
-      </div>
+      <SiteFooter />
     </div>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, color: '#1C1410' }}>
-        {label}
-      </span>
+    <label className="sn-field">
+      <span className="sn-label">{label}</span>
       {children}
     </label>
   )
-}
-
-const inputStyle: CSSProperties = {
-  fontFamily: "'DM Sans', sans-serif",
-  fontSize: 14,
-  color: '#1C1410',
-  background: '#FAF8F4',
-  border: '1.5px solid rgba(28,20,16,0.12)',
-  borderRadius: 8,
-  padding: '11px 14px',
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box'
-}
-
-const textAreaStyle: CSSProperties = {
-  ...inputStyle,
-  resize: 'vertical',
 }

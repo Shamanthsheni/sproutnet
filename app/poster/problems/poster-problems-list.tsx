@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 
 type ProblemRow = {
@@ -16,11 +16,13 @@ type ProblemRow = {
   created_at: string
 }
 
+function problemTypeLabel(value: string) {
+  return value === 'industry_challenge' ? 'Industry challenge' : 'Public impact'
+}
+
 export default function PosterProblemsList({ problems }: { problems: ProblemRow[] }) {
   const [items, setItems] = useState(problems)
   const [busyId, setBusyId] = useState<string | null>(null)
-
-  const hasItems = useMemo(() => items.length > 0, [items])
 
   async function updateStatus(id: string, status: string) {
     setBusyId(id)
@@ -30,7 +32,7 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
       body: JSON.stringify({ id, status }),
     })
     if (res.ok) {
-      setItems(prev => prev.map(p => (p.id === id ? { ...p, status } : p)))
+      setItems((prev) => prev.map((problem) => (problem.id === id ? { ...problem, status } : problem)))
     }
     setBusyId(null)
   }
@@ -44,155 +46,130 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
       body: JSON.stringify({ id }),
     })
     if (res.ok) {
-      setItems(prev => prev.filter(p => p.id !== id))
+      setItems((prev) => prev.filter((problem) => problem.id !== id))
     }
     setBusyId(null)
   }
 
-  if (!hasItems) {
+  if (items.length === 0) {
     return (
-      <div style={{
-        textAlign: 'center', padding: '80px 24px',
-        background: '#fff', borderRadius: 12,
-        border: '1.5px solid rgba(28,20,16,0.07)'
-      }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🗂️</div>
-        <div style={{
-          fontFamily: 'Sora, sans-serif',
-          fontSize: 18, fontWeight: 600,
-          color: '#1C1410', marginBottom: 8
-        }}>
-          No problems yet
-        </div>
-        <div style={{ fontSize: 14, color: '#9CA3A0' }}>
-          Post your first problem to see it here.
+      <div className="sn-empty sn-stack-sm">
+        <div className="sn-section-label">Problem management</div>
+        <h3 className="sn-card-title">No problems yet</h3>
+        <p className="sn-card-copy">
+          Post your first challenge brief to start collecting enrollments and serious student submissions.
+        </p>
+        <div className="sn-cta-row" style={{ marginTop: 4, justifyContent: 'center' }}>
+          <Link href="/poster/post-problem" className="sn-btn sn-btn-primary">
+            Post a problem
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'grid', gap: 14 }}>
-      {items.map(problem => {
+    <div className="sn-stack-md">
+      {items.map((problem) => {
         const isOpen = problem.status === 'open'
         const isBusy = busyId === problem.id
-        const deadline = new Date(problem.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        const deadline = new Date(problem.deadline).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+        const createdAt = new Date(problem.created_at).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+
         return (
-          <div key={problem.id} style={{
-            background: '#fff',
-            border: '1.5px solid rgba(28,20,16,0.06)',
-            borderRadius: 14,
-            padding: '18px 20px',
-            boxShadow: '0 8px 30px rgba(28,20,16,0.06)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                  color: '#2D6A4F', background: '#EAF4EE',
-                  padding: '4px 10px', borderRadius: 999
-                }}>
-                  {problem.domain}
-                </span>
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                  color: isOpen ? '#15803d' : '#92400e',
-                  background: isOpen ? 'rgba(21,128,61,0.12)' : 'rgba(146,64,14,0.12)',
-                  padding: '4px 10px', borderRadius: 999,
-                  textTransform: 'capitalize'
-                }}>
-                  {problem.status}
-                </span>
+          <article key={problem.id} className="sn-card sn-stack-md">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div className="sn-stack-sm" style={{ flex: '1 1 320px' }}>
+                <div className="sn-badge-row" style={{ marginTop: 0 }}>
+                  <span className="sn-pill sn-pill-brand">{problem.domain}</span>
+                  <span className={problem.problem_type === 'industry_challenge' ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>
+                    {problemTypeLabel(problem.problem_type)}
+                  </span>
+                  <span className={isOpen ? 'sn-pill sn-pill-light' : 'sn-pill sn-pill-accent'}>
+                    {isOpen ? 'Live' : 'On hold'}
+                  </span>
+                </div>
+                <h3 className="sn-card-title">{problem.title}</h3>
+                <p className="sn-card-copy">
+                  Keep the brief live, review who has enrolled, and update the details without leaving this management view.
+                </p>
               </div>
-              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 17, fontWeight: 650, color: '#0f0a08' }}>
-                {problem.title}
-              </div>
-              <div style={{ fontSize: 13, color: '#4A3F38', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <span>{problem.problem_type === 'industry_challenge' ? 'Industry Challenge' : 'Public Impact'}</span>
-                <span>· {problem.milestones} milestones</span>
-                <span>· deadline {deadline}</span>
+
+              <div className="sn-stack-sm" style={{ minWidth: 160 }}>
+                <span className="sn-meta">Created</span>
+                <span className="sn-inline-heading" style={{ fontSize: 16 }}>
+                  {createdAt}
+                </span>
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 10,
-              justifyContent: 'flex-end',
-              borderTop: '1px solid rgba(28,20,16,0.06)',
-              paddingTop: 12
-            }}>
-              <a href={`/poster/problems/${problem.id}/enrollments`} style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#1C1410',
-                textDecoration: 'none',
-                border: '1px solid rgba(28,20,16,0.12)',
-                borderRadius: 9,
-                padding: '7px 12px',
-                background: 'rgba(28,20,16,0.02)'
-              }}>
-                Enrolled
-              </a>
-              <a href={`/poster/problems/${problem.id}/edit`} style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#1C1410',
-                textDecoration: 'none',
-                border: '1px solid rgba(28,20,16,0.12)',
-                borderRadius: 9,
-                padding: '7px 12px',
-                background: 'rgba(28,20,16,0.02)'
-              }}>
-                Edit
-              </a>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 14,
+              }}
+            >
+              <div className="sn-surface sn-stack-sm">
+                <span className="sn-meta">Deadline</span>
+                <strong className="sn-inline-heading">{deadline}</strong>
+                <p className="sn-card-copy">Submission window closes on this date.</p>
+              </div>
+              <div className="sn-surface sn-stack-sm">
+                <span className="sn-meta">Milestones</span>
+                <strong className="sn-inline-heading">{problem.milestones}</strong>
+                <p className="sn-card-copy">Structured checkpoints expected from students.</p>
+              </div>
+              <div className="sn-surface sn-stack-sm">
+                <span className="sn-meta">Submissions</span>
+                <strong className="sn-inline-heading">{problem.submission_count ?? 0}</strong>
+                <p className="sn-card-copy">Solutions received against this challenge.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              <Link href={`/poster/problems/${problem.id}/enrollments`} className="sn-btn sn-btn-light">
+                View enrollments
+              </Link>
+              <Link href={`/poster/problems/${problem.id}/edit`} className="sn-btn sn-btn-light">
+                Edit problem
+              </Link>
               <button
                 type="button"
                 disabled={isBusy}
                 onClick={() => updateStatus(problem.id, isOpen ? 'pending' : 'open')}
-                style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#0f0a08',
-                  background: isOpen ? '#FCD34D' : '#BBF7D0',
-                  border: '1px solid rgba(28,20,16,0.1)',
-                  borderRadius: 9,
-                  padding: '7px 12px',
-                  cursor: isBusy ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 2px 10px rgba(28,20,16,0.08)',
-                  opacity: isBusy ? 0.7 : 1
-                }}
+                className={`sn-btn ${isOpen ? 'sn-btn-light' : 'sn-btn-secondary'}`}
+                style={{ opacity: isBusy ? 0.65 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
               >
-                {isOpen ? 'Hold' : 'Publish'}
+                {isOpen ? 'Move to hold' : 'Publish now'}
               </button>
               <button
                 type="button"
                 disabled={isBusy}
                 onClick={() => deleteProblem(problem.id)}
-                style={{
-                  fontFamily: 'DM Sans, sans-serif',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#DC2626',
-                  background: 'rgba(220,38,38,0.08)',
-                  border: '1px solid rgba(220,38,38,0.2)',
-                  borderRadius: 9,
-                  padding: '7px 12px',
-                  cursor: isBusy ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 2px 10px rgba(220,38,38,0.12)',
-                  opacity: isBusy ? 0.7 : 1
-                }}
+                className="sn-btn sn-btn-danger"
+                style={{ opacity: isBusy ? 0.65 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
               >
                 Delete
               </button>
             </div>
-          </div>
+          </article>
         )
       })}
     </div>

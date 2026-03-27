@@ -15,7 +15,7 @@ type SiteHeaderProps = {
 const NAV_ITEMS = [
   { href: '/', label: 'Home' },
   { href: '/problems', label: 'Marketplace' },
-  { href: '/how-it-works', label: 'Challenges' },
+  { href: '/how-it-works', label: 'How It Works' },
   { href: '/leaderboard', label: 'Community' },
 ]
 
@@ -27,7 +27,7 @@ function isActive(currentPath: string, href: string) {
 function actionClassName(tone: HeaderAction['tone'] = 'secondary') {
   if (tone === 'primary') return 'sn-btn sn-btn-primary'
   if (tone === 'light') return 'sn-btn sn-btn-light'
-  if (tone === 'ghost') return 'sn-btn sn-btn-dark-ghost'
+  if (tone === 'ghost') return 'sn-btn sn-btn-ghost'
   return 'sn-btn sn-btn-secondary'
 }
 
@@ -98,29 +98,7 @@ export function SiteHeader({ currentPath, actions = [] }: SiteHeaderProps) {
 }
 
 export function SiteFooter() {
-  return (
-    <footer className="sn-footer">
-      <div className="sn-footer-inner">
-        <div className="sn-footer-grid">
-          <div className="sn-stack-sm">
-            <SiteLogo />
-            <p className="sn-footer-copy">
-              A cleaner challenge marketplace for student solvers, organisations, and universities that want structured thinking to feel credible from the first click.
-            </p>
-          </div>
-
-          <div className="sn-footer-links">
-            <Link href="/how-it-works">How It Works</Link>
-            <Link href="/problems">Problems</Link>
-            <Link href="/leaderboard">Leaderboard</Link>
-            <Link href="/login">Sign In</Link>
-          </div>
-
-          <div className="sn-footer-copy">2026 SproutNet</div>
-        </div>
-      </div>
-    </footer>
-  )
+  return null
 }
 
 type SectionIntroProps = {

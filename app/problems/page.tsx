@@ -174,17 +174,17 @@ function ProblemCard({
   const contextSnippet = problem.context.length > 155 ? `${problem.context.slice(0, 155)}...` : problem.context
 
   return (
-    <Link href={`/problems/${problem.id}`} style={{ textDecoration: 'none' }}>
-      <article className="sn-card sn-stack-md">
-        <div style={{ height: 220, borderRadius: 18, background: 'linear-gradient(135deg, #eaf1ff, #d8f2ff)', border: '1px solid var(--sn-line)' }} />
+    <Link href={`/problems/${problem.id}`} className="sn-market-link">
+      <article className="sn-card sn-stack-md sn-market-card">
+        <div style={{ height: 220, borderRadius: 18, background: 'linear-gradient(135deg, var(--sn-brand-soft), #dff5e5)', border: '1px solid var(--sn-line)' }} />
         <div className="sn-badge-row" style={{ marginTop: 0 }}>
           <span className="sn-pill sn-pill-brand">{problem.domain}</span>
           <span className={isIndustry ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>
             {isIndustry ? `Industry Challenge${problem.reward_amount ? ` - INR ${problem.reward_amount.toLocaleString('en-IN')}` : ''}` : 'Public Impact'}
           </span>
         </div>
-        <h2 className="sn-card-title">{problem.title}</h2>
-        <p className="sn-card-copy">{contextSnippet}</p>
+        <h2 className="sn-card-title sn-market-title">{problem.title}</h2>
+        <p className="sn-card-copy sn-market-copy">{contextSnippet}</p>
         <div className="sn-market-meta">
           <div>
             <strong>{deadlineLabel}</strong>
