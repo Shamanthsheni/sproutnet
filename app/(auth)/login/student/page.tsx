@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { SiteLogo } from '@/app/ui/site-shell'
 
 export default function StudentLoginPage() {
   const router = useRouter()
@@ -12,8 +13,8 @@ export default function StudentLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleLogin(event: React.FormEvent) {
+    event.preventDefault()
     setLoading(true)
     setError('')
 
@@ -26,11 +27,7 @@ export default function StudentLoginPage() {
       return
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
+    const { data: profile, error: profileError } = await supabase.from('users').select('role').eq('id', data.user.id).single()
 
     if (profileError || !profile) {
       await supabase.auth.signOut()
@@ -39,13 +36,7 @@ export default function StudentLoginPage() {
       return
     }
 
-    if (profile.role === 'student') {
-      router.push('/dashboard')
-      router.refresh()
-      return
-    }
-
-    if (profile.role === 'admin') {
+    if (profile.role === 'student' || profile.role === 'admin') {
       router.push('/dashboard')
       router.refresh()
       return
@@ -57,97 +48,91 @@ export default function StudentLoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#FAF8F4',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '48px 16px',
-      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E")`
-    }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
+    <div className="sn-page">
+      <div className="sn-auth-shell">
+        <div className="sn-auth-grid">
+          <section className="sn-auth-hero">
+            <div className="sn-stack-md">
+              <SiteLogo />
+              <span className="sn-eyebrow">
+                <span className="sn-eyebrow-dot" />
+                Student login
+              </span>
+              <h1 className="sn-auth-title">
+                Enter the
+                <br />
+                builder <em>workspace.</em>
+              </h1>
+              <p className="sn-auth-copy">
+                Sign in to browse challenge briefs, enroll in the ones that matter, and turn careful work into visible ranking movement.
+              </p>
+            </div>
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 24 }}>
-            <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-              <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-              <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-              <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-              <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-            </svg>
-            <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 20, color: '#1C1410' }}>
-              SproutNet
-            </span>
-          </Link>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 32, fontWeight: 400, color: '#1C1410', letterSpacing: '-0.5px', lineHeight: 1.1, display: 'block' }}>
-            Student login
-          </h1>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: '#4A3F38', marginTop: 8, fontWeight: 300 }}>
-            Sign in to browse and solve real problems.
-          </p>
-        </div>
-
-        {/* Card */}
-        <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '36px 40px', boxShadow: '0 4px 24px rgba(28,20,16,0.07)' }}>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {error && (
-              <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#DC2626' }}>
-                {error}
+            <div className="sn-panel-list">
+              <div className="sn-panel-item">
+                <strong>Verified access</strong>
+                <span>Student accounts are constrained to approved college domains during the current phase.</span>
               </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, color: '#1C1410' }}>
-                College email
-              </label>
-              <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@jyothyit.ac.in"
-                style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8, padding: '11px 14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}
-              />
+              <div className="sn-panel-item">
+                <strong>Builder-first flow</strong>
+                <span>Browse live challenges, enroll with intent, and submit work inside a cleaner builder flow.</span>
+              </div>
             </div>
+          </section>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, color: '#1C1410' }}>
-                Password
-              </label>
-              <input
-                type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="********"
-                style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8, padding: '11px 14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}
-              />
-            </div>
+          <section className="sn-auth-card">
+            <form className="sn-form-grid" onSubmit={handleLogin}>
+              <div className="sn-stack-sm">
+                <div className="sn-section-label">Builder access</div>
+                <h2 className="sn-card-title">Student sign in</h2>
+                <p className="sn-card-copy">Use your registered student credentials to enter the solving workflow.</p>
+              </div>
 
-            <button type="submit" disabled={loading} style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410',
-              background: loading ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8,
-              padding: '13px', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 4,
-              boxShadow: '0 2px 10px rgba(244,167,35,0.3)', width: '100%'
-            }}>
-              {loading ? 'Signing in...' : 'Sign in →'}
-            </button>
+              {error ? <div className="sn-alert">{error}</div> : null}
 
-          </form>
+              <div className="sn-field">
+                <label className="sn-label" htmlFor="student-email">
+                  College email
+                </label>
+                <input
+                  id="student-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@jyothyit.ac.in"
+                  required
+                  className="sn-input"
+                />
+              </div>
 
-          <div style={{ borderTop: '1px solid rgba(28,20,16,0.07)', margin: '24px 0' }} />
+              <div className="sn-field">
+                <label className="sn-label" htmlFor="student-password">
+                  Password
+                </label>
+                <input
+                  id="student-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="sn-input"
+                />
+              </div>
 
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#9CA3A0', textAlign: 'center' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/join?role=student" style={{ color: '#2D6A4F', fontWeight: 600, textDecoration: 'none' }}>Join as Student</Link>
-          </p>
+              <button type="submit" className="sn-btn sn-btn-primary" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+
+              <p className="sn-card-copy">
+                Need an account? <Link href="/join?role=student" style={{ color: 'var(--sn-brand-dark)', fontWeight: 700 }}>Join as a student</Link>.
+              </p>
+              <p className="sn-card-copy">
+                Wrong role? <Link href="/login" style={{ color: 'var(--sn-brand-dark)', fontWeight: 700 }}>Back to role selection</Link>.
+              </p>
+            </form>
+          </section>
         </div>
-
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#9CA3A0', textAlign: 'center', marginTop: 20 }}>
-          Verified student accounts only · Season 1 open
-        </p>
-
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#9CA3A0', textAlign: 'center', marginTop: 8 }}>
-          <Link href="/login" style={{ color: '#2D6A4F', textDecoration: 'none', fontWeight: 600 }}>Back to role selection</Link>
-        </p>
-
       </div>
     </div>
   )

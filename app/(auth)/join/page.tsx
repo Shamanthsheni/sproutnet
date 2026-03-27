@@ -1,16 +1,24 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { SiteLogo } from '@/app/ui/site-shell'
 
 type UserType = 'student' | 'poster' | null
 
 const DEPARTMENTS = [
-  'Computer Science', 'Information Science', 'Electronics & Communication',
-  'Electrical Engineering', 'Mechanical Engineering', 'Civil Engineering',
-  'Biotechnology', 'MBA', 'MCA', 'Other'
+  'Computer Science',
+  'Information Science',
+  'Electronics & Communication',
+  'Electrical Engineering',
+  'Mechanical Engineering',
+  'Civil Engineering',
+  'Biotechnology',
+  'MBA',
+  'MCA',
+  'Other',
 ]
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year', 'PG 1st Year', 'PG 2nd Year']
@@ -20,7 +28,12 @@ const ORG_TYPES = ['Startup', 'NGO / Non-profit', 'Company', 'Government Body', 
 function JoinContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [userType, setUserType] = useState<UserType>(null)
+  const [userType, setUserType] = useState<UserType>(() => {
+    const role = searchParams.get('role')
+    if (role === 'poster') return 'poster'
+    if (role === 'student') return 'student'
+    return null
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,12 +45,8 @@ function JoinContent() {
   const [city, setCity] = useState('')
   const [orgType, setOrgType] = useState('')
 
-  useEffect(() => {
-    if (searchParams.get('role') === 'poster') setUserType('poster')
-  }, [searchParams])
-
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleRegister(event: React.FormEvent) {
+    event.preventDefault()
     setLoading(true)
     setError('')
 
@@ -62,7 +71,7 @@ function JoinContent() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } }
+      options: { data: { name } },
     })
 
     if (signUpError) {
@@ -73,6 +82,7 @@ function JoinContent() {
 
     if (data.user) {
       const updates: Record<string, string> = { name }
+
       if (userType === 'student') {
         updates.dept = dept
         updates.year = year
@@ -80,6 +90,7 @@ function JoinContent() {
         updates.city = city
         updates.org_type = orgType
       }
+
       await supabase.from('users').update(updates).eq('id', data.user.id)
       router.push('/dashboard')
       router.refresh()
@@ -88,188 +99,200 @@ function JoinContent() {
     setLoading(false)
   }
 
-  const inp: React.CSSProperties = {
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: 14,
-    color: '#1C1410',
-    background: '#FAF8F4',
-    border: '1.5px solid rgba(28,20,16,0.12)',
-    borderRadius: 8,
-    padding: '11px 14px',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box'
-  }
-
-  const lbl: React.CSSProperties = {
-    fontFamily: "'DM Sans', sans-serif",
-    fontSize: 13,
-    fontWeight: 500,
-    color: '#1C1410'
-  }
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#FAF8F4',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '48px 16px'
-    }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
-
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 24 }}>
-            <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-              <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-              <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-              <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-              <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-            </svg>
-            <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 20, color: '#1C1410' }}>SproutNet</span>
-          </Link>
-          <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 32, fontWeight: 400, color: '#1C1410', letterSpacing: '-0.5px', display: 'block' }}>
-            Join SproutNet.
-          </h1>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: '#4A3F38', marginTop: 8, fontWeight: 300 }}>
-            Who are you joining as?
-          </p>
-        </div>
-
-        {/* Role selector */}
-        {!userType && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <button
-              onClick={() => setUserType('student')}
-              style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget).style.borderColor = '#2D6A4F'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
-              onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(28,20,16,0.1)'; (e.currentTarget).style.transform = 'translateY(0)' }}
-            >
-              <div style={{ fontSize: 28, marginBottom: 10 }}>🎓</div>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#1C1410', marginBottom: 6 }}>I&apos;m a Student</div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', fontWeight: 300 }}>Browse real problems, build structured solutions, earn your Builder Score.</div>
-              <div style={{ marginTop: 12, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#2D6A4F', background: '#EAF4EE', padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>
-                @jyothyit.ac.in only · Phase 1
-              </div>
-            </button>
-
-            <button
-              onClick={() => setUserType('poster')}
-              style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { (e.currentTarget).style.borderColor = '#F4A723'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
-              onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(28,20,16,0.1)'; (e.currentTarget).style.transform = 'translateY(0)' }}
-            >
-              <div style={{ fontSize: 28, marginBottom: 10 }}>🏢</div>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#1C1410', marginBottom: 6 }}>I have a Problem to Post</div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', fontWeight: 300 }}>Post real challenges. Get structured solutions from India&apos;s sharpest students.</div>
-              <div style={{ marginTop: 12, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#1E40AF', background: 'rgba(30,64,175,0.08)', padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>
-                NGOs · Companies · Individuals
-              </div>
-            </button>
-
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#9CA3A0', textAlign: 'center', marginTop: 8 }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color: '#2D6A4F', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
-            </p>
-          </div>
-        )}
-
-        {/* Registration form */}
-        {userType && (
-          <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '36px 40px', boxShadow: '0 4px 24px rgba(28,20,16,0.07)' }}>
-            <button
-              onClick={() => { setUserType(null); setError('') }}
-              style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#9CA3A0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}
-            >
-              ← Back
-            </button>
-
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{userType === 'student' ? '🎓' : '🏢'}</div>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#1C1410' }}>
-                {userType === 'student' ? 'Create Student Account' : 'Create Poster Account'}
-              </div>
+    <div className="sn-page">
+      <div className="sn-auth-shell">
+        <div className="sn-auth-grid">
+          <section className="sn-auth-hero">
+            <div className="sn-stack-md">
+              <SiteLogo />
+              <span className="sn-eyebrow">
+                <span className="sn-eyebrow-dot" />
+                Account creation
+              </span>
+              <h1 className="sn-auth-title">
+                Join the
+                <br />
+                challenge <em>network.</em>
+              </h1>
+              <p className="sn-auth-copy">
+                The new sign-up flow is designed to feel more like onboarding into a real product. The account rules stay the same, but the surrounding experience is sharper and more confident.
+              </p>
             </div>
 
-            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {error && (
-                <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '10px 14px', fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#DC2626' }}>
-                  {error}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={lbl}>Full name</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Arjun Verma" style={inp}
-                  onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+            <div className="sn-panel-list">
+              <div className="sn-panel-item">
+                <strong>Students</strong>
+                <span>Join to solve real problems, submit structured work, and build visible ranking proof.</span>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={lbl}>{userType === 'student' ? 'College email (@jyothyit.ac.in)' : 'Email address'}</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                  placeholder={userType === 'student' ? 'you@jyothyit.ac.in' : 'you@company.com'} style={inp}
-                  onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+              <div className="sn-panel-item">
+                <strong>Posters</strong>
+                <span>Join to publish challenge briefs and receive submissions with real structure instead of vague idea dumps.</span>
               </div>
+            </div>
+          </section>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={lbl}>Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} placeholder="Min 8 characters" style={inp}
-                  onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+          <section className="sn-auth-card">
+            {!userType ? (
+              <div className="sn-stack-md">
+                <div className="sn-stack-sm">
+                  <div className="sn-section-label">Choose a role</div>
+                  <h2 className="sn-card-title">Who are you joining as?</h2>
+                  <p className="sn-card-copy">Selecting a role only changes the form fields shown here. The account rules and routes remain intact.</p>
+                </div>
+
+                <div className="sn-role-grid">
+                  <button type="button" className="sn-role-card" onClick={() => setUserType('student')}>
+                    <div className="sn-stack-sm">
+                      <span className="sn-pill sn-pill-brand">Student</span>
+                      <h3 className="sn-card-title">I want to solve problems.</h3>
+                      <p className="sn-card-copy">Build structured submissions, move through milestones, and earn your Builder Score.</p>
+                    </div>
+                  </button>
+
+                  <button type="button" className="sn-role-card" onClick={() => setUserType('poster')}>
+                    <div className="sn-stack-sm">
+                      <span className="sn-pill sn-pill-accent">Poster</span>
+                      <h3 className="sn-card-title">I want to post challenges.</h3>
+                      <p className="sn-card-copy">Create briefs for NGOs, companies, institutions, or individual problem statements.</p>
+                    </div>
+                  </button>
+                </div>
+
+                <p className="sn-card-copy">
+                  Already have an account? <Link href="/login" style={{ color: 'var(--sn-brand-dark)', fontWeight: 700 }}>Sign in</Link>.
+                </p>
               </div>
-
-              {userType === 'student' && (<>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={lbl}>Department</label>
-                  <select value={dept} onChange={e => setDept(e.target.value)} required style={{ ...inp, cursor: 'pointer' }}
-                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}>
-                    <option value="">Select department</option>
-                    {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+            ) : (
+              <form className="sn-form-grid" onSubmit={handleRegister}>
+                <div className="sn-stack-sm">
+                  <button
+                    type="button"
+                    className="sn-btn sn-btn-ghost"
+                    onClick={() => {
+                      setUserType(null)
+                      setError('')
+                    }}
+                    style={{ width: 'fit-content' }}
+                  >
+                    Back
+                  </button>
+                  <div className="sn-section-label">{userType === 'student' ? 'Student onboarding' : 'Poster onboarding'}</div>
+                  <h2 className="sn-card-title">
+                    {userType === 'student' ? 'Create your builder account' : 'Create your poster account'}
+                  </h2>
+                  <p className="sn-card-copy">
+                    {userType === 'student'
+                      ? 'The visual experience is new, but the account policy is the same: approved student domains only during the current phase.'
+                      : 'Use the poster flow to create an organisation-facing account for posting and reviewing challenges.'}
+                  </p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={lbl}>Year</label>
-                  <select value={year} onChange={e => setYear(e.target.value)} required style={{ ...inp, cursor: 'pointer' }}
-                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}>
-                    <option value="">Select year</option>
-                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
-              </>)}
 
-              {userType === 'poster' && (<>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={lbl}>City</label>
-                  <input type="text" value={city} onChange={e => setCity(e.target.value)} required placeholder="Bangalore" style={inp}
-                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={lbl}>Organisation type</label>
-                  <select value={orgType} onChange={e => setOrgType(e.target.value)} required style={{ ...inp, cursor: 'pointer' }}
-                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'}>
-                    <option value="">Select type</option>
-                    {ORG_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              </>)}
+                {error ? <div className="sn-alert">{error}</div> : null}
 
-              <button type="submit" disabled={loading} style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410',
-                background: loading ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8,
-                padding: '13px', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 4,
-                boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
-              }}>
-                {loading ? 'Creating account...' : 'Create account →'}
-              </button>
+                <div className="sn-field">
+                  <label className="sn-label" htmlFor="join-name">
+                    Full name
+                  </label>
+                  <input id="join-name" value={name} onChange={(event) => setName(event.target.value)} required className="sn-input" />
+                </div>
 
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#9CA3A0', textAlign: 'center' }}>
-                Already have an account?{' '}
-                <Link href="/login" style={{ color: '#2D6A4F', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
-              </p>
-            </form>
-          </div>
-        )}
+                <div className="sn-field">
+                  <label className="sn-label" htmlFor="join-email">
+                    {userType === 'student' ? 'College email' : 'Email address'}
+                  </label>
+                  <input
+                    id="join-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    placeholder={userType === 'student' ? 'you@jyothyit.ac.in' : 'you@company.com'}
+                    className="sn-input"
+                  />
+                </div>
+
+                <div className="sn-field">
+                  <label className="sn-label" htmlFor="join-password">
+                    Password
+                  </label>
+                  <input
+                    id="join-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    minLength={8}
+                    className="sn-input"
+                  />
+                </div>
+
+                {userType === 'student' ? (
+                  <>
+                    <div className="sn-field">
+                      <label className="sn-label" htmlFor="join-department">
+                        Department
+                      </label>
+                      <select id="join-department" value={dept} onChange={(event) => setDept(event.target.value)} required className="sn-select">
+                        <option value="">Select department</option>
+                        {DEPARTMENTS.map((department) => (
+                          <option key={department} value={department}>
+                            {department}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="sn-field">
+                      <label className="sn-label" htmlFor="join-year">
+                        Year
+                      </label>
+                      <select id="join-year" value={year} onChange={(event) => setYear(event.target.value)} required className="sn-select">
+                        <option value="">Select year</option>
+                        {YEARS.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="sn-field">
+                      <label className="sn-label" htmlFor="join-city">
+                        City
+                      </label>
+                      <input id="join-city" value={city} onChange={(event) => setCity(event.target.value)} required className="sn-input" />
+                    </div>
+
+                    <div className="sn-field">
+                      <label className="sn-label" htmlFor="join-org-type">
+                        Organisation type
+                      </label>
+                      <select id="join-org-type" value={orgType} onChange={(event) => setOrgType(event.target.value)} required className="sn-select">
+                        <option value="">Select type</option>
+                        {ORG_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                <button type="submit" className="sn-btn sn-btn-primary" disabled={loading}>
+                  {loading ? 'Creating account...' : 'Create account'}
+                </button>
+
+                <p className="sn-card-copy">
+                  Already have an account? <Link href="/login" style={{ color: 'var(--sn-brand-dark)', fontWeight: 700 }}>Sign in</Link>.
+                </p>
+              </form>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   )
@@ -277,7 +300,7 @@ function JoinContent() {
 
 export default function JoinPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#FAF8F4' }} />}>
+    <Suspense fallback={<div className="sn-page"><div className="sn-auth-shell" /></div>}>
       <JoinContent />
     </Suspense>
   )

@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { SiteFooter, SiteHeader } from '@/app/ui/site-shell'
 
 type Problem = {
   id: string
@@ -40,24 +41,21 @@ type User = {
   name: string
 }
 
-const DOMAIN_ICONS: Record<string, string> = {
-  'AI & Data': '🤖', 'Climate': '🌿', 'Public Infrastructure': '🏗',
-  'Healthcare': '🏥', 'Agriculture': '🌾', 'Education': '📚',
-  'Urban Mobility': '🚌', 'Civic Technology': '🏛',
-}
-
 const SECTIONS = [
-  { key: 'context', label: 'Background & Context', icon: '📋' },
-  { key: 'problem_stmt', label: 'The Problem', icon: '🎯' },
-  { key: 'scope', label: 'Scope', icon: '🔭' },
-  { key: 'constraints', label: 'Constraints', icon: '⚠️' },
-  { key: 'deliverables', label: 'Deliverables', icon: '📦' },
+  { key: 'context' as const, label: 'Background' },
+  { key: 'problem_stmt' as const, label: 'Problem' },
+  { key: 'scope' as const, label: 'Scope' },
+  { key: 'constraints' as const, label: 'Constraints' },
+  { key: 'deliverables' as const, label: 'Deliverables' },
 ]
+
+type SectionKey = (typeof SECTIONS)[number]['key']
 
 export default function ProblemDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  const [referenceTime] = useState(() => Date.now())
 
   const [problem, setProblem] = useState<Problem | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -65,7 +63,7 @@ export default function ProblemDetailPage() {
   const [loading, setLoading] = useState(true)
   const [commentBody, setCommentBody] = useState('')
   const [posting, setPosting] = useState(false)
-  const [activeSection, setActiveSection] = useState('context')
+  const [activeSection, setActiveSection] = useState<SectionKey>('context')
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
@@ -75,25 +73,17 @@ export default function ProblemDetailPage() {
     async function load() {
       const supabase = createClient()
 
-      // Load problem
-      const { data: prob } = await supabase
-        .from('problems')
-        .select('*')
-        .eq('id', id)
-        .single()
+      const { data: prob } = await supabase.from('problems').select('*').eq('id', id).single()
       setProblem(prob)
 
-      // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
+
       if (authUser) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('id, role, name')
-          .eq('id', authUser.id)
-          .single()
+        const { data: profile } = await supabase.from('users').select('id, role, name').eq('id', authUser.id).single()
         setUser(profile)
 
-        // Check if student already submitted
         if (profile?.role === 'student') {
           const { data: enroll } = await supabase
             .from('enrollments')
@@ -102,6 +92,7 @@ export default function ProblemDetailPage() {
             .eq('student_id', authUser.id)
             .eq('status', 'active')
             .limit(1)
+
           setIsEnrolled((enroll?.length ?? 0) > 0)
 
           const { data: sub } = await supabase
@@ -110,25 +101,27 @@ export default function ProblemDetailPage() {
             .eq('problem_id', id)
             .eq('student_id', authUser.id)
             .limit(1)
+
           setHasSubmitted((sub?.length ?? 0) > 0)
         }
       }
 
-      // Load comments
       const { data: disc } = await supabase
         .from('discussion')
         .select('id, body, created_at, author_id, parent_id, users(name, role)')
         .eq('problem_id', id)
         .order('created_at', { ascending: true })
-      setComments((disc as unknown as Comment[]) ?? [])
 
+      setComments((disc as unknown as Comment[]) ?? [])
       setLoading(false)
     }
+
     load()
   }, [id])
 
   async function postComment() {
     if (!commentBody.trim() || !user) return
+
     setPosting(true)
     const supabase = createClient()
     const { data } = await supabase
@@ -136,25 +129,31 @@ export default function ProblemDetailPage() {
       .insert({ problem_id: id, author_id: user.id, body: commentBody.trim() })
       .select('id, body, created_at, author_id, parent_id, users(name, role)')
       .single()
-    if (data) setComments(prev => [...prev, data as unknown as Comment])
+
+    if (data) setComments((prev) => [...prev, data as unknown as Comment])
+
     setCommentBody('')
     setPosting(false)
   }
 
   async function enroll() {
     if (!user || user.role !== 'student') return
+
     setEnrolling(true)
     setEnrollError('')
+
     const res = await fetch('/api/enrollments/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ problem_id: id })
+      body: JSON.stringify({ problem_id: id }),
     })
+
     if (res.ok) {
       setIsEnrolled(true)
     } else {
       const text = await res.text().catch(() => '')
       let message = `Request failed (${res.status}).`
+
       if (text) {
         try {
           const data = JSON.parse(text)
@@ -163,458 +162,283 @@ export default function ProblemDetailPage() {
           message = text
         }
       }
+
       setEnrollError(message)
     }
+
     setEnrolling(false)
   }
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#9CA3A0' }}>Loading...</div>
-    </div>
-  )
-
-  if (!problem) return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
-        <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 600, color: '#1C1410' }}>Problem not found</div>
-        <Link href="/problems" style={{ color: '#2D6A4F', fontSize: 14, marginTop: 12, display: 'block' }}>← Back to problems</Link>
+  if (loading) {
+    return (
+      <div className="sn-page">
+        <div className="sn-auth-shell">
+          <div className="sn-empty">Loading challenge brief...</div>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  if (!problem) {
+    return (
+      <div className="sn-page">
+        <div className="sn-auth-shell">
+          <div className="sn-empty sn-stack-sm">
+            <h1 className="sn-card-title">Problem not found</h1>
+            <Link href="/problems" className="sn-btn sn-btn-light">
+              Back to problems
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const isIndustry = problem.problem_type === 'industry_challenge'
-  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const daysLeft = Math.max(0, Math.ceil((new Date(problem.deadline).getTime() - referenceTime) / (1000 * 60 * 60 * 24)))
+  const activeCopy = problem[activeSection]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="sn-page">
+      <div className="sn-hero-band">
+        <SiteHeader
+          currentPath="/problems"
+          actions={[
+            { href: '/problems', label: 'All problems', tone: 'secondary' },
+            { href: user ? '/dashboard' : '/login', label: user ? 'Dashboard' : 'Sign in', tone: 'primary' },
+          ]}
+        />
 
-      {/* Nav */}
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-        <div className="sn-nav-actions" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
-          <Link href="/problems" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>← Problems</Link>
-          {user && (
-            <Link href="/dashboard" style={{
-              fontSize: 14, fontWeight: 600, color: '#1C1410',
-              background: '#F4A723', padding: '8px 20px',
-              borderRadius: 6, textDecoration: 'none'
-            }}>Dashboard</Link>
-          )}
-        </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href="/problems">Back to problems</Link>
-            {user && <Link href="/dashboard" className="sn-menu-primary">Dashboard</Link>}
-          </div>
-        </details>
-      </nav>
-
-      <div style={{
-        maxWidth: 1100,
-        margin: '0 auto',
-        padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)',
-        display: 'flex',
-        gap: 32,
-        flexWrap: 'wrap',
-        alignItems: 'flex-start'
-      }}>
-
-        {/* LEFT — Problem content */}
-        <div style={{ flex: '1 1 620px', minWidth: 0 }}>
-          {/* Badges */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
-              color: '#2D6A4F', background: '#EAF4EE',
-              border: '1px solid rgba(45,106,79,0.15)',
-              padding: '4px 10px', borderRadius: 999
-            }}>
-              {DOMAIN_ICONS[problem.domain]} {problem.domain}
-            </span>
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
-              color: isIndustry ? '#1E40AF' : '#4A3F38',
-              background: isIndustry ? 'rgba(30,64,175,0.08)' : 'rgba(28,20,16,0.05)',
-              border: `1px solid ${isIndustry ? 'rgba(30,64,175,0.15)' : 'rgba(28,20,16,0.1)'}`,
-              padding: '4px 10px', borderRadius: 999
-            }}>
-              {isIndustry ? `💼 Industry Challenge · ₹${problem.reward_amount?.toLocaleString('en-IN')}` : '🌍 Public Impact'}
-            </span>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-              color: '#22C55E', background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.2)',
-              padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em'
-            }}>
-              ● Open
-            </span>
-          </div>
-
-          {/* Title */}
-          <h1 style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 'clamp(28px, 6vw, 38px)', fontWeight: 400,
-            color: '#1C1410', letterSpacing: '-0.5px',
-            lineHeight: 1.15, marginBottom: 32
-          }}>
-            {problem.title}
-          </h1>
-
-          {/* Section tabs */}
-          <div style={{
-            display: 'flex', gap: 4, marginBottom: 28,
-            borderBottom: '1px solid rgba(28,20,16,0.08)',
-            overflowX: 'auto', paddingBottom: 0
-          }}>
-            {SECTIONS.map(s => (
-              <button key={s.key} onClick={() => setActiveSection(s.key)} style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
-                color: activeSection === s.key ? '#1C1410' : '#9CA3A0',
-                background: 'none', border: 'none',
-                borderBottom: `2px solid ${activeSection === s.key ? '#2D6A4F' : 'transparent'}`,
-                padding: '10px 16px', cursor: 'pointer',
-                whiteSpace: 'nowrap', marginBottom: -1
-              }}>
-                {s.icon} {s.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Active section content */}
-          {SECTIONS.map(s => activeSection === s.key && (
-            <div key={s.key} style={{
-              background: '#fff',
-              border: '1.5px solid rgba(28,20,16,0.07)',
-              borderRadius: 12, padding: '28px',
-              marginBottom: 28
-            }}>
-              <div style={{
-                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
-                color: '#2D6A4F', marginBottom: 14,
-                textTransform: 'uppercase', letterSpacing: '0.08em'
-              }}>
-                {s.icon} {s.label}
+        <section className="sn-hero">
+          <div className="sn-container sn-hero-grid">
+            <div className="sn-stack-lg">
+              <div className="sn-badge-row sn-fade-up">
+                <span className="sn-pill sn-pill-dark">{problem.domain}</span>
+                <span className="sn-pill sn-pill-dark">{isIndustry ? 'Industry challenge' : 'Public impact'}</span>
+                <span className="sn-pill sn-pill-dark">Status: {problem.status}</span>
               </div>
-              <p style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 15,
-                color: '#1C1410', lineHeight: 1.75, fontWeight: 300,
-                whiteSpace: 'pre-wrap', margin: 0
-              }}>
-                {problem[s.key as keyof Problem] as string}
-              </p>
-            </div>
-          ))}
-
-          {/* Milestones */}
-          <div style={{
-            background: '#fff',
-            border: '1.5px solid rgba(28,20,16,0.07)',
-            borderRadius: 12, padding: '28px',
-            marginBottom: 32
-          }}>
-            <div style={{
-              fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
-              color: '#2D6A4F', marginBottom: 18,
-              textTransform: 'uppercase', letterSpacing: '0.08em'
-            }}>
-              🗺️ Milestones
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {Array.from({ length: problem.milestones }, (_, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '14px 16px',
-                  background: '#FAF8F4', borderRadius: 8,
-                  border: '1px solid rgba(28,20,16,0.06)'
-                }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: '#EAF4EE', border: '2px solid rgba(45,106,79,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
-                    color: '#2D6A4F', fontWeight: 500, flexShrink: 0
-                  }}>
-                    {i + 1}
-                  </div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410' }}>
-                    Milestone {i + 1} — Submit your Stage 1 draft + Stage 2 full solution
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Discussion */}
-          <div>
-            <div style={{
-              fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600,
-              color: '#1C1410', marginBottom: 20
-            }}>
-              Discussion ({comments.length})
-            </div>
-
-            {comments.length === 0 && (
-              <div style={{
-                background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
-                borderRadius: 12, padding: '32px', textAlign: 'center',
-                marginBottom: 20
-              }}>
-                <div style={{ fontSize: 28, marginBottom: 10 }}>💬</div>
-                <div style={{ fontSize: 14, color: '#9CA3A0' }}>No comments yet. Be the first to ask a question.</div>
-              </div>
-            )}
-
-            {comments.map(c => (
-              <div key={c.id} style={{
-                background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
-                borderRadius: 12, padding: '20px', marginBottom: 12
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{
-                    width: 30, height: 30, borderRadius: '50%',
-                    background: '#2D6A4F', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: '#fff',
-                    fontFamily: 'Sora, sans-serif', fontSize: 11, fontWeight: 700
-                  }}>
-                    {c.users?.name?.charAt(0) ?? '?'}
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600, color: '#1C1410' }}>
-                      {c.users?.name ?? 'Unknown'}
-                    </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#9CA3A0' }}>
-                      {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </div>
-                  </div>
-                </div>
-                <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410', lineHeight: 1.6, margin: 0 }}>
-                  {c.body}
+              <div className="sn-fade-up sn-fade-up-delay-1">
+                <h1 className="sn-hero-title">
+                  {problem.title}
+                </h1>
+                <p className="sn-hero-copy">
+                  Review the full brief, move through the section tabs, and decide whether this challenge is worth your time before you commit to solving it.
                 </p>
               </div>
-            ))}
-
-            {/* Comment input */}
-            {user ? (
-              <div style={{
-                background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
-                borderRadius: 12, padding: '20px'
-              }}>
-                <textarea
-                  value={commentBody}
-                  onChange={e => setCommentBody(e.target.value)}
-                  placeholder="Ask a question or leave a comment..."
-                  rows={3}
-                  style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 14, color: '#1C1410',
-                    background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.1)',
-                    borderRadius: 8, padding: '12px 14px',
-                    resize: 'vertical', outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <button onClick={postComment} disabled={posting || !commentBody.trim()} style={{
-                  marginTop: 10, fontFamily: 'DM Sans, sans-serif',
-                  fontSize: 14, fontWeight: 600,
-                  color: '#1C1410', background: '#F4A723',
-                  border: 'none', borderRadius: 8,
-                  padding: '10px 24px', cursor: 'pointer'
-                }}>
-                  {posting ? 'Posting...' : 'Post comment'}
-                </button>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <Link href="/login" style={{ color: '#2D6A4F', fontSize: 14, fontWeight: 600 }}>
-                  Sign in to join the discussion →
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT — Sidebar */}
-        <div style={{ flex: '0 1 320px', width: '100%' }}>
-          {/* CTA Card */}
-          <div style={{
-            background: '#1C1410', borderRadius: 14,
-            padding: '28px', marginBottom: 20
-          }}>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-              color: 'rgba(250,248,244,0.4)', letterSpacing: '0.1em',
-              textTransform: 'uppercase', marginBottom: 14
-            }}>
-              // ready to build?
-            </div>
-            <div style={{
-              fontFamily: "'Instrument Serif', Georgia, serif",
-              fontSize: 22, color: '#FAF8F4',
-              lineHeight: 1.2, marginBottom: 20
-            }}>
-              {hasSubmitted ? 'You\'ve started this.' : 'Start solving this problem.'}
-            </div>
-
-            {user?.role === 'student' ? (
-              isEnrolled ? (
-                <button
-                  onClick={() => router.push(`/problems/${problem.id}/submit`)}
-                  style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 15, fontWeight: 600,
-                    color: '#1C1410', background: '#F4A723',
-                    border: 'none', borderRadius: 8,
-                    padding: '14px', cursor: 'pointer'
-                  }}
-                >
-                  {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
-                </button>
-              ) : (
-                <div>
-                  <button
-                    onClick={enroll}
-                    disabled={enrolling}
-                    style={{
-                      width: '100%', fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 15, fontWeight: 600,
-                      color: '#1C1410', background: enrolling ? '#F9C05A' : '#F4A723',
-                      border: 'none', borderRadius: 8,
-                      padding: '14px', cursor: enrolling ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {enrolling ? 'Enrolling...' : 'Enroll to Solve →'}
-                  </button>
-                  {enrollError && (
-                    <div style={{
-                      marginTop: 10,
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 12,
-                      color: '#DC2626',
-                      textAlign: 'center'
-                    }}>
-                      {enrollError}
-                    </div>
-                  )}
+              <div className="sn-grid-3 sn-fade-up sn-fade-up-delay-2">
+                <div className="sn-stat-card">
+                  <div className="sn-stat-value">{daysLeft}d</div>
+                  <div className="sn-stat-label">Remaining before the problem deadline</div>
                 </div>
-              )
-            ) : !user ? (
-              <Link href="/login" style={{
-                display: 'block', textAlign: 'center',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 15, fontWeight: 600,
-                color: '#1C1410', background: '#F4A723',
-                borderRadius: 8, padding: '14px',
-                textDecoration: 'none'
-              }}>
-                Sign in to Solve →
-              </Link>
-            ) : (
-              <div style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-                color: 'rgba(250,248,244,0.4)', textAlign: 'center'
-              }}>
-                Only students can submit solutions.
+                <div className="sn-stat-card">
+                  <div className="sn-stat-value">{problem.milestones}</div>
+                  <div className="sn-stat-label">Milestones across the solving journey</div>
+                </div>
+                <div className="sn-stat-card">
+                  <div className="sn-stat-value">{problem.submission_count}</div>
+                  <div className="sn-stat-label">Submissions recorded so far</div>
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* Stats Card */}
-          <div style={{
-            background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
-            borderRadius: 14, padding: '24px', marginBottom: 20
-          }}>
-            {[
-              { label: 'Days Left', value: `${daysLeft}d`, color: daysLeft <= 7 ? '#DC2626' : '#F4A723' },
-              { label: 'Milestones', value: problem.milestones, color: '#2D6A4F' },
-              { label: 'Submissions', value: problem.submission_count, color: '#1C1410' },
-              { label: 'Judging by', value: new Date(problem.judging_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), color: '#1C1410' },
-            ].map((stat, i) => (
-              <div key={stat.label} style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px 0',
-                borderBottom: i < 3 ? '1px solid rgba(28,20,16,0.06)' : 'none'
-              }}>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9CA3A0' }}>
-                  {stat.label}
-                </span>
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 14, fontWeight: 500, color: stat.color
-                }}>
-                  {stat.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* 7-field framework reminder */}
-          <div style={{
-            background: '#EAF4EE', border: '1px solid rgba(45,106,79,0.15)',
-            borderRadius: 14, padding: '20px'
-          }}>
-            <div style={{
-              fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600,
-              color: '#2D6A4F', marginBottom: 12,
-              textTransform: 'uppercase', letterSpacing: '0.08em'
-            }}>
-              The Framework
             </div>
-            {[
-              'Problem Understanding',
-              'Root Cause Analysis',
-              'Proposed Solution',
-              'Feasibility Assessment',
-              'Expected Impact',
-              'Risks & Limitations',
-              'Implementation Plan',
-            ].map((f, i) => (
-              <div key={f} style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '6px 0',
-                borderBottom: i < 6 ? '1px solid rgba(45,106,79,0.08)' : 'none'
-              }}>
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 10, color: '#2D6A4F', opacity: 0.5, minWidth: 16
-                }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#2D6A4F' }}>
-                  {f}
-                </span>
+
+            <aside className="sn-hero-panel sn-fade-up sn-fade-up-delay-2">
+              <div className="sn-panel-label">Challenge summary</div>
+              <h2 className="sn-panel-title">Everything important is visible early.</h2>
+              <p className="sn-panel-copy">
+                Use the summary cards to understand challenge type, judging timing, and submission expectations before you move deeper into the brief.
+              </p>
+              <div className="sn-panel-list">
+                <div className="sn-panel-item">
+                  <strong>{isIndustry && problem.reward_amount ? `INR ${problem.reward_amount.toLocaleString('en-IN')}` : 'Public impact track'}</strong>
+                  <span>{isIndustry ? 'Reward-backed challenge format.' : 'Impact-first challenge format.'}</span>
+                </div>
+                <div className="sn-panel-item">
+                  <strong>Judging closes {new Date(problem.judging_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</strong>
+                  <span>Review timing stays visible so students know when their work turns into scored proof.</span>
+                </div>
               </div>
-            ))}
+            </aside>
+          </div>
+        </section>
+      </div>
+
+      <section className="sn-section sn-section-paper">
+        <div className="sn-container sn-side-layout">
+          <div className="sn-stack-lg">
+            <div className="sn-surface" style={{ padding: 24 }}>
+              <div className="sn-stack-md">
+                <div className="sn-tabs">
+                  {SECTIONS.map((section) => (
+                    <button
+                      key={section.key}
+                      type="button"
+                      className={`sn-tab${activeSection === section.key ? ' is-active' : ''}`}
+                      onClick={() => setActiveSection(section.key)}
+                    >
+                      {section.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="sn-stack-sm">
+                  <div className="sn-section-label">
+                    {SECTIONS.find((section) => section.key === activeSection)?.label}
+                  </div>
+                  <p className="sn-card-copy" style={{ whiteSpace: 'pre-wrap', fontSize: 15, lineHeight: 1.8 }}>
+                    {activeCopy}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="sn-card sn-stack-md">
+              <div className="sn-section-label">Milestones</div>
+              <h2 className="sn-card-title">A visible solving arc from first understanding to final execution.</h2>
+              <div className="sn-stack-sm">
+                {Array.from({ length: problem.milestones }, (_, index) => (
+                  <div key={`milestone-${index + 1}`} className="sn-surface" style={{ padding: 18 }}>
+                    <div className="sn-split-line">
+                      <strong>Milestone {index + 1}</strong>
+                      <span className="sn-pill sn-pill-light">Structured submission</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="sn-stack-sm">
+              <div className="sn-split-line">
+                <h2 className="sn-card-title">Discussion</h2>
+                <span className="sn-pill sn-pill-light">{comments.length} comments</span>
+              </div>
+
+              {comments.length === 0 ? (
+                <div className="sn-empty">
+                  <p className="sn-card-copy">No comments yet. The discussion space is ready when someone has a real question to ask.</p>
+                </div>
+              ) : (
+                comments.map((comment) => (
+                  <article key={comment.id} className="sn-comment-card sn-stack-sm">
+                    <div className="sn-split-line" style={{ justifyContent: 'flex-start' }}>
+                      <div className="sn-avatar" style={{ background: '#12856F' }}>
+                        {comment.users?.name?.slice(0, 1).toUpperCase() ?? '?'}
+                      </div>
+                      <div className="sn-stack-sm" style={{ gap: 2 }}>
+                        <strong>{comment.users?.name ?? 'Unknown'}</strong>
+                        <span className="sn-subtle">
+                          {new Date(comment.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="sn-card-copy">{comment.body}</p>
+                  </article>
+                ))
+              )}
+
+              {user ? (
+                <div className="sn-comment-card sn-stack-sm">
+                  <label className="sn-label" htmlFor="discussion-body">
+                    Add to the discussion
+                  </label>
+                  <textarea
+                    id="discussion-body"
+                    value={commentBody}
+                    onChange={(event) => setCommentBody(event.target.value)}
+                    placeholder="Ask a useful question or clarify a point in the brief."
+                    className="sn-textarea"
+                  />
+                  <div className="sn-cta-row">
+                    <button
+                      type="button"
+                      className="sn-btn sn-btn-light"
+                      disabled={posting || !commentBody.trim()}
+                      onClick={postComment}
+                    >
+                      {posting ? 'Posting...' : 'Post comment'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="sn-empty">
+                  <Link href="/login" className="sn-btn sn-btn-light">
+                    Sign in to join the discussion
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="sn-stack-md" style={{ position: 'sticky', top: 110 }}>
+            <aside className="sn-sidebar-card sn-sidebar-card-dark sn-stack-md">
+              <div className="sn-panel-label">Action</div>
+              <h2 className="sn-card-title sn-card-title-dark">
+                {hasSubmitted ? 'Continue your solution.' : isEnrolled ? 'Start your submission.' : 'Commit to this challenge.'}
+              </h2>
+              <p className="sn-card-copy sn-card-copy-dark">
+                The CTA stays visible because the page should make the next move obvious without reducing the seriousness of the brief.
+              </p>
+
+              {user?.role === 'student' ? (
+                isEnrolled ? (
+                  <button type="button" className="sn-btn sn-btn-primary" onClick={() => router.push(`/problems/${problem.id}/submit`)}>
+                    {hasSubmitted ? 'Continue solving' : 'Start solving'}
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" className="sn-btn sn-btn-primary" disabled={enrolling} onClick={enroll}>
+                      {enrolling ? 'Enrolling...' : 'Enroll to solve'}
+                    </button>
+                    {enrollError ? <div className="sn-alert">{enrollError}</div> : null}
+                  </>
+                )
+              ) : user ? (
+                <div className="sn-inline-chip">Only student accounts can submit solutions.</div>
+              ) : (
+                <Link href="/login" className="sn-btn sn-btn-primary">
+                  Sign in to solve
+                </Link>
+              )}
+            </aside>
+
+            <aside className="sn-sidebar-card sn-stack-sm">
+              <div className="sn-section-label">Marketplace metadata</div>
+              <div className="sn-stack-sm">
+                <div className="sn-split-line">
+                  <span className="sn-subtle">Days left</span>
+                  <strong>{daysLeft}d</strong>
+                </div>
+                <div className="sn-split-line">
+                  <span className="sn-subtle">Milestones</span>
+                  <strong>{problem.milestones}</strong>
+                </div>
+                <div className="sn-split-line">
+                  <span className="sn-subtle">Submissions</span>
+                  <strong>{problem.submission_count}</strong>
+                </div>
+                <div className="sn-split-line">
+                  <span className="sn-subtle">Judging by</span>
+                  <strong>{new Date(problem.judging_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</strong>
+                </div>
+              </div>
+            </aside>
+
+            <aside className="sn-sidebar-card sn-stack-sm">
+              <div className="sn-section-label">Seven-field reminder</div>
+              <ul className="sn-list">
+                <li>Problem Understanding</li>
+                <li>Root Cause Analysis</li>
+                <li>Proposed Solution</li>
+                <li>Feasibility Assessment</li>
+                <li>Expected Impact</li>
+                <li>Risks and Limitations</li>
+                <li>Implementation Plan</li>
+              </ul>
+            </aside>
           </div>
         </div>
-      </div>
+      </section>
+
+      <SiteFooter />
     </div>
   )
 }

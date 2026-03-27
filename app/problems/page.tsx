@@ -1,17 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { SectionIntro, SiteFooter, SiteHeader } from '@/app/ui/site-shell'
 
 const DOMAINS = ['All', 'AI & Data', 'Climate', 'Public Infrastructure', 'Healthcare', 'Agriculture', 'Education', 'Urban Mobility', 'Civic Technology']
 
-const DOMAIN_ICONS: Record<string, string> = {
-  'AI & Data': '🤖',
-  'Climate': '🌿',
-  'Public Infrastructure': '🏗',
-  'Healthcare': '🏥',
-  'Agriculture': '🌾',
-  'Education': '📚',
-  'Urban Mobility': '🚌',
-  'Civic Technology': '🏛',
+const TYPE_OPTIONS = [
+  { value: 'all', label: 'All Types' },
+  { value: 'public_impact', label: 'Public Impact' },
+  { value: 'industry_challenge', label: 'Industry Challenge' },
+]
+
+function filterClass(active: boolean) {
+  return active ? 'sn-pill sn-pill-brand' : 'sn-pill sn-pill-light'
 }
 
 export default async function ProblemsPage({
@@ -31,289 +31,175 @@ export default async function ProblemsPage({
     .order('created_at', { ascending: false })
     .eq('status', 'open')
 
-  if (selectedDomain !== 'All') {
-    query = query.eq('domain', selectedDomain)
-  }
-  if (selectedType !== 'all') {
-    query = query.eq('problem_type', selectedType)
-  }
+  if (selectedDomain !== 'All') query = query.eq('domain', selectedDomain)
+  if (selectedType !== 'all') query = query.eq('problem_type', selectedType)
 
   const { data: problems } = await query
+  const problemCount = problems?.length ?? 0
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="sn-page">
+      <SiteHeader
+        currentPath="/problems"
+        actions={[
+          { href: '/login/poster', label: 'Post a Challenge', tone: 'secondary' },
+          { href: '/login/student', label: 'Solver Log in', tone: 'primary' },
+        ]}
+      />
 
-      {/* Nav */}
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-        <div className="sn-nav-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
-          <Link href="/problems" style={{ fontSize: 14, fontWeight: 500, color: '#1C1410', textDecoration: 'none' }}>Problems</Link>
-          <Link href="/leaderboard" style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38', textDecoration: 'none' }}>Leaderboard</Link>
-          <Link href="/dashboard" style={{
-            fontSize: 14, fontWeight: 600, color: '#1C1410',
-            background: '#F4A723', padding: '8px 20px',
-            borderRadius: 6, textDecoration: 'none'
-          }}>Dashboard →</Link>
-        </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href="/problems">Problems</Link>
-            <Link href="/leaderboard">Leaderboard</Link>
-            <Link href="/dashboard" className="sn-menu-primary">Dashboard â†’</Link>
-          </div>
-        </details>
-      </nav>
-
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
-
-        {/* Header */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 11, color: '#2D6A4F',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 12
-          }}>
-            // open problems · season 1
-          </div>
-          <h1 style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 'clamp(32px, 7vw, 48px)', fontWeight: 400,
-            color: '#1C1410', letterSpacing: '-0.5px',
-            marginBottom: 12
-          }}>
-            Real problems.<br />Waiting for your thinking.
-          </h1>
-          <p style={{ fontSize: 16, color: '#4A3F38', fontWeight: 300 }}>
-            {problems?.length ?? 0} open problems across {selectedDomain === 'All' ? '8 domains' : selectedDomain}
-          </p>
-        </div>
-
-        {/* Filters */}
-        <div style={{ marginBottom: 36 }}>
-          {/* Type filter */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-            {[
-              { value: 'all', label: 'All Types' },
-              { value: 'public_impact', label: '🌍 Public Impact' },
-              { value: 'industry_challenge', label: '💼 Industry Challenge' },
-            ].map(t => (
-              <Link key={t.value} href={`/problems?domain=${selectedDomain}&type=${t.value}`} style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 13, fontWeight: 500,
-                padding: '7px 16px', borderRadius: 999,
-                textDecoration: 'none',
-                background: selectedType === t.value ? '#1C1410' : '#fff',
-                color: selectedType === t.value ? '#FAF8F4' : '#4A3F38',
-                border: `1.5px solid ${selectedType === t.value ? '#1C1410' : 'rgba(28,20,16,0.12)'}`,
-              }}>
-                {t.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Domain filter */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {DOMAINS.map(d => (
-              <Link key={d} href={`/problems?domain=${d}&type=${selectedType}`} style={{
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: 13, fontWeight: 500,
-                padding: '6px 14px', borderRadius: 999,
-                textDecoration: 'none',
-                background: selectedDomain === d ? '#2D6A4F' : '#fff',
-                color: selectedDomain === d ? '#fff' : '#4A3F38',
-                border: `1.5px solid ${selectedDomain === d ? '#2D6A4F' : 'rgba(28,20,16,0.12)'}`,
-              }}>
-                {d !== 'All' && DOMAIN_ICONS[d]} {d}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Problems grid */}
-        {problems && problems.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-            {problems.map(problem => (
-              <ProblemCard key={problem.id} problem={problem} />
-            ))}
-          </div>
-        ) : (
-          <div style={{
-            textAlign: 'center', padding: '80px 24px',
-            background: '#fff', borderRadius: 12,
-            border: '1.5px solid rgba(28,20,16,0.07)'
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
-            <div style={{
-              fontFamily: 'Sora, sans-serif',
-              fontSize: 18, fontWeight: 600,
-              color: '#1C1410', marginBottom: 8
-            }}>
-              No problems found
+      <section className="sn-hero">
+        <div className="sn-container sn-hero-grid">
+          <div className="sn-stack-lg sn-fade-up">
+            <span className="sn-eyebrow">
+              <span className="sn-eyebrow-dot" />
+              Live challenge marketplace
+            </span>
+            <div className="sn-stack-sm">
+              <h1 className="sn-hero-title">Live Challenges</h1>
+              <p className="sn-hero-copy">
+                Explore open problem briefs across public impact and industry challenge tracks. Filter by domain, scan the cards, and open the brief that matches your strengths.
+              </p>
             </div>
-            <div style={{ fontSize: 14, color: '#9CA3A0' }}>
-              Try a different domain or type filter.
+            <div className="sn-badge-row">
+              <span className="sn-pill sn-pill-brand">{problemCount} open</span>
+              <span className="sn-pill sn-pill-light">{selectedDomain === 'All' ? 'All domains' : selectedDomain}</span>
+              <span className="sn-pill sn-pill-light">{TYPE_OPTIONS.find((item) => item.value === selectedType)?.label ?? 'All Types'}</span>
             </div>
           </div>
-        )}
-      </div>
+
+          <aside className="sn-hero-panel sn-fade-up sn-fade-up-delay-1">
+            <div className="sn-panel-label">How to use this page</div>
+            <h2 className="sn-panel-title">Filter quickly. Open only the briefs worth your time.</h2>
+            <div className="sn-panel-list">
+              <div className="sn-panel-item">
+                <strong>Domain first</strong>
+                <span>Start broad or narrow the marketplace to the sectors you care about most.</span>
+              </div>
+              <div className="sn-panel-item">
+                <strong>Track second</strong>
+                <span>Switch between public impact and industry challenge to match your intent.</span>
+              </div>
+              <div className="sn-panel-item">
+                <strong>Brief depth next</strong>
+                <span>Each card surfaces enough information to decide whether to open the full challenge.</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="sn-section">
+        <div className="sn-container sn-stack-lg">
+          <SectionIntro
+            label="Filters"
+            title={
+              <>
+                Shape the marketplace
+                <br />
+                around your search.
+              </>
+            }
+          />
+
+          <div className="sn-card sn-stack-sm">
+            <div className="sn-section-label">Challenge Type</div>
+            <div className="sn-badge-row">
+              {TYPE_OPTIONS.map((type) => (
+                <Link
+                  key={type.value}
+                  href={`/problems?domain=${encodeURIComponent(selectedDomain)}&type=${encodeURIComponent(type.value)}`}
+                  className={filterClass(selectedType === type.value)}
+                  style={{ textDecoration: 'none' }}
+                >
+                  {type.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="sn-section-label" style={{ marginTop: 6 }}>Domain</div>
+            <div className="sn-badge-row">
+              {DOMAINS.map((domain) => (
+                <Link
+                  key={domain}
+                  href={`/problems?domain=${encodeURIComponent(domain)}&type=${encodeURIComponent(selectedType)}`}
+                  className={filterClass(selectedDomain === domain)}
+                  style={{ textDecoration: 'none' }}
+                >
+                  {domain}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {problemCount > 0 ? (
+            <div className="sn-grid-3">
+              {problems?.map((problem) => (
+                <ProblemCard key={problem.id} problem={problem} />
+              ))}
+            </div>
+          ) : (
+            <div className="sn-empty">
+              <h3 className="sn-card-title">No challenges match this filter.</h3>
+              <p className="sn-card-copy" style={{ marginTop: 10 }}>
+                Try another domain or track to widen the marketplace view.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <SiteFooter />
     </div>
   )
 }
 
-function ProblemCard({ problem }: { problem: {
-  id: string
-  title: string
-  domain: string
-  problem_type: string
-  status: string
-  reward_amount: number | null
-  milestones: number
-  deadline: string
-  submission_count: number
-  context: string
-}}) {
+function ProblemCard({
+  problem,
+}: {
+  problem: {
+    id: string
+    title: string
+    domain: string
+    problem_type: string
+    status: string
+    reward_amount: number | null
+    milestones: number
+    deadline: string
+    submission_count: number
+    context: string
+  }
+}) {
   const isIndustry = problem.problem_type === 'industry_challenge'
-  const daysLeft = Math.ceil((new Date(problem.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-  const contextSnippet = problem.context.slice(0, 140) + '...'
+  const deadlineLabel = new Date(problem.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  const contextSnippet = problem.context.length > 155 ? `${problem.context.slice(0, 155)}...` : problem.context
 
   return (
     <Link href={`/problems/${problem.id}`} style={{ textDecoration: 'none' }}>
-      <div style={{
-        background: '#fff',
-        border: '1.5px solid rgba(28,20,16,0.07)',
-        borderRadius: 14,
-        padding: 'clamp(20px, 3vw, 28px)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        transition: 'all 0.2s',
-        cursor: 'pointer'
-      }}>
-
-        {/* Badges row */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {/* Domain badge */}
-          <span style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: 12, fontWeight: 500,
-            color: '#2D6A4F', background: '#EAF4EE',
-            border: '1px solid rgba(45,106,79,0.15)',
-            padding: '4px 10px', borderRadius: 999
-          }}>
-            {DOMAIN_ICONS[problem.domain]} {problem.domain}
-          </span>
-
-          {/* Type badge */}
-          <span style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: 12, fontWeight: 500,
-            color: isIndustry ? '#1E40AF' : '#4A3F38',
-            background: isIndustry ? 'rgba(30,64,175,0.08)' : 'rgba(28,20,16,0.05)',
-            border: `1px solid ${isIndustry ? 'rgba(30,64,175,0.15)' : 'rgba(28,20,16,0.1)'}`,
-            padding: '4px 10px', borderRadius: 999
-          }}>
-            {isIndustry ? `💼 ₹${problem.reward_amount?.toLocaleString('en-IN')}` : '🌍 Public Impact'}
+      <article className="sn-card sn-stack-md">
+        <div style={{ height: 220, borderRadius: 18, background: 'linear-gradient(135deg, #eaf1ff, #d8f2ff)', border: '1px solid var(--sn-line)' }} />
+        <div className="sn-badge-row" style={{ marginTop: 0 }}>
+          <span className="sn-pill sn-pill-brand">{problem.domain}</span>
+          <span className={isIndustry ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>
+            {isIndustry ? `Industry Challenge${problem.reward_amount ? ` - INR ${problem.reward_amount.toLocaleString('en-IN')}` : ''}` : 'Public Impact'}
           </span>
         </div>
-
-        {/* Title */}
-        <h2 style={{
-          fontFamily: 'Sora, sans-serif',
-          fontSize: 16, fontWeight: 600,
-          color: '#1C1410', lineHeight: 1.4,
-          margin: 0
-        }}>
-          {problem.title}
-        </h2>
-
-        {/* Context snippet */}
-        <p style={{
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: 13, color: '#4A3F38',
-          fontWeight: 300, lineHeight: 1.6,
-          margin: 0, flex: 1
-        }}>
-          {contextSnippet}
-        </p>
-
-        {/* Footer stats */}
-        <div style={{
-          display: 'flex', gap: 20, rowGap: 8, flexWrap: 'wrap',
-          paddingTop: 14,
-          borderTop: '1px solid rgba(28,20,16,0.06)'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 14, fontWeight: 500,
-              color: daysLeft <= 7 ? '#DC2626' : '#F4A723'
-            }}>
-              {daysLeft}d
-            </span>
-            <span style={{ fontSize: 11, color: '#9CA3A0', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-              left
-            </span>
+        <h2 className="sn-card-title">{problem.title}</h2>
+        <p className="sn-card-copy">{contextSnippet}</p>
+        <div className="sn-market-meta">
+          <div>
+            <strong>{deadlineLabel}</strong>
+            <span>deadline</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 14, fontWeight: 500, color: '#2D6A4F'
-            }}>
-              {problem.milestones}
-            </span>
-            <span style={{ fontSize: 11, color: '#9CA3A0', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-              milestones
-            </span>
+          <div>
+            <strong>{problem.milestones}</strong>
+            <span>milestones</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 14, fontWeight: 500, color: '#1C1410'
-            }}>
-              {problem.submission_count}
-            </span>
-            <span style={{ fontSize: 11, color: '#9CA3A0', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-              submissions
-            </span>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-            <span style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: 13, fontWeight: 600,
-              color: '#2D6A4F'
-            }}>
-              View →
-            </span>
+          <div>
+            <strong>{problem.submission_count}</strong>
+            <span>submissions</span>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   )
 }
