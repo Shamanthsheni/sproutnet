@@ -139,7 +139,7 @@ export function SiteFooter() {
           style={{
             marginTop: 28,
             paddingTop: 18,
-            borderTop: '1px solid rgba(255,255,255,0.08)',
+            borderTop: '1px solid var(--sn-footer-divider)',
             fontSize: 13,
           }}
         >

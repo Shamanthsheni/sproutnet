@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { SiteFooter } from '@/app/ui/site-shell'
 import { createClient } from '@/lib/supabase/server'
 import { PosterHeader } from '@/app/poster/ui/poster-shell'
+import { ThemeSettingsCard } from '@/app/ui/theme-control'
 
 export default async function PosterDashboardPage() {
   const supabase = await createClient()
@@ -91,6 +92,9 @@ export default async function PosterDashboardPage() {
                 <span>Every student submission still follows the same structured framework.</span>
               </div>
             </div>
+            <ThemeSettingsCard
+              copy="After the first visit, this is where you can switch between device, light, and dark modes."
+            />
           </aside>
         </div>
       </section>

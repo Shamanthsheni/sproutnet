@@ -9,19 +9,12 @@ export default async function LandingPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { count: totalProblems } = await supabase
-    .from('problems')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'open')
-
   const { data: featuredProblems } = await supabase
     .from('problems')
     .select('id, title, domain, problem_type, context')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
     .limit(3)
-
-  const openProblems = totalProblems ?? 0
 
   return (
     <div className="sn-page">
@@ -34,7 +27,7 @@ export default async function LandingPage() {
       />
 
       <section className="sn-hero">
-        <div className="sn-container sn-hero-grid">
+        <div className="sn-container sn-hero-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
           <div className="sn-stack-lg">
             <span className="sn-eyebrow">
               <span className="sn-eyebrow-dot" />
@@ -69,28 +62,6 @@ export default async function LandingPage() {
               </Link>
             </div>
           </div>
-
-          <aside className="sn-hero-panel">
-            <div className="sn-panel-label">Marketplace overview</div>
-            <h2 className="sn-panel-title">The challenge flow is clear from the first screen.</h2>
-            <p className="sn-panel-copy">
-              Students see live challenges, clear deadlines, and structured submission expectations. Posters get a clean path to publish and manage real briefs.
-            </p>
-            <div className="sn-panel-list">
-              <div className="sn-panel-item">
-                <strong>{openProblems} live challenges</strong>
-                <span>Open across public impact and industry tracks.</span>
-              </div>
-              <div className="sn-panel-item">
-                <strong>7-field submission framework</strong>
-                <span>Every serious solution follows the same structure.</span>
-              </div>
-              <div className="sn-panel-item">
-                <strong>Blind judging</strong>
-                <span>Scores come from the work, not the person behind it.</span>
-              </div>
-            </div>
-          </aside>
         </div>
       </section>
 

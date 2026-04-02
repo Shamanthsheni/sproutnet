@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SectionIntro, SiteFooter, SiteHeader } from '@/app/ui/site-shell'
+import { ThemeSettingsCard } from '@/app/ui/theme-control'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -98,7 +99,10 @@ export default async function DashboardPage() {
                   <span>{isStudent ? 'Jump back into problems, scores, and public proof.' : 'Move directly into approvals, judging, and analytics.'}</span>
                 </div>
               </div>
-              <form action="/api/auth/signout" method="POST">
+              <ThemeSettingsCard
+                copy="After the first visit, this is where you can switch between device, light, and dark modes."
+              />
+              <form action="/api/auth/signout" method="POST" style={{ marginTop: 18 }}>
                 <button type="submit" className="sn-btn sn-btn-light">
                   Sign out
                 </button>

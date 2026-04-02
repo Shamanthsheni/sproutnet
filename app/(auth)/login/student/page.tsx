@@ -49,40 +49,12 @@ export default function StudentLoginPage() {
 
   return (
     <div className="sn-page">
-      <div className="sn-auth-shell">
-        <div className="sn-auth-grid">
-          <section className="sn-auth-hero">
-            <div className="sn-stack-md">
-              <SiteLogo />
-              <span className="sn-eyebrow">
-                <span className="sn-eyebrow-dot" />
-                Student login
-              </span>
-              <h1 className="sn-auth-title">
-                Enter the
-                <br />
-                builder <em>workspace.</em>
-              </h1>
-              <p className="sn-auth-copy">
-                Sign in to browse challenge briefs, enroll in the ones that matter, and turn careful work into visible ranking movement.
-              </p>
-            </div>
-
-            <div className="sn-panel-list">
-              <div className="sn-panel-item">
-                <strong>Verified access</strong>
-                <span>Student accounts are constrained to approved college domains during the current phase.</span>
-              </div>
-              <div className="sn-panel-item">
-                <strong>Builder-first flow</strong>
-                <span>Browse live challenges, enroll with intent, and submit work inside a cleaner builder flow.</span>
-              </div>
-            </div>
-          </section>
-
+      <div className="sn-auth-shell sn-auth-shell-center">
+        <div className="sn-auth-grid sn-auth-grid-single">
           <section className="sn-auth-card">
             <form className="sn-form-grid" onSubmit={handleLogin}>
               <div className="sn-stack-sm">
+                <SiteLogo />
                 <div className="sn-section-label">Builder access</div>
                 <h2 className="sn-card-title">Student sign in</h2>
                 <p className="sn-card-copy">Use your registered student credentials to enter the solving workflow.</p>

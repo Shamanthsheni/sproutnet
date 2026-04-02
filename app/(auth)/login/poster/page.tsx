@@ -55,40 +55,12 @@ export default function PosterLoginPage() {
 
   return (
     <div className="sn-page">
-      <div className="sn-auth-shell">
-        <div className="sn-auth-grid">
-          <section className="sn-auth-hero">
-            <div className="sn-stack-md">
-              <SiteLogo />
-              <span className="sn-eyebrow">
-                <span className="sn-eyebrow-dot" />
-                Poster login
-              </span>
-              <h1 className="sn-auth-title">
-                Enter the
-                <br />
-                challenge <em>studio.</em>
-              </h1>
-              <p className="sn-auth-copy">
-                Sign in to post real briefs, manage timelines, and review student work inside a cleaner challenge-marketplace experience.
-              </p>
-            </div>
-
-            <div className="sn-panel-list">
-              <div className="sn-panel-item">
-                <strong>Brief-led workflow</strong>
-                <span>Poster access is designed around challenge creation and submission review rather than generic account management.</span>
-              </div>
-              <div className="sn-panel-item">
-                <strong>Organisation credibility</strong>
-                <span>Publish challenge briefs in a flow that feels clearer and more credible for organisations and institutions.</span>
-              </div>
-            </div>
-          </section>
-
+      <div className="sn-auth-shell sn-auth-shell-center">
+        <div className="sn-auth-grid sn-auth-grid-single">
           <section className="sn-auth-card">
             <form className="sn-form-grid" onSubmit={handleLogin}>
               <div className="sn-stack-sm">
+                <SiteLogo />
                 <div className="sn-section-label">Poster access</div>
                 <h2 className="sn-card-title">Poster sign in</h2>
                 <p className="sn-card-copy">Use your poster credentials to manage challenges and review submitted solutions.</p>

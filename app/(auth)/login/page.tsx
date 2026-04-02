@@ -6,40 +6,12 @@ import { SiteLogo } from '@/app/ui/site-shell'
 export default function LoginPage() {
   return (
     <div className="sn-page">
-      <div className="sn-auth-shell">
-        <div className="sn-auth-grid">
-          <section className="sn-auth-hero">
-            <div className="sn-stack-md">
-              <SiteLogo />
-              <span className="sn-eyebrow">
-                <span className="sn-eyebrow-dot" />
-                Access control
-              </span>
-              <h1 className="sn-auth-title">
-                Choose the right
-                <br />
-                <em>entry point.</em>
-              </h1>
-              <p className="sn-auth-copy">
-                Separate builder and poster access keeps the challenge marketplace easy to navigate without mixing the two experiences.
-              </p>
-            </div>
-
-            <div className="sn-panel-list">
-              <div className="sn-panel-item">
-                <strong>Student access</strong>
-                <span>Browse live challenges, enroll, submit, and build a visible Builder Score.</span>
-              </div>
-              <div className="sn-panel-item">
-                <strong>Poster access</strong>
-                <span>Create challenge briefs, review responses, and manage your posted problem pipeline.</span>
-              </div>
-            </div>
-          </section>
-
+      <div className="sn-auth-shell sn-auth-shell-center">
+        <div className="sn-auth-grid sn-auth-grid-single">
           <section className="sn-auth-card">
             <div className="sn-stack-md">
               <div className="sn-stack-sm">
+                <SiteLogo />
                 <div className="sn-section-label">Sign in</div>
                 <h2 className="sn-card-title">Choose your role</h2>
                 <p className="sn-card-copy">Separate entry points keep each workflow clear without changing account logic behind the scenes.</p>
