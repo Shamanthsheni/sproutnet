@@ -176,7 +176,7 @@ function ProblemCard({
   return (
     <Link href={`/problems/${problem.id}`} className="sn-market-link">
       <article className="sn-card sn-stack-md sn-market-card">
-        <div style={{ height: 220, borderRadius: 18, background: 'linear-gradient(135deg, var(--sn-brand-soft), #dff5e5)', border: '1px solid var(--sn-line)' }} />
+        <div className="sn-market-visual" style={{ height: 220 }} />
         <div className="sn-badge-row" style={{ marginTop: 0 }}>
           <span className="sn-pill sn-pill-brand">{problem.domain}</span>
           <span className={isIndustry ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>

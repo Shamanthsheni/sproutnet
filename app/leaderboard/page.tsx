@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SectionIntro, SiteFooter, SiteHeader } from '@/app/ui/site-shell'
 
-const AVATAR_COLORS = ['#67AE7F', '#4C8D62', '#F26900', '#148B63', '#6C8B72', '#6C4F3F']
+const AVATAR_COLORS = ['#E95420', '#77216F', '#C34113', '#A347BA', '#F97316', '#5E2750']
 
 function avatarColor(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]

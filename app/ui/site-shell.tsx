@@ -36,13 +36,15 @@ export function SiteLogo({ href = '/' }: { href?: string }) {
     <Link href={href} className="sn-logo">
       <span className="sn-logo-badge" aria-hidden="true">
         <svg viewBox="0 0 34 34" fill="none">
-          <rect width="34" height="34" rx="12" fill="#0A1627" />
-          <line x1="17" y1="27" x2="17" y2="15" stroke="#F7F3EC" strokeWidth="1.7" strokeLinecap="round" />
-          <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#FFB25F" />
-          <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="#1AD2A0" fillOpacity="0.9" />
+          <rect width="34" height="34" rx="12" fill="#E95420" />
+          <line x1="17" y1="27" x2="17" y2="15" stroke="#FFF4EE" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#FFD4C2" />
+          <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="#77216F" fillOpacity="0.9" />
         </svg>
       </span>
-      <span className="sn-logo-text">SproutNet</span>
+      <span className="sn-logo-text">
+        <span className="sn-logo-accent">Sprout</span>Net
+      </span>
     </Link>
   )
 }
@@ -98,7 +100,54 @@ export function SiteHeader({ currentPath, actions = [] }: SiteHeaderProps) {
 }
 
 export function SiteFooter() {
-  return null
+  return (
+    <footer className="sn-footer">
+      <div className="sn-footer-inner">
+        <div className="sn-footer-grid">
+          <div className="sn-stack-sm">
+            <SiteLogo />
+            <p className="sn-footer-copy">
+              SproutNet turns real challenges into structured student work.
+              Browse live problems, submit serious solutions, and build visible
+              proof through a challenge marketplace designed for students,
+              organisations, and universities.
+            </p>
+          </div>
+
+          <div className="sn-stack-sm">
+            <div className="sn-meta-dark">Explore</div>
+            <div className="sn-footer-links">
+              <Link href="/">Home</Link>
+              <Link href="/problems">Marketplace</Link>
+              <Link href="/how-it-works">How It Works</Link>
+              <Link href="/leaderboard">Community</Link>
+            </div>
+          </div>
+
+          <div className="sn-stack-sm">
+            <div className="sn-meta-dark">Access</div>
+            <div className="sn-footer-links">
+              <Link href="/login/student">Student Login</Link>
+              <Link href="/login/poster">Poster Login</Link>
+              <Link href="/join">Create Account</Link>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="sn-subtle"
+          style={{
+            marginTop: 28,
+            paddingTop: 18,
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            fontSize: 13,
+          }}
+        >
+          Structured thinking for real India.
+        </div>
+      </div>
+    </footer>
+  )
 }
 
 type SectionIntroProps = {

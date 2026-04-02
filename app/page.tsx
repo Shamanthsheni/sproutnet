@@ -97,7 +97,7 @@ export default async function LandingPage() {
       <section className="sn-section">
         <div className="sn-container sn-grid-2">
           <article className="sn-card sn-stack-md" style={{ position: 'relative' }}>
-            <div className="sn-section-label" style={{ color: '#ffffff', background: 'var(--sn-brand)', padding: '14px 18px', borderRadius: '16px 16px 0 0', margin: '-28px -28px 6px' }}>
+            <div className="sn-section-label" style={{ color: '#ffffff', background: 'linear-gradient(135deg, var(--sn-brand) 0, var(--sn-accent) 100%)', padding: '14px 18px', borderRadius: '16px 16px 0 0', margin: '-28px -28px 6px' }}>
               SproutNet for individual solvers
             </div>
             <h2 className="sn-card-title" style={{ fontSize: 56, lineHeight: 0.98 }}>
@@ -116,7 +116,7 @@ export default async function LandingPage() {
           </article>
 
           <article className="sn-card sn-stack-md" style={{ position: 'relative' }}>
-            <div className="sn-section-label" style={{ color: '#ffffff', background: 'var(--sn-brand)', padding: '14px 18px', borderRadius: '16px 16px 0 0', margin: '-28px -28px 6px' }}>
+            <div className="sn-section-label" style={{ color: '#ffffff', background: 'linear-gradient(135deg, var(--sn-brand) 0, var(--sn-accent) 100%)', padding: '14px 18px', borderRadius: '16px 16px 0 0', margin: '-28px -28px 6px' }}>
               SproutNet for companies and universities
             </div>
             <h2 className="sn-card-title" style={{ fontSize: 56, lineHeight: 0.98 }}>
@@ -149,7 +149,7 @@ export default async function LandingPage() {
             {(featuredProblems ?? []).map((problem) => (
               <Link key={problem.id} href={`/problems/${problem.id}`} style={{ textDecoration: 'none' }}>
                 <article className="sn-card sn-stack-md">
-                  <div style={{ height: 240, borderRadius: 18, background: 'linear-gradient(135deg, var(--sn-brand-soft), #dff5e5)', border: '1px solid var(--sn-line)' }} />
+                  <div className="sn-market-visual" style={{ height: 240 }} />
                   <div className="sn-badge-row" style={{ marginTop: 0 }}>
                     <span className="sn-pill sn-pill-brand">{problem.domain}</span>
                     <span className={problem.problem_type === 'industry_challenge' ? 'sn-pill sn-pill-accent' : 'sn-pill sn-pill-light'}>
