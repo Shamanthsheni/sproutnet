@@ -509,20 +509,35 @@ export default function BlogsFeed({
                   <p style={{ fontSize: 15, color: '#3F352E', lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{post.body}</p>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 14, borderTop: '1px solid rgba(28,20,16,0.07)', marginBottom: 18 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleLike(post.id)}
-                      disabled={!viewer || isLiking || setupRequired}
-                      style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: post.likedByViewer ? '#1C1410' : '#7A7068', background: post.likedByViewer ? '#F4A723' : '#F6F2EB', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: !viewer || isLiking || setupRequired ? 'not-allowed' : 'pointer' }}
-                    >
-                      {setupRequired
-                        ? 'Blogs unavailable'
-                        : isLiking
+                    {setupRequired ? (
+                      <button
+                        type="button"
+                        disabled
+                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#7A7068', background: '#F6F2EB', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: 'not-allowed' }}
+                      >
+                        Blogs unavailable
+                      </button>
+                    ) : viewer ? (
+                      <button
+                        type="button"
+                        onClick={() => handleLike(post.id)}
+                        disabled={isLiking}
+                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: post.likedByViewer ? '#1C1410' : '#7A7068', background: post.likedByViewer ? '#F4A723' : '#F6F2EB', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: isLiking ? 'not-allowed' : 'pointer' }}
+                      >
+                        {isLiking
                           ? 'Updating...'
                           : post.likedByViewer
                             ? `Liked - ${post.likesCount}`
                             : `Like - ${post.likesCount}`}
-                    </button>
+                      </button>
+                    ) : (
+                      <Link
+                        href="/login"
+                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#2D6A4F', background: '#F6F2EB', borderRadius: 999, padding: '9px 14px', textDecoration: 'none' }}
+                      >
+                        Log in to like - {post.likesCount}
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={() => toggleComments(post.id)}
@@ -538,7 +553,9 @@ export default function BlogsFeed({
                         Discussion
                       </div>
                     {rootComments.length === 0 ? (
-                      <div style={{ fontSize: 13, color: '#7A7068', marginBottom: 14 }}>No comments yet. Start the thread.</div>
+                      <div style={{ fontSize: 13, color: '#7A7068', marginBottom: 14 }}>
+                        No comments yet{viewer ? '. Start the thread.' : '.'}
+                      </div>
                     ) : (
                       <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
                         {renderCommentList(rootComments, 0)}

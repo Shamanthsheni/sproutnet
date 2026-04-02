@@ -35,6 +35,7 @@ export async function proxy(request: NextRequest) {
     '/login/poster',
     '/join',
     '/problems',
+    '/blogs',
     '/leaderboard',
     '/impact',
     '/how-it-works',
@@ -43,6 +44,7 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || (pathname.startsWith('/problems/') && !pathname.endsWith('/submit'))
   )
+    || (pathname.startsWith('/blogs/') && !pathname.startsWith('/blogs/manage'))
 
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
