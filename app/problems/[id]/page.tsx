@@ -968,9 +968,27 @@ export default function ProblemDetailPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '24px', background: '#FAF8F4', borderRadius: 12, marginTop: 20 }}>
-                <Link href="/login" style={{ color: '#2D6A4F', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-                  Sign in to join the discussion →
+              <div style={{
+                textAlign: 'center', padding: '32px 20px',
+                background: 'linear-gradient(135deg, #FFFDF8 0%, #FAF8F4 100%)',
+                border: '1px stroke rgba(28,20,16,0.08)',
+                borderRadius: 16, marginTop: 24,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 4 }}>
+                  Join the SproutNet Community
+                </div>
+                <div style={{ fontSize: 13, color: '#7A6F68', marginBottom: 16 }}>
+                  Sign in to post replies, upvote helpful contributions, and connect with the problem author.
+                </div>
+                <Link href="/login" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  color: '#1C1410', background: '#F4A723',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
+                  padding: '10px 24px', borderRadius: 20, textDecoration: 'none',
+                  boxShadow: '0 4px 14px rgba(244,167,35,0.3)', transition: 'all 0.15s ease'
+                }}>
+                  Sign in to Participate →
                 </Link>
               </div>
             )}
