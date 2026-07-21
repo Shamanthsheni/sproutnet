@@ -36,6 +36,7 @@ type Comment = {
   created_at: string
   author_id: string
   parent_id: string | null
+  likes_count?: number
   users: { name: string; role: string } | null
 }
 
@@ -77,6 +78,11 @@ export default function ProblemDetailPage() {
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState('')
   const [nowMs] = useState(() => Date.now())
+
+  // Reply state
+  const [replyingToId, setReplyingToId] = useState<string | null>(null)
+  const [replyBody, setReplyBody] = useState('')
+  const [postingReply, setPostingReply] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -127,7 +133,7 @@ export default function ProblemDetailPage() {
       // Load comments
       const { data: disc } = await supabase
         .from('discussion')
-        .select('id, body, created_at, author_id, parent_id, users(name, role)')
+        .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
         .eq('problem_id', id)
         .order('created_at', { ascending: true })
       setComments((disc as unknown as Comment[]) ?? [])
@@ -143,12 +149,27 @@ export default function ProblemDetailPage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('discussion')
-      .insert({ problem_id: id, author_id: user.id, body: commentBody.trim() })
-      .select('id, body, created_at, author_id, parent_id, users(name, role)')
+      .insert({ problem_id: id, author_id: user.id, body: commentBody.trim(), parent_id: null })
+      .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
       .single()
     if (data) setComments(prev => [...prev, data as unknown as Comment])
     setCommentBody('')
     setPosting(false)
+  }
+
+  async function postReply(parentId: string) {
+    if (!replyBody.trim() || !user) return
+    setPostingReply(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('discussion')
+      .insert({ problem_id: id, author_id: user.id, body: replyBody.trim(), parent_id: parentId })
+      .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+      .single()
+    if (data) setComments(prev => [...prev, data as unknown as Comment])
+    setReplyBody('')
+    setReplyingToId(null)
+    setPostingReply(false)
   }
 
   async function enroll() {
