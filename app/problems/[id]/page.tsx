@@ -342,7 +342,9 @@ export default function ProblemDetailPage() {
   if (!problem) return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#EAF4EE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
         <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 600, color: '#1C1410' }}>Problem not found</div>
         <Link href="/problems" style={{ color: '#2D6A4F', fontSize: 14, marginTop: 12, display: 'block' }}>← Back to problems</Link>
       </div>
