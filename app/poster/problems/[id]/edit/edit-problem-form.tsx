@@ -55,7 +55,6 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
   const [domain, setDomain] = useState(problem.domain)
   const [problemType, setProblemType] = useState(problem.problem_type)
   const [rewardAmount, setRewardAmount] = useState(problem.reward_amount ? String(problem.reward_amount) : '')
-  const [milestones, setMilestones] = useState(String(problem.milestones))
   const [deadline, setDeadline] = useState(problem.deadline)
   const [judgingDeadline, setJudgingDeadline] = useState(problem.judging_deadline)
   const [context, setContext] = useState(problem.context)
@@ -163,7 +162,7 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
       problem_type: problemType,
       thumbnail_url: nextThumbnailUrl,
       reward_amount: problemType === 'industry_challenge' && rewardAmount ? Number(rewardAmount) : null,
-      milestones: Number(milestones),
+      milestones: 1,
       deadline,
       judging_deadline: judgingDeadline,
       context: context.trim(),
@@ -435,9 +434,6 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            <Field label="Milestones">
-              <input type="number" min="1" max="7" value={milestones} onChange={e => setMilestones(e.target.value)} style={inputStyle} />
-            </Field>
             <Field label="Submission deadline">
               <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} required style={inputStyle} />
             </Field>

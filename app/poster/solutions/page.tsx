@@ -139,7 +139,7 @@ export default async function PosterSolutionsPage() {
                   {sub.problems?.title ?? 'Problem'}
                 </div>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#4A3F38', marginBottom: 12 }}>
-                  {sub.problems?.domain ?? '—'} · Milestone {sub.milestone} · {sub.stage}
+                  {sub.problems?.domain ?? '—'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{

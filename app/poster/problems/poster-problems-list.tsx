@@ -110,7 +110,6 @@ export default function PosterProblemsList({ problems }: { problems: ProblemRow[
               </div>
               <div style={{ fontSize: 13, color: '#4A3F38', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <span>{problem.problem_type === 'industry_challenge' ? 'Industry Challenge' : 'Public Impact'}</span>
-                <span>· {problem.milestones} milestones</span>
                 <span>· deadline {deadline}</span>
               </div>
             </div>

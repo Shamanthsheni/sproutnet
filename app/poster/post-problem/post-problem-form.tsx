@@ -41,7 +41,6 @@ export default function PostProblemForm({ posterName }: Props) {
   const [domain, setDomain] = useState(DOMAINS[0])
   const [problemType, setProblemType] = useState(PROBLEM_TYPES[0].value)
   const [rewardAmount, setRewardAmount] = useState('')
-  const [milestones, setMilestones] = useState('2')
   const [deadline, setDeadline] = useState('')
   const [judgingDeadline, setJudgingDeadline] = useState('')
   const [context, setContext] = useState('')
@@ -147,7 +146,7 @@ export default function PostProblemForm({ posterName }: Props) {
       status: 'open',
       thumbnail_url: thumbnailUrl,
       reward_amount: problemType === 'industry_challenge' && rewardAmount ? Number(rewardAmount) : null,
-      milestones: Number(milestones),
+      milestones: 1,
       deadline,
       judging_deadline: judgingDeadline,
       context: context.trim(),
@@ -433,16 +432,6 @@ export default function PostProblemForm({ posterName }: Props) {
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            <Field label="Milestones">
-              <input
-                type="number"
-                min="1"
-                max="7"
-                value={milestones}
-                onChange={e => setMilestones(e.target.value)}
-                style={inputStyle}
-              />
-            </Field>
             <Field label="Submission deadline">
               <input
                 type="date"
