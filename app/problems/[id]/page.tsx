@@ -84,6 +84,70 @@ export default function ProblemDetailPage() {
   const [replyBody, setReplyBody] = useState('')
   const [postingReply, setPostingReply] = useState(false)
 
+  // Like state
+  const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set())
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(`sproutnet_liked_comments_${user.id}`)
+        if (stored) {
+          setLikedCommentIds(new Set(JSON.parse(stored)))
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [user?.id])
+
+  const toggleLike = async (commentId: string) => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    const isCurrentlyLiked = likedCommentIds.has(commentId)
+    const currentCount = likeCounts[commentId] ?? 0
+    const newCount = isCurrentlyLiked ? Math.max(0, currentCount - 1) : currentCount + 1
+
+    // Optimistic UI update
+    setLikedCommentIds(prev => {
+      const next = new Set(prev)
+      if (isCurrentlyLiked) next.delete(commentId)
+      else next.add(commentId)
+      if (user?.id) {
+        try {
+          localStorage.setItem(`sproutnet_liked_comments_${user.id}`, JSON.stringify(Array.from(next)))
+        } catch {
+          // ignore
+        }
+      }
+      return next
+    })
+
+    setLikeCounts(prev => ({
+      ...prev,
+      [commentId]: newCount
+    }))
+
+    // Async DB update
+    const supabase = createClient()
+    try {
+      if (isCurrentlyLiked) {
+        await supabase.rpc('decrement_discussion_likes', { c_id: commentId }).catch(() => null)
+        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId).catch(() => null)
+        await supabase.from('discussion_likes').delete().eq('discussion_id', commentId).eq('user_id', user.id).catch(() => null)
+      } else {
+        await supabase.rpc('increment_discussion_likes', { c_id: commentId }).catch(() => null)
+        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId).catch(() => null)
+        await supabase.from('discussion_likes').insert({ discussion_id: commentId, user_id: user.id }).catch(() => null)
+      }
+    } catch {
+      // Ignore network errors, optimistic state remains smooth
+    }
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -136,7 +200,14 @@ export default function ProblemDetailPage() {
         .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
         .eq('problem_id', id)
         .order('created_at', { ascending: true })
-      setComments((disc as unknown as Comment[]) ?? [])
+      const loadedComments = (disc as unknown as Comment[]) ?? []
+      setComments(loadedComments)
+      
+      const counts: Record<string, number> = {}
+      loadedComments.forEach(c => {
+        counts[c.id] = c.likes_count ?? 0
+      })
+      setLikeCounts(counts)
 
       setLoading(false)
     }
