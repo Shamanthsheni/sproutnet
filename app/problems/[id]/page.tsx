@@ -215,7 +215,7 @@ export default function ProblemDetailPage() {
       // Load comments
       const { data: disc } = await supabase
         .from('discussion')
-        .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+        .select('id, body, created_at, author_id, parent_id, users(name, role)')
         .eq('problem_id', id)
         .order('created_at', { ascending: true })
       const loadedComments = (disc as unknown as Comment[]) ?? []
@@ -239,7 +239,7 @@ export default function ProblemDetailPage() {
     const { data } = await supabase
       .from('discussion')
       .insert({ problem_id: id, author_id: user.id, body: commentBody.trim(), parent_id: null })
-      .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+      .select('id, body, created_at, author_id, parent_id, users(name, role)')
       .single()
     if (data) setComments(prev => [...prev, data as unknown as Comment])
     setCommentBody('')
@@ -253,7 +253,7 @@ export default function ProblemDetailPage() {
     const { data } = await supabase
       .from('discussion')
       .insert({ problem_id: id, author_id: user.id, body: replyBody.trim(), parent_id: parentId })
-      .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+      .select('id, body, created_at, author_id, parent_id, users(name, role)')
       .single()
     if (data) setComments(prev => [...prev, data as unknown as Comment])
     setReplyBody('')
