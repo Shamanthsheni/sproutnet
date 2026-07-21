@@ -671,10 +671,13 @@ export default function ProblemDetailPage() {
 
             {/* Comment List */}
             {(() => {
-              const matchesQuery = (c: Comment) => {
+              const matchesQuery = (c: Comment): boolean => {
                 if (!searchQuery.trim()) return true
                 const q = searchQuery.toLowerCase()
-                return c.body.toLowerCase().includes(q) || (c.users?.name ?? '').toLowerCase().includes(q)
+                const selfMatch = c.body.toLowerCase().includes(q) || (c.users?.name ?? '').toLowerCase().includes(q)
+                if (selfMatch) return true
+                const children = comments.filter(child => child.parent_id === c.id)
+                return children.some(child => matchesQuery(child))
               }
 
               const rootComments = comments.filter(c => c.parent_id === null && matchesQuery(c))
@@ -728,7 +731,8 @@ export default function ProblemDetailPage() {
                 const isLiked = likedCommentIds.has(c.id)
                 const likes = likeCounts[c.id] ?? 0
                 const childReplies = comments.filter(child => child.parent_id === c.id)
-                const isRepliesExpanded = expandedReplies.has(c.id)
+                const hasMatchingChild = searchQuery.trim().length > 0 && childReplies.some(child => matchesQuery(child))
+                const isRepliesExpanded = expandedReplies.has(c.id) || hasMatchingChild
 
                 return (
                   <div key={c.id} style={{
