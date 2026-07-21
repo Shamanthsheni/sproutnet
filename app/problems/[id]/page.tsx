@@ -46,18 +46,32 @@ type User = {
   name: string
 }
 
-const DOMAIN_ICONS: Record<string, string> = {
-  'AI & Data': '🤖', 'Climate': '🌿', 'Public Infrastructure': '🏗',
-  'Healthcare': '🏥', 'Agriculture': '🌾', 'Education': '📚',
-  'Urban Mobility': '🚌', 'Civic Technology': '🏛',
+function renderDomainIcon(domain: string) {
+  switch (domain) {
+    case 'AI & Data':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+    case 'Climate':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+    case 'Healthcare':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+    case 'Public Infrastructure':
+    case 'Urban Mobility':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    case 'Agriculture':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12A10 10 0 0 1 12 2z"/><path d="M12 6v12"/></svg>
+    case 'Education':
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    default:
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+  }
 }
 
 const SECTIONS = [
-  { key: 'context', label: 'Background & Context', icon: '📋' },
-  { key: 'problem_stmt', label: 'The Problem', icon: '🎯' },
-  { key: 'scope', label: 'Scope', icon: '🔭' },
-  { key: 'constraints', label: 'Constraints', icon: '⚠️' },
-  { key: 'deliverables', label: 'Deliverables', icon: '📦' },
+  { key: 'context', label: 'Background & Context', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+  { key: 'problem_stmt', label: 'The Problem', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> },
+  { key: 'scope', label: 'Scope', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
+  { key: 'constraints', label: 'Constraints', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> },
+  { key: 'deliverables', label: 'Deliverables', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> },
 ]
 
 function getRelativeTime(dateStr: string): string {
@@ -389,26 +403,40 @@ export default function ProblemDetailPage() {
               fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
               color: '#2D6A4F', background: '#EAF4EE',
               border: '1px solid rgba(45,106,79,0.15)',
-              padding: '4px 10px', borderRadius: 999
+              padding: '4px 10px', borderRadius: 999,
+              display: 'inline-flex', alignItems: 'center', gap: 6
             }}>
-              {DOMAIN_ICONS[problem.domain]} {problem.domain}
+              {renderDomainIcon(problem.domain)} {problem.domain}
             </span>
             <span style={{
               fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
               color: isIndustry ? '#1E40AF' : '#4A3F38',
               background: isIndustry ? 'rgba(30,64,175,0.08)' : 'rgba(28,20,16,0.05)',
               border: `1px solid ${isIndustry ? 'rgba(30,64,175,0.15)' : 'rgba(28,20,16,0.1)'}`,
-              padding: '4px 10px', borderRadius: 999
+              padding: '4px 10px', borderRadius: 999,
+              display: 'inline-flex', alignItems: 'center', gap: 6
             }}>
-              {isIndustry ? `💼 Industry Challenge · ₹${problem.reward_amount?.toLocaleString('en-IN')}` : '🌍 Public Impact'}
+              {isIndustry ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  Industry Challenge · ₹{problem.reward_amount?.toLocaleString('en-IN')}
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  Public Impact
+                </>
+              )}
             </span>
             <span style={{
               fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
               color: '#22C55E', background: 'rgba(34,197,94,0.08)',
               border: '1px solid rgba(34,197,94,0.2)',
-              padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em'
+              padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em',
+              display: 'inline-flex', alignItems: 'center', gap: 5
             }}>
-              ● Open
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }} />
+              Open
             </span>
           </div>
 
@@ -549,10 +577,26 @@ export default function ProblemDetailPage() {
                         background: sortBy === mode ? '#fff' : 'transparent',
                         border: 'none', borderRadius: 16, padding: '5px 12px', cursor: 'pointer',
                         boxShadow: sortBy === mode ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
-                        transition: 'all 0.15s ease'
+                        transition: 'all 0.15s ease',
+                        display: 'inline-flex', alignItems: 'center', gap: 5
                       }}
                     >
-                      {mode === 'top' ? '🔥 Top' : mode === 'newest' ? '⏱ Latest' : '📜 Oldest'}
+                      {mode === 'top' ? (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                          Top
+                        </>
+                      ) : mode === 'newest' ? (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          Latest
+                        </>
+                      ) : (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+                          Oldest
+                        </>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -667,9 +711,11 @@ export default function ProblemDetailPage() {
                                 <span style={{
                                   fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700,
                                   color: '#1C1410', background: '#F4A723', padding: '2px 8px', borderRadius: 12,
-                                  boxShadow: '0 1px 4px rgba(244,167,35,0.3)'
+                                  boxShadow: '0 1px 4px rgba(244,167,35,0.3)',
+                                  display: 'inline-flex', alignItems: 'center', gap: 4
                                 }}>
-                                  ● OP / Problem Poster
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                                  OP / Problem Poster
                                 </span>
                               )}
 
