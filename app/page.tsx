@@ -160,7 +160,7 @@ footer{background:var(--soil);padding:52px}
 @media(max-width:640px){.hiw-grid{grid-template-columns:1fr}.hero-ctas{flex-direction:column;width:100%}.btn-hp,.btn-hs{width:100%;justify-content:center}.stats-bar{flex-direction:column;gap:22px}.si-stat::after{display:none}.poster-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}.nav-right a{width:100%;justify-content:center}}
       `}}/>
 
-      <nav id="nav">
+      <nav id="nav" suppressHydrationWarning>
         <Link href="/" className="nav-brand">
           <svg className="logo-svg" viewBox="0 0 34 34" fill="none">
             <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
@@ -245,45 +245,45 @@ footer{background:var(--soil);padding:52px}
       <div className="reality">
         <div className="r-inner">
           <div className="r-label">{'// why this exists'}</div>
-          <div className="r-item"><div className="r-num">01</div><div className="r-text">Exams test memory. SproutNet tests <em>judgment.</em></div></div>
-          <div className="r-item"><div className="r-num">02</div><div className="r-text">Assignments have right answers. <em>Real problems don&apos;t.</em></div></div>
-          <div className="r-item"><div className="r-num">03</div><div className="r-text">You&apos;ve been trained to study India. Now <em>help fix it.</em></div></div>
+          <div className="r-item" suppressHydrationWarning><div className="r-num">01</div><div className="r-text">Exams test memory. SproutNet tests <em>judgment.</em></div></div>
+          <div className="r-item" suppressHydrationWarning><div className="r-num">02</div><div className="r-text">Assignments have right answers. <em>Real problems don&apos;t.</em></div></div>
+          <div className="r-item" suppressHydrationWarning><div className="r-num">03</div><div className="r-text">You&apos;ve been trained to study India. Now <em>help fix it.</em></div></div>
         </div>
       </div>
 
-      <section id="about">
+      <section id="about" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv">{'// what this is'}</div>
-          <h2 className="s-title rv d1">Not another hackathon.</h2>
-          <p className="s-sub rv d2">Three things make SproutNet different from every competition you&apos;ve seen.</p>
+          <div className="s-label rv" suppressHydrationWarning>{'// what this is'}</div>
+          <h2 className="s-title rv d1" suppressHydrationWarning>Not another hackathon.</h2>
+          <p className="s-sub rv d2" suppressHydrationWarning>Three things make SproutNet different from every competition you&apos;ve seen.</p>
           <div className="what-grid">
-            <div className="wc rv d1"><div className="wc-icon">🔍</div><div className="wc-title">Real Problems</div><div className="wc-body">Posted by real people with real context — not toy scenarios invented for a weekend.</div></div>
-            <div className="wc rv d2"><div className="wc-icon">🧠</div><div className="wc-title">Structured Thinking</div><div className="wc-body">A 7-field framework that forces you to think like a professional — from root cause to implementation plan.</div></div>
-            <div className="wc rv d3"><div className="wc-icon">🇮🇳</div><div className="wc-title">Indian Context</div><div className="wc-body">Problems rooted in this country&apos;s actual lived reality. Agriculture, healthcare, infrastructure, civic tech.</div></div>
+            <div className="wc rv d1" suppressHydrationWarning><div className="wc-icon">🔍</div><div className="wc-title">Real Problems</div><div className="wc-body">Posted by real people with real context — not toy scenarios invented for a weekend.</div></div>
+            <div className="wc rv d2" suppressHydrationWarning><div className="wc-icon">🧠</div><div className="wc-title">Structured Thinking</div><div className="wc-body">A 7-field framework that forces you to think like a professional — from root cause to implementation plan.</div></div>
+            <div className="wc rv d3" suppressHydrationWarning><div className="wc-icon">🇮🇳</div><div className="wc-title">Indian Context</div><div className="wc-body">Problems rooted in this country&apos;s actual lived reality. Agriculture, healthcare, infrastructure, civic tech.</div></div>
           </div>
         </div>
       </section>
 
-      <section className="hiw" id="how-it-works">
+      <section className="hiw" id="how-it-works" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv">{'// the process'}</div>
-          <h2 className="s-title rv d1">Simple. Serious. Structured.</h2>
+          <div className="s-label rv" suppressHydrationWarning>{'// the process'}</div>
+          <h2 className="s-title rv d1" suppressHydrationWarning>Simple. Serious. Structured.</h2>
           <div className="hiw-grid">
-            <div className="hiw-step rv d1"><div className="step-dot"><div className="step-n">01</div></div><div className="step-t">Browse real problems</div><div className="step-d">Vetted, fully scoped. Each one matters to someone real.</div></div>
-            <div className="hiw-step rv d2"><div className="step-dot"><div className="step-n">02</div></div><div className="step-t">Submit your solution</div><div className="step-d">Build your solution using our 7-field framework.</div></div>
-            <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">03</div></div><div className="step-t">Get evaluated fairly</div><div className="step-d">Blind review. 5 clear criteria. No favouritism.</div></div>
-            <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">04</div></div><div className="step-t">See your thinking matter</div><div className="step-d">Your rank, your badges, your Builder Score.</div></div>
+            <div className="hiw-step rv d1" suppressHydrationWarning><div className="step-dot"><div className="step-n">01</div></div><div className="step-t">Browse real problems</div><div className="step-d">Vetted, fully scoped. Each one matters to someone real.</div></div>
+            <div className="hiw-step rv d2" suppressHydrationWarning><div className="step-dot"><div className="step-n">02</div></div><div className="step-t">Submit your solution</div><div className="step-d">Build your solution using our 7-field framework.</div></div>
+            <div className="hiw-step rv d3" suppressHydrationWarning><div className="step-dot"><div className="step-n">03</div></div><div className="step-t">Get evaluated fairly</div><div className="step-d">Blind review. 5 clear criteria. No favouritism.</div></div>
+            <div className="hiw-step rv d3" suppressHydrationWarning><div className="step-dot"><div className="step-n">04</div></div><div className="step-t">See your thinking matter</div><div className="step-d">Your rank, your badges, your Builder Score.</div></div>
           </div>
-          <Link href="/problems" className="hiw-cta rv">See open problems →</Link>
+          <Link href="/problems" className="hiw-cta rv" suppressHydrationWarning>See open problems →</Link>
         </div>
       </section>
 
-      <section className="domains">
+      <section className="domains" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv">{'// problem domains'}</div>
-          <h2 className="s-title rv d1">What kind of problems?<br/>Indian ones.</h2>
-          <p className="s-sub rv d2">Eight starting domains. Every real Indian problem fits somewhere.</p>
-          <div className="domain-mosaic rv d1">
+          <div className="s-label rv" suppressHydrationWarning>{'// problem domains'}</div>
+          <h2 className="s-title rv d1" suppressHydrationWarning>What kind of problems?<br/>Indian ones.</h2>
+          <p className="s-sub rv d2" suppressHydrationWarning>Eight starting domains. Every real Indian problem fits somewhere.</p>
+          <div className="domain-mosaic rv d1" suppressHydrationWarning>
             <div className="dt">🤖 AI &amp; Data</div>
             <div className="dt">🌿 Climate</div>
             <div className="dt">🏗 Public Infrastructure</div>
