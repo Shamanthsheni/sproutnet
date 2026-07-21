@@ -837,35 +837,72 @@ export default function SubmitPage() {
 
         {/* PDF & Supporting Documents Upload (At the end, unlocked when all 7 fields complete) */}
         <div style={{
-          background: isAllFieldsCompleted ? '#fff' : '#F9F8F6',
-          border: `1.5px solid ${isAllFieldsCompleted ? 'rgba(45,106,79,0.3)' : 'rgba(28,20,16,0.08)'}`,
+          background: isAllFieldsCompleted ? '#fff' : '#FFFBEB',
+          border: `1.5px solid ${isAllFieldsCompleted ? 'rgba(45,106,79,0.3)' : '#FCD34D'}`,
           borderRadius: 14,
           padding: '24px 26px',
           marginBottom: 36,
-          boxShadow: isAllFieldsCompleted ? '0 4px 16px rgba(45,106,79,0.05)' : 'none',
+          boxShadow: isAllFieldsCompleted ? '0 4px 16px rgba(45,106,79,0.05)' : '0 2px 10px rgba(245,158,11,0.08)',
           transition: 'all 0.2s ease'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isAllFieldsCompleted ? '#2D6A4F' : '#B45309'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
               <h3 style={{
                 fontFamily: 'Sora, sans-serif',
                 fontSize: 16,
                 fontWeight: 600,
                 color: '#1C1410'
               }}>
-                Upload PDF & Supporting Evidence (Optional)
+                Upload PDF & Supporting Evidence
               </h3>
             </div>
-            <span style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 600,
-              color: isAllFieldsCompleted ? '#2D6A4F' : '#9CA3A0',
-              background: isAllFieldsCompleted ? '#EAF4EE' : '#EAE7E1',
-              padding: '3px 10px', borderRadius: 6
+
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontFamily: 'Sora, sans-serif',
+              fontSize: 12,
+              fontWeight: 700,
+              color: isAllFieldsCompleted ? '#2D6A4F' : '#B45309',
+              background: isAllFieldsCompleted ? '#EAF4EE' : '#FEF3C7',
+              border: `1.5px solid ${isAllFieldsCompleted ? '#6EE7B7' : '#FCD34D'}`,
+              padding: '5px 12px',
+              borderRadius: 20
             }}>
-              {isAllFieldsCompleted ? 'Unlocked' : 'Requires All 7 Fields'}
-            </span>
+              {isAllFieldsCompleted ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                  Unlocked for Upload
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  LOCKED — Fill All 7 Fields
+                </>
+              )}
+            </div>
           </div>
+
+          {!isAllFieldsCompleted && (
+            <div style={{
+              background: '#FEF3C7',
+              border: '1.5px solid #FCD34D',
+              borderRadius: 10,
+              padding: '12px 16px',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 13,
+              color: '#92400E',
+              fontWeight: 600
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>File upload is currently locked. Complete all 7 solution fields above ({completedFields}/7 completed) to enable PDF uploads.</span>
+            </div>
+          )}
 
           <p style={{ fontSize: 13, color: '#6A5F58', marginBottom: 16, lineHeight: 1.6 }}>
             {isAllFieldsCompleted
@@ -883,8 +920,8 @@ export default function SubmitPage() {
               fontFamily: 'DM Sans, sans-serif',
               fontSize: 14,
               color: isAllFieldsCompleted ? '#1C1410' : '#9CA3A0',
-              background: isAllFieldsCompleted ? '#FAF8F4' : '#EFECE6',
-              border: `1.5px dashed ${isAllFieldsCompleted ? 'rgba(45,106,79,0.35)' : 'rgba(28,20,16,0.15)'}`,
+              background: isAllFieldsCompleted ? '#FAF8F4' : '#F3F0E8',
+              border: `1.5px dashed ${isAllFieldsCompleted ? 'rgba(45,106,79,0.35)' : 'rgba(180,83,9,0.3)'}`,
               borderRadius: 10,
               padding: '14px 16px',
               outline: 'none',
@@ -893,10 +930,10 @@ export default function SubmitPage() {
             }}
           />
 
-          <div style={{ fontSize: 12, color: '#9CA3A0', marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: isAllFieldsCompleted ? '#6A5F58' : '#B45309', marginTop: 10, fontWeight: 500 }}>
             {!isAllFieldsCompleted ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> File upload is locked until fields 1 through 7 are completed.
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> PDF file upload is locked until fields 1 through 7 are completed.
               </span>
             ) : uploadingFiles
               ? 'Uploading document...'
@@ -950,6 +987,7 @@ export default function SubmitPage() {
                     }}
                   >
                     Remove
+                  </button>
                 </div>
               ))}
             </div>
