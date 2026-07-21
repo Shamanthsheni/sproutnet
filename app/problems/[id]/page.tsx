@@ -60,6 +60,22 @@ const SECTIONS = [
   { key: 'deliverables', label: 'Deliverables', icon: '📦' },
 ]
 
+function getRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffInSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000))
+
+  if (diffInSeconds < 60) return 'Just now'
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours}h ago`
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 7) return `${diffInDays}d ago`
+
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
+
 export default function ProblemDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -139,13 +155,11 @@ export default function ProblemDetailPage() {
     const supabase = createClient()
     try {
       if (isCurrentlyLiked) {
-        await supabase.rpc('decrement_discussion_likes', { c_id: commentId }).catch(() => null)
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId).catch(() => null)
-        await supabase.from('discussion_likes').delete().eq('discussion_id', commentId).eq('user_id', user.id).catch(() => null)
+        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
+        await supabase.from('discussion_likes').delete().eq('discussion_id', commentId).eq('user_id', user.id)
       } else {
-        await supabase.rpc('increment_discussion_likes', { c_id: commentId }).catch(() => null)
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId).catch(() => null)
-        await supabase.from('discussion_likes').insert({ discussion_id: commentId, user_id: user.id }).catch(() => null)
+        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
+        await supabase.from('discussion_likes').insert({ discussion_id: commentId, user_id: user.id })
       }
     } catch {
       // Ignore network errors, optimistic state remains smooth
@@ -461,23 +475,6 @@ export default function ProblemDetailPage() {
             </div>
           ))}
 
-
-function getRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffInSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000))
-
-  if (diffInSeconds < 60) return 'Just now'
-  const diffInMinutes = Math.floor(diffInSeconds / 60)
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
-  const diffInHours = Math.floor(diffInMinutes / 60)
-  if (diffInHours < 24) return `${diffInHours}h ago`
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 7) return `${diffInDays}d ago`
-
-  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-}
-
           {/* Discussion */}
           <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 16, padding: '24px 26px', boxShadow: '0 4px 20px rgba(28,20,16,0.03)' }}>
             
@@ -748,10 +745,45 @@ function getRelativeTime(dateStr: string): string {
                 background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.1)',
                 borderRadius: 14, padding: '18px', marginTop: 24
               }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1410' }}>
+                    Join the Conversation
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCommentBody(prev => `${prev} **bold** `)}
+                      style={{ fontSize: 11, fontWeight: 700, color: '#4A3F38', background: '#fff', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommentBody(prev => `${prev} *italic* `)}
+                      style={{ fontSize: 11, fontStyle: 'italic', fontWeight: 600, color: '#4A3F38', background: '#fff', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommentBody(prev => `${prev} \`code\` `)}
+                      style={{ fontSize: 11, fontFamily: 'monospace', color: '#4A3F38', background: '#fff', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}
+                    >
+                      &lt;/&gt;
+                    </button>
+                  </div>
+                </div>
+
                 <textarea
                   value={commentBody}
                   onChange={e => setCommentBody(e.target.value)}
-                  placeholder="Ask a question, share an insight, or suggest a solution approach..."
+                  onKeyDown={e => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                      e.preventDefault()
+                      postComment()
+                    }
+                  }}
+                  placeholder="Ask a question, share an insight, or suggest a solution approach... (Press Ctrl + Enter to post)"
                   rows={3}
                   style={{
                     width: '100%', fontFamily: 'DM Sans, sans-serif',
@@ -762,19 +794,41 @@ function getRelativeTime(dateStr: string): string {
                     boxSizing: 'border-box'
                   }}
                 />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                  <div style={{ fontSize: 12, color: '#9CA3A0' }}>
-                    Signed in as <strong>{user.name}</strong>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ fontSize: 12, color: '#6A5F58', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span>Posting as <strong>{user.name}</strong></span>
+                    {commentBody.length > 0 && (
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#9CA3A0' }}>
+                        {commentBody.length} chars
+                      </span>
+                    )}
                   </div>
-                  <button onClick={postComment} disabled={posting || !commentBody.trim()} style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 14, fontWeight: 600,
-                    color: '#1C1410', background: posting ? '#E2E8F0' : '#F4A723',
-                    border: 'none', borderRadius: 8,
-                    padding: '10px 24px', cursor: (posting || !commentBody.trim()) ? 'not-allowed' : 'pointer'
-                  }}>
-                    {posting ? 'Posting...' : 'Post comment'}
-                  </button>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {commentBody.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCommentBody('')}
+                        style={{
+                          fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
+                          color: '#6A5F58', background: 'transparent', border: 'none',
+                          padding: '8px 12px', cursor: 'pointer'
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button onClick={postComment} disabled={posting || !commentBody.trim()} style={{
+                      fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 14, fontWeight: 600,
+                      color: '#1C1410', background: posting ? '#E2E8F0' : '#F4A723',
+                      border: 'none', borderRadius: 8,
+                      padding: '10px 24px', cursor: (posting || !commentBody.trim()) ? 'not-allowed' : 'pointer'
+                    }}>
+                      {posting ? 'Posting...' : 'Post comment →'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
