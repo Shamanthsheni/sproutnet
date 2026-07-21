@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -88,6 +88,54 @@ function getRelativeTime(dateStr: string): string {
   if (diffInDays < 7) return `${diffInDays}d ago`
 
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
+
+function renderFormattedContent(text: string) {
+  if (!text) return null
+  const lines = text.split('\n')
+  return lines.map((line, lIdx) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
+
+    const renderedLine = parts.map((part, pIdx) => {
+      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        return <strong key={pIdx} style={{ fontWeight: 700, color: '#1C1410' }}>{part.slice(2, -2)}</strong>
+      }
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+        return <em key={pIdx} style={{ fontStyle: 'italic', color: '#2D3748' }}>{part.slice(1, -1)}</em>
+      }
+      if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+        return (
+          <code key={pIdx} style={{
+            fontFamily: 'JetBrains Mono, monospace', fontSize: '0.88em',
+            background: 'rgba(45,106,79,0.08)', color: '#2D6A4F', padding: '2px 6px',
+            borderRadius: 4, border: '1px solid rgba(45,106,79,0.15)'
+          }}>
+            {part.slice(1, -1)}
+          </code>
+        )
+      }
+      return part
+    })
+
+    if (line.startsWith('> ')) {
+      return (
+        <blockquote key={lIdx} style={{
+          borderLeft: '3px solid #2D6A4F', paddingLeft: 12, margin: '6px 0',
+          color: '#4A3F38', fontStyle: 'italic', background: '#EAF4EE',
+          borderRadius: '0 6px 6px 0', padding: '6px 12px'
+        }}>
+          {renderedLine}
+        </blockquote>
+      )
+    }
+
+    return (
+      <Fragment key={lIdx}>
+        {renderedLine}
+        {lIdx < lines.length - 1 && <br />}
+      </Fragment>
+    )
+  })
 }
 
 export default function ProblemDetailPage() {
@@ -756,12 +804,12 @@ export default function ProblemDetailPage() {
                       </div>
 
                       {/* Comment Body */}
-                      <p style={{
+                      <div style={{
                         fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410',
-                        lineHeight: 1.65, margin: '8px 0 14px 0', whiteSpace: 'pre-wrap', fontWeight: 400
+                        lineHeight: 1.65, margin: '8px 0 14px 0', fontWeight: 400
                       }}>
-                        {c.body}
-                      </p>
+                        {renderFormattedContent(c.body)}
+                      </div>
 
                       {/* Action Bar Pills */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
