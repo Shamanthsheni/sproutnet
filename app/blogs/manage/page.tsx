@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { type BlogUserSummary } from '@/lib/blogs'
-import { getBlogFeed } from '@/lib/blogs.server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { type BlogUserSummary, type BlogFeedPost, normalizeBlogSetupError, isMissingBlogTablesError } from '@/lib/blogs'
 import BlogsFeed from '../blogs-feed'
 import MyPostsPanel from './my-posts-panel'
 
@@ -17,6 +17,7 @@ export default async function BlogsManagePage() {
   let viewer: BlogUserSummary | null = null
   let userId: string | null = null
 
+  // ── Step 1: get auth (fast, single cookie read) ──────────────────────────
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -28,15 +29,81 @@ export default async function BlogsManagePage() {
         .select('id, name, role, dept, year')
         .eq('id', user.id)
         .single()
-
-      if (profile) {
-        viewer = profile as BlogUserSummary
-      }
+      if (profile) viewer = profile as BlogUserSummary
     }
   } catch {}
 
-  const { posts, error, setupRequired } = await getBlogFeed(userId)
-  const myPosts = viewer ? posts.filter(post => post.author?.id === viewer.id) : []
+  // ── Step 2: fetch only this user's posts (no body, no comments, no likes) ─
+  let myPosts: BlogFeedPost[] = []
+  let error: string | null = null
+  let setupRequired = false
+
+  if (userId) {
+    try {
+      const admin = createAdminClient()
+
+      // Stage 1: fetch only this user's posts (no body — not needed for manage view)
+      const { data: postRows, error: postsError } = await admin
+        .from('blog_posts')
+        .select('id, title, post_type, created_at, author_id')
+        .eq('author_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (postsError) {
+        if (isMissingBlogTablesError(postsError.message)) {
+          setupRequired = true
+        } else {
+          error = normalizeBlogSetupError(postsError.message)
+        }
+      } else {
+        const posts = postRows ?? []
+        const postIds = posts.map(p => p.id)
+
+        // Stage 2: fetch comments + likes for only those posts, in parallel
+        const [commentsResult, likesResult] = postIds.length > 0
+          ? await Promise.all([
+              admin
+                .from('blog_comments')
+                .select('id, post_id, created_at, author_id')
+                .in('post_id', postIds)
+                .order('created_at', { ascending: true }),
+              admin
+                .from('blog_post_likes')
+                .select('post_id, user_id')
+                .in('post_id', postIds),
+            ])
+          : [{ data: [], error: null }, { data: [], error: null }]
+
+        const comments = commentsResult.data ?? []
+        const likes = likesResult.data ?? []
+
+        // Group counts
+        const commentCounts = new Map<string, number>()
+        const likeCounts = new Map<string, number>()
+        for (const c of comments) commentCounts.set(c.post_id, (commentCounts.get(c.post_id) ?? 0) + 1)
+        for (const l of likes) likeCounts.set(l.post_id, (likeCounts.get(l.post_id) ?? 0) + 1)
+
+        const likedByViewer = new Set(likes.filter(l => l.user_id === userId).map(l => l.post_id))
+
+        myPosts = posts.map(post => ({
+          id: post.id,
+          title: post.title,
+          body: '',
+          postType: post.post_type === 'question' ? 'question' : 'knowledge',
+          createdAt: post.created_at,
+          author: viewer,
+          likesCount: likeCounts.get(post.id) ?? 0,
+          commentsCount: commentCounts.get(post.id) ?? 0,
+          likedByViewer: likedByViewer.has(post.id),
+          comments: [],
+        } satisfies BlogFeedPost))
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Could not load your posts.'
+    }
+  }
+
   const dashboardHref = !viewer ? '/login' : viewer.role === 'poster' ? '/poster/dashboard' : '/dashboard'
 
   const emptyState = viewer
