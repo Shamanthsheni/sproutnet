@@ -256,7 +256,7 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
                       {problem.title}
                     </div>
                     <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'rgba(148,163,184,0.8)', marginTop: 3 }}>
-                      {problem.milestones}m · {problem.submission_count}s · {problem.id.slice(0, 8)}…
+                      {problem.submission_count} sub · {problem.id.slice(0, 8)}…
                     </div>
                   </div>
 

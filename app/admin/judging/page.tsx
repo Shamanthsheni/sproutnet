@@ -99,7 +99,7 @@ export default async function AdminJudgingPage() {
           Judging queue
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>
-          Stage 2 submissions waiting in the blind judging queue. Showing latest 200.
+          Submissions waiting in the blind judging queue. Showing latest 200.
         </p>
       </div>
 
@@ -122,21 +122,21 @@ export default async function AdminJudgingPage() {
             No pending submissions
           </div>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-            When students submit Stage 2 solutions, they will appear here.
+            When students submit solutions, they will appear here.
           </div>
         </div>
       ) : (
         <div className="admin-table">
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1.4fr 160px 140px 130px 170px 180px',
-            minWidth: 860,
+            gridTemplateColumns: '1.4fr 160px 130px 170px 180px',
+            minWidth: 800,
             gap: 10,
             padding: '12px 14px',
             background: 'var(--bg-hover)',
             borderBottom: '1px solid var(--border-primary)'
           }}>
-            {['Problem', 'Domain', 'Milestone', 'Submitted', 'Student', 'Actions'].map(h => (
+            {['Problem', 'Domain', 'Submitted', 'Student', 'Actions'].map(h => (
               <div key={h} style={{
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: 10,
@@ -156,8 +156,8 @@ export default async function AdminJudgingPage() {
               return (
                 <div key={sub.id} style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.4fr 160px 140px 130px 170px 180px',
-                  minWidth: 860,
+                  gridTemplateColumns: '1.4fr 160px 130px 170px 180px',
+                  minWidth: 800,
                   gap: 10,
                   padding: '12px 14px',
                   borderBottom: '1px solid var(--border-primary)',
@@ -174,10 +174,6 @@ export default async function AdminJudgingPage() {
 
                   <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(226,232,240,0.85)', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {sub.problem_domain ?? '—'}
-                  </div>
-
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(226,232,240,0.85)' }}>
-                    {sub.milestone}
                   </div>
 
                   <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(226,232,240,0.85)' }}>
