@@ -88,6 +88,10 @@ export default function ProblemDetailPage() {
   const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set())
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
 
+  // Filter & Sort state
+  const [sortBy, setSortBy] = useState<'newest' | 'top' | 'oldest'>('newest')
+  const [searchQuery, setSearchQuery] = useState('')
+
   useEffect(() => {
     if (user?.id) {
       try {
