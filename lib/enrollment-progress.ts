@@ -43,7 +43,7 @@ export async function syncCompletedEnrollments(
     .from('submissions')
     .select('problem_id, milestone, problems(milestones)')
     .eq('student_id', studentId)
-    .eq('stage', 'full')
+    .neq('status', 'draft')
 
   if (error || !data) {
     return []

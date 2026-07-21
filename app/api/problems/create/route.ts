@@ -15,7 +15,7 @@ type ProblemPayload = {
   status?: string
   thumbnail_url?: string | null
   reward_amount?: number | null
-  milestones: number
+  milestones?: number
   deadline: string
   judging_deadline: string
   context: string
@@ -71,10 +71,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const milestones = Number(payload?.milestones)
-  if (!Number.isFinite(milestones) || milestones < 1) {
-    missing.push('milestones')
-  }
+  const milestones = payload?.milestones ? Number(payload.milestones) : 1
 
   if (
     typeof payload?.deadline === 'string' &&

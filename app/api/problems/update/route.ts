@@ -14,7 +14,7 @@ type ProblemPayload = {
   problem_type: string
   thumbnail_url?: string | null
   reward_amount?: number | null
-  milestones: number
+  milestones?: number
   deadline: string
   judging_deadline: string
   context: string
@@ -72,10 +72,7 @@ export async function POST(req: Request) {
       missing.push(key)
     }
   }
-  const milestones = Number(payload?.milestones)
-  if (!Number.isFinite(milestones) || milestones < 1) {
-    missing.push('milestones')
-  }
+  const milestones = payload?.milestones ? Number(payload.milestones) : 1
   if (missing.length > 0) {
     return NextResponse.json({ error: `Missing or invalid fields: ${missing.join(', ')}` }, { status: 422 })
   }
