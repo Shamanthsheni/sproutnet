@@ -95,7 +95,7 @@ export default async function LeaderboardPage() {
             The Builders.
           </h1>
           <p style={{ fontSize: 16, color: '#4A3F38', fontWeight: 300 }}>
-            Builder Score = avg score × depth × milestones completed.
+            Builder Score = avg score × depth × solutions completed.
           </p>
         </div>
 
@@ -239,7 +239,7 @@ export default async function LeaderboardPage() {
               background: '#F2EEE8',
               borderBottom: '1px solid rgba(28,20,16,0.06)'
             }}>
-              {['#', 'Builder', 'Tried', 'Avg', 'Miles', 'Score'].map(h => (
+              {['#', 'Builder', 'Tried', 'Avg', 'Done', 'Score'].map(h => (
                 <div key={h} style={{
                   fontFamily: 'JetBrains Mono, monospace',
                   fontSize: 10, color: '#9CA3A0',

@@ -169,10 +169,10 @@ footer{background:var(--soil);padding:52px}
                 <p className="card-body">Each problem includes a full brief: context, constraints, what a good solution looks like, and what domain it falls under. Read it carefully -- the detail matters.</p>
               </div>
               <div className="card">
-                <div className="step-num">02 - Submit milestone by milestone</div>
-                <div className="card-title">Submit milestone by milestone</div>
-                <p className="card-body">You don&apos;t submit once at the end. You build in milestones -- like professionals do on real projects.</p>
-                <p className="card-body">Milestone 1 is a draft: three fields that test your understanding of the problem. Milestone 2 is the full submission: all seven fields completed and defensible. This forces you to think before you build, and refine before you submit.</p>
+                <div className="step-num">02 - Submit your solution</div>
+                <div className="card-title">Submit your solution</div>
+                <p className="card-body">You draft and submit your solution using our 7-field framework -- like professionals do on real projects.</p>
+                <p className="card-body">The framework tests your problem understanding through to root cause analysis, implementation depth, and risk assessment. Save your draft anytime, and submit when ready for evaluation.</p>
               </div>
               <div className="card">
                 <div className="step-num">03 - Get evaluated fairly</div>
@@ -276,7 +276,7 @@ footer{background:var(--soil);padding:52px}
 
             <div className="score-box">
               <div className="score-title">How scores become Builder Score</div>
-              <div className="score-body">Your average score across all five criteria is multiplied by 10 and adjusted for milestones completed. The formula rewards both quality and consistency -- a string of good submissions matters more than one exceptional one.</div>
+              <div className="score-body">Your average score across all five criteria is multiplied by 10 and adjusted for solutions completed. The formula rewards both quality and consistency -- a string of good submissions matters more than one exceptional one.</div>
             </div>
 
             <div className="hiw-quote">&quot;A single outstanding submission will not outrank someone who thinks carefully across five problems. Consistency is the skill we are measuring.&quot;</div>
@@ -350,7 +350,7 @@ footer{background:var(--soil);padding:52px}
               <details className="faq-item">
                 <summary>How long do I have to submit?</summary>
                 <div className="faq-content">
-                  <p>Each problem has a deadline. Milestone 1 must be submitted before Milestone 2 can be unlocked. Both have independent deadlines shown on the problem page.</p>
+                  <p>Each problem has a submission deadline. You can save your draft as you work and submit anytime before the deadline shown on the problem page.</p>
                 </div>
               </details>
               <details className="faq-item">

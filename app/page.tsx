@@ -229,7 +229,7 @@ footer{background:var(--soil);padding:52px}
             <div className="td"></div>
             <div className="ti"><span>✓</span> Blind judging · 5-criteria rubric</div>
             <div className="td"></div>
-            <div className="ti"><span>✓</span> Milestone-based submissions</div>
+            <div className="ti"><span>✓</span> Structured 7-field submissions</div>
           </div>
         </div>
         <div className="hero-scroll a5"><div className="scroll-line"></div></div>
@@ -270,7 +270,7 @@ footer{background:var(--soil);padding:52px}
           <h2 className="s-title rv d1">Simple. Serious. Structured.</h2>
           <div className="hiw-grid">
             <div className="hiw-step rv d1"><div className="step-dot"><div className="step-n">01</div></div><div className="step-t">Browse real problems</div><div className="step-d">Vetted, fully scoped. Each one matters to someone real.</div></div>
-            <div className="hiw-step rv d2"><div className="step-dot"><div className="step-n">02</div></div><div className="step-t">Submit milestone by milestone</div><div className="step-d">Build your solution in stages, like professionals do.</div></div>
+            <div className="hiw-step rv d2"><div className="step-dot"><div className="step-n">02</div></div><div className="step-t">Submit your solution</div><div className="step-d">Build your solution using our 7-field framework.</div></div>
             <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">03</div></div><div className="step-t">Get evaluated fairly</div><div className="step-d">Blind review. 5 clear criteria. No favouritism.</div></div>
             <div className="hiw-step rv d3"><div className="step-dot"><div className="step-n">04</div></div><div className="step-t">See your thinking matter</div><div className="step-d">Your rank, your badges, your Builder Score.</div></div>
           </div>
@@ -306,7 +306,7 @@ footer{background:var(--soil);padding:52px}
           </div>
           <div className="mockup">
             <div className="mockup-hd">
-              <div className="mockup-title">Milestone 2 Submission</div>
+              <div className="mockup-title">7-Field Solution Submission</div>
               <div className="mockup-pill">5 / 7 complete</div>
             </div>
             <div className="fi"><div className="fchk done">✓</div><div className="fn done">Problem Understanding</div></div>
