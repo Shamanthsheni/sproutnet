@@ -108,6 +108,19 @@ export default function ProblemDetailPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'top' | 'oldest'>('newest')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // UX state
+  const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set())
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
+
+  const toggleThreadCollapse = (id: string) => {
+    setCollapsedThreads(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   useEffect(() => {
     if (user?.id) {
       try {
@@ -476,54 +489,70 @@ export default function ProblemDetailPage() {
           ))}
 
           {/* Discussion */}
-          <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 16, padding: '24px 26px', boxShadow: '0 4px 20px rgba(28,20,16,0.03)' }}>
+          <div style={{
+            background: '#FAF8F4',
+            border: '1px solid rgba(28,20,16,0.08)',
+            borderRadius: 20,
+            padding: '28px 24px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.04)'
+          }}>
             
             {/* Header & Stats */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20, borderBottom: '1px solid rgba(28,20,16,0.07)', paddingBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410', margin: 0 }}>
-                  Discussion
-                </h2>
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 600,
-                  color: '#2D6A4F', background: '#EAF4EE', padding: '3px 10px', borderRadius: 999
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 16, marginBottom: 28,
+              borderBottom: '1px solid rgba(28,20,16,0.08)', paddingBottom: 20
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10, background: '#2D6A4F',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FAF8F4'
                 }}>
-                  {comments.length} comment{comments.length === 1 ? '' : 's'}
-                </span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410', margin: 0, letterSpacing: '-0.3px' }}>
+                    Discussion Thread
+                  </h2>
+                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#6A5F58', marginTop: 2 }}>
+                    {comments.length} contribution{comments.length === 1 ? '' : 's'} from community & poster
+                  </div>
+                </div>
               </div>
 
               {/* Sorting & Search Toolbar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3A0" strokeWidth="2" style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3A0" strokeWidth="2" style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search discussion..."
+                    placeholder="Search responses..."
                     style={{
-                      fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#1C1410',
-                      background: '#FAF8F4', border: '1px solid rgba(28,20,16,0.12)',
-                      borderRadius: 8, padding: '6px 12px 6px 30px', outline: 'none', width: 140
+                      fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1C1410',
+                      background: '#fff', border: '1px solid rgba(28,20,16,0.12)',
+                      borderRadius: 20, padding: '7px 14px 7px 34px', outline: 'none', width: 160,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                     }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', background: '#FAF8F4', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 8, padding: 2 }}>
+                <div style={{ display: 'flex', background: '#EFECE6', borderRadius: 20, padding: 3 }}>
                   {(['newest', 'top', 'oldest'] as const).map(mode => (
                     <button
                       key={mode}
                       onClick={() => setSortBy(mode)}
                       style={{
                         fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                        color: sortBy === mode ? '#1C1410' : '#6A5F58',
+                        color: sortBy === mode ? '#1C1410' : '#7A6F68',
                         background: sortBy === mode ? '#fff' : 'transparent',
-                        border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
-                        boxShadow: sortBy === mode ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                        textTransform: 'capitalize'
+                        border: 'none', borderRadius: 16, padding: '5px 12px', cursor: 'pointer',
+                        boxShadow: sortBy === mode ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      {mode}
+                      {mode === 'top' ? '🔥 Top' : mode === 'newest' ? '⏱ Latest' : '📜 Oldest'}
                     </button>
                   ))}
                 </div>
@@ -555,20 +584,22 @@ export default function ProblemDetailPage() {
               if (comments.length === 0) {
                 return (
                   <div style={{
-                    background: '#FAF8F4', border: '1.5px dashed rgba(28,20,16,0.12)',
-                    borderRadius: 14, padding: '40px 20px', textAlign: 'center', marginBottom: 24
+                    background: '#fff', border: '1px stroke rgba(28,20,16,0.06)',
+                    borderRadius: 16, padding: '48px 24px', textAlign: 'center', marginBottom: 24,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
                   }}>
                     <div style={{
-                      width: 48, height: 48, borderRadius: '50%', background: '#EAF4EE',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto'
+                      width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(135deg, #EAF4EE 0%, #D4EADB 100%)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px auto',
+                      boxShadow: '0 4px 12px rgba(45,106,79,0.15)'
                     }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
-                    <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', marginBottom: 4 }}>
-                      No discussions yet
+                    <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: '#1C1410', marginBottom: 6 }}>
+                      Start the Conversation
                     </div>
-                    <div style={{ fontSize: 13, color: '#6A5F58', maxWidth: 320, margin: '0 auto' }}>
-                      Be the first to share a thought, ask a question, or discuss solution strategies!
+                    <div style={{ fontSize: 14, color: '#6A5F58', maxWidth: 360, margin: '0 auto', lineHeight: 1.5 }}>
+                      No comments yet. Share your problem analysis, clarify requirements, or propose solutions!
                     </div>
                   </div>
                 )
@@ -576,8 +607,8 @@ export default function ProblemDetailPage() {
 
               if (rootComments.length === 0) {
                 return (
-                  <div style={{ padding: '30px', textAlign: 'center', color: '#9CA3A0', fontSize: 13 }}>
-                    No comments found matching &quot;{searchQuery}&quot;.
+                  <div style={{ padding: '36px', textAlign: 'center', color: '#7A6F68', fontSize: 14 }}>
+                    No responses matching &quot;<strong>{searchQuery}</strong>&quot;.
                   </div>
                 )
               }
@@ -587,148 +618,214 @@ export default function ProblemDetailPage() {
                 const isLiked = likedCommentIds.has(c.id)
                 const likes = likeCounts[c.id] ?? 0
                 const childReplies = comments.filter(child => child.parent_id === c.id)
+                const isCollapsed = collapsedThreads.has(c.id)
 
                 return (
                   <div key={c.id} style={{
-                    background: isPoster ? '#FBF9F4' : '#fff',
-                    border: `1.5px solid ${isPoster ? 'rgba(244,167,35,0.3)' : 'rgba(28,20,16,0.08)'}`,
-                    borderRadius: 12,
-                    padding: isChild ? '14px 16px' : '18px 20px',
-                    marginBottom: 12,
-                    transition: 'border-color 0.2s'
+                    position: 'relative',
+                    paddingLeft: isChild ? 24 : 0,
+                    marginBottom: isChild ? 12 : 20,
                   }}>
-                    {/* User Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{
-                          width: isChild ? 28 : 34, height: isChild ? 28 : 34, borderRadius: '50%',
-                          background: isPoster ? '#F4A723' : '#2D6A4F', display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', color: '#1C1410',
-                          fontFamily: 'Sora, sans-serif', fontSize: isChild ? 11 : 12, fontWeight: 700
-                        }}>
-                          {c.users?.name?.charAt(0)?.toUpperCase() ?? '?'}
-                        </div>
-
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 600, color: '#1C1410' }}>
-                              {c.users?.name ?? 'Anonymous User'}
-                            </span>
-
-                            {isPoster && (
-                              <span style={{
-                                fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700,
-                                color: '#1C1410', background: '#F4A723', padding: '2px 7px', borderRadius: 4
-                              }}>
-                                Poster
-                              </span>
-                            )}
-
-                            {c.users?.role && !isPoster && (
-                              <span style={{
-                                fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 500,
-                                color: '#6A5F58', background: '#F2EEE8', padding: '2px 7px', borderRadius: 4,
-                                textTransform: 'capitalize'
-                              }}>
-                                {c.users.role}
-                              </span>
-                            )}
-                          </div>
-
-                          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#9CA3A0', marginTop: 1 }}>
-                            {getRelativeTime(c.created_at)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410', lineHeight: 1.6, margin: '8px 0 12px 0', whiteSpace: 'pre-wrap' }}>
-                      {c.body}
-                    </p>
-
-                    {/* Action Bar: Like & Reply */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => toggleLike(c.id)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                          color: isLiked ? '#DC2626' : '#6A5F58',
-                          background: isLiked ? '#FEF2F2' : 'transparent',
-                          border: `1px solid ${isLiked ? 'rgba(220,38,38,0.2)' : 'transparent'}`,
-                          borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isLiked ? '#DC2626' : 'none'} stroke={isLiked ? '#DC2626' : '#6A5F58'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                        <span>{likes}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReplyingToId(replyingToId === c.id ? null : c.id)
-                          setReplyBody('')
-                        }}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                          color: '#4A3F38', background: 'transparent', border: 'none',
-                          padding: '3px 6px', cursor: 'pointer'
-                        }}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-                        Reply
-                      </button>
-                    </div>
-
-                    {/* Inline Reply Form */}
-                    {replyingToId === c.id && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(28,20,16,0.08)' }}>
-                        <textarea
-                          value={replyBody}
-                          onChange={e => setReplyBody(e.target.value)}
-                          placeholder={`Reply to ${c.users?.name ?? 'user'}...`}
-                          rows={2}
-                          style={{
-                            width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1C1410',
-                            background: '#FAF8F4', border: '1.5px solid #2D6A4F', borderRadius: 8,
-                            padding: '10px 12px', resize: 'vertical', outline: 'none', boxSizing: 'border-box'
-                          }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-                          <button
-                            type="button"
-                            onClick={() => setReplyingToId(null)}
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
-                              color: '#6A5F58', background: '#F2EEE8', border: 'none', borderRadius: 6,
-                              padding: '6px 12px', cursor: 'pointer'
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => postReply(c.id)}
-                            disabled={postingReply || !replyBody.trim()}
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                              color: '#1C1410', background: '#F4A723', border: 'none', borderRadius: 6,
-                              padding: '6px 16px', cursor: (postingReply || !replyBody.trim()) ? 'not-allowed' : 'pointer'
-                            }}
-                          >
-                            {postingReply ? 'Sending...' : 'Post Reply'}
-                          </button>
-                        </div>
-                      </div>
+                    {/* Visual Vertical Thread Line for nested items */}
+                    {isChild && (
+                      <div style={{
+                        position: 'absolute', left: 8, top: 0, bottom: 0, width: 2,
+                        background: 'linear-gradient(180deg, rgba(45,106,79,0.3) 0%, rgba(28,20,16,0.06) 100%)',
+                        borderRadius: 1
+                      }} />
                     )}
 
-                    {/* Nested Replies */}
-                    {childReplies.length > 0 && (
-                      <div style={{ marginTop: 14, paddingLeft: 16, borderLeft: '2px solid rgba(45,106,79,0.2)' }}>
+                    <div style={{
+                      background: isPoster ? 'linear-gradient(135deg, #FFFDF8 0%, #FFF9EC 100%)' : '#fff',
+                      border: isPoster ? '1.5px solid rgba(244,167,35,0.4)' : '1px solid rgba(28,20,16,0.08)',
+                      borderRadius: 14,
+                      padding: '16px 20px',
+                      boxShadow: isPoster ? '0 4px 16px rgba(244,167,35,0.08)' : '0 2px 8px rgba(0,0,0,0.02)',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      {/* User Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {/* Avatar Circle */}
+                          <div style={{
+                            width: isChild ? 32 : 36, height: isChild ? 32 : 36, borderRadius: '50%',
+                            background: isPoster ? 'linear-gradient(135deg, #F4A723 0%, #D88E0E 100%)' : 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: isPoster ? '#1C1410' : '#fff',
+                            fontFamily: 'Sora, sans-serif', fontSize: isChild ? 12 : 13, fontWeight: 700,
+                            boxShadow: isPoster ? '0 2px 8px rgba(244,167,35,0.3)' : '0 2px 8px rgba(45,106,79,0.2)'
+                          }}>
+                            {c.users?.name?.charAt(0)?.toUpperCase() ?? '?'}
+                          </div>
+
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1410' }}>
+                                {c.users?.name ?? 'Community Contributor'}
+                              </span>
+
+                              {isPoster && (
+                                <span style={{
+                                  fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700,
+                                  color: '#1C1410', background: '#F4A723', padding: '2px 8px', borderRadius: 12,
+                                  boxShadow: '0 1px 4px rgba(244,167,35,0.3)'
+                                }}>
+                                  ● OP / Problem Poster
+                                </span>
+                              )}
+
+                              {c.users?.role && !isPoster && (
+                                <span style={{
+                                  fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 600,
+                                  color: '#2D6A4F', background: '#EAF4EE', padding: '2px 8px', borderRadius: 12,
+                                  textTransform: 'capitalize'
+                                }}>
+                                  {c.users.role}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#9CA3A0', marginTop: 2 }}>
+                              {getRelativeTime(c.created_at)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Thread collapse toggle if child replies exist */}
+                        {childReplies.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => toggleThreadCollapse(c.id)}
+                            style={{
+                              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+                              color: '#6A5F58', background: '#EFECE6', border: 'none',
+                              borderRadius: 12, padding: '3px 10px', cursor: 'pointer',
+                              display: 'inline-flex', alignItems: 'center', gap: 4
+                            }}
+                          >
+                            <span>{isCollapsed ? '+' : '−'}</span>
+                            <span>{isCollapsed ? `Expand (${childReplies.length})` : 'Collapse'}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Comment Body */}
+                      <p style={{
+                        fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410',
+                        lineHeight: 1.65, margin: '8px 0 14px 0', whiteSpace: 'pre-wrap', fontWeight: 400
+                      }}>
+                        {c.body}
+                      </p>
+
+                      {/* Action Bar Pills */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        {/* Upvote Pill */}
+                        <button
+                          type="button"
+                          onClick={() => toggleLike(c.id)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 700,
+                            color: isLiked ? '#DC2626' : '#4A3F38',
+                            background: isLiked ? '#FEF2F2' : '#F5F2EC',
+                            border: `1px solid ${isLiked ? 'rgba(220,38,38,0.25)' : 'rgba(28,20,16,0.08)'}`,
+                            borderRadius: 20, padding: '4px 12px', cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill={isLiked ? '#DC2626' : 'none'} stroke={isLiked ? '#DC2626' : '#4A3F38'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                          <span>{likes} {likes === 1 ? 'upvote' : 'upvotes'}</span>
+                        </button>
+
+                        {/* Reply Pill */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplyingToId(replyingToId === c.id ? null : c.id)
+                            setReplyBody('')
+                          }}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+                            color: '#2D6A4F', background: '#EAF4EE',
+                            border: '1px solid rgba(45,106,79,0.15)',
+                            borderRadius: 20, padding: '4px 12px', cursor: 'pointer'
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                          Reply
+                        </button>
+
+                        {/* Copy Link Pill */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#comment-${c.id}`)
+                              setCopiedLinkId(c.id)
+                              setTimeout(() => setCopiedLinkId(null), 2000)
+                            } catch {
+                              // ignore
+                            }
+                          }}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
+                            color: copiedLinkId === c.id ? '#10B981' : '#7A6F68', background: 'transparent',
+                            border: 'none', padding: '4px 8px', cursor: 'pointer'
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          {copiedLinkId === c.id ? 'Link copied!' : 'Share'}
+                        </button>
+                      </div>
+
+                      {/* Inline Reply Input */}
+                      {replyingToId === c.id && (
+                        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(28,20,16,0.08)' }}>
+                          <textarea
+                            value={replyBody}
+                            onChange={e => setReplyBody(e.target.value)}
+                            placeholder={`Replying to ${c.users?.name ?? 'user'}...`}
+                            rows={2}
+                            style={{
+                              width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1C1410',
+                              background: '#FAF8F4', border: '1.5px solid #2D6A4F', borderRadius: 10,
+                              padding: '10px 14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box'
+                            }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => setReplyingToId(null)}
+                              style={{
+                                fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
+                                color: '#7A6F68', background: '#EFECE6', border: 'none', borderRadius: 8,
+                                padding: '6px 14px', cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => postReply(c.id)}
+                              disabled={postingReply || !replyBody.trim()}
+                              style={{
+                                fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+                                color: '#1C1410', background: '#F4A723', border: 'none', borderRadius: 8,
+                                padding: '6px 18px', cursor: (postingReply || !replyBody.trim()) ? 'not-allowed' : 'pointer',
+                                boxShadow: '0 2px 6px rgba(244,167,35,0.2)'
+                              }}
+                            >
+                              {postingReply ? 'Posting...' : 'Post Reply'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Thread Child Node Container */}
+                    {!isCollapsed && childReplies.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
                         {childReplies.map(child => renderCommentCard(child, true))}
                       </div>
                     )}
