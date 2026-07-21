@@ -168,7 +168,7 @@ export default async function DashboardPage() {
               { label: 'Builder Score', value: profile.builder_score ?? 0, accent: '#F4A723' },
               { label: 'Problems Attempted', value: profile.attempted ?? 0, accent: '#2D6A4F' },
               { label: 'Avg Score', value: profile.avg_score ? Number(profile.avg_score).toFixed(1) : '—', accent: '#2D6A4F' },
-              { label: 'Milestones Done', value: profile.milestones_done ?? 0, accent: '#2D6A4F' },
+              { label: 'Solutions Completed', value: profile.milestones_done ?? 0, accent: '#2D6A4F' },
             ].map(stat => (
               <div key={stat.label} style={{
                 background: '#fff',
@@ -321,40 +321,20 @@ export default async function DashboardPage() {
                       </div>
 
                       <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: 12,
                         marginBottom: 18
                       }}>
-                        <div>
-                          <div style={{
-                            fontFamily: 'JetBrains Mono, monospace',
-                            fontSize: 11,
-                            color: '#9CA3A0',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.08em',
-                            marginBottom: 4
-                          }}>
-                            Deadline
-                          </div>
-                          <div style={{ fontSize: 14, color: '#1C1410' }}>
-                            {new Date(problem.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </div>
+                        <div style={{
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 11,
+                          color: '#9CA3A0',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          marginBottom: 4
+                        }}>
+                          Deadline
                         </div>
-                        <div>
-                          <div style={{
-                            fontFamily: 'JetBrains Mono, monospace',
-                            fontSize: 11,
-                            color: '#9CA3A0',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.08em',
-                            marginBottom: 4
-                          }}>
-                            Progress
-                          </div>
-                          <div style={{ fontSize: 14, color: '#1C1410' }}>
-                            {problem.milestones} milestones
-                          </div>
+                        <div style={{ fontSize: 14, color: '#1C1410' }}>
+                          {new Date(problem.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </div>
                       </div>
 

@@ -365,44 +365,6 @@ export default function ProblemDetailPage() {
             </div>
           ))}
 
-          {/* Milestones */}
-          <div style={{
-            background: '#fff',
-            border: '1.5px solid rgba(28,20,16,0.07)',
-            borderRadius: 12, padding: '28px',
-            marginBottom: 32
-          }}>
-            <div style={{
-              fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
-              color: '#2D6A4F', marginBottom: 18,
-              textTransform: 'uppercase', letterSpacing: '0.08em'
-            }}>
-              🗺️ Milestones
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {Array.from({ length: problem.milestones }, (_, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '14px 16px',
-                  background: '#FAF8F4', borderRadius: 8,
-                  border: '1px solid rgba(28,20,16,0.06)'
-                }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: '#EAF4EE', border: '2px solid rgba(45,106,79,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
-                    color: '#2D6A4F', fontWeight: 500, flexShrink: 0
-                  }}>
-                    {i + 1}
-                  </div>
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410' }}>
-                    Milestone {i + 1} — Submit your Stage 1 draft + Stage 2 full solution
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Discussion */}
           <div>
@@ -657,7 +619,6 @@ export default function ProblemDetailPage() {
           }}>
             {[
               { label: 'Days Left', value: `${daysLeft}d`, color: daysLeft <= 7 ? '#DC2626' : '#F4A723' },
-              { label: 'Milestones', value: problem.milestones, color: '#2D6A4F' },
               { label: 'Submissions', value: problem.submission_count, color: '#1C1410' },
               { label: 'Judging by', value: new Date(problem.judging_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), color: '#1C1410' },
             ].map((stat, i) => (
@@ -665,7 +626,7 @@ export default function ProblemDetailPage() {
                 display: 'flex', justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '12px 0',
-                borderBottom: i < 3 ? '1px solid rgba(28,20,16,0.06)' : 'none'
+                borderBottom: i < 2 ? '1px solid rgba(28,20,16,0.06)' : 'none'
               }}>
                 <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#9CA3A0' }}>
                   {stat.label}

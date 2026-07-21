@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +16,6 @@ type Problem = {
   id: string
   title: string
   domain: string
-  milestones: number
   deadline: string
 }
 
@@ -42,13 +41,10 @@ type ExistingSubmission = {
   ai_feedback: string | null
 }
 
-const STAGE1_FIELDS = [
+const ALL_FIELDS = [
   { key: 'f_understanding', label: 'Problem Understanding', placeholder: 'In your own words, what is the core problem? Who does it affect and how? What evidence do you have that this is real?', hint: 'Be specific. Avoid restating the problem brief — show you understand it.' },
   { key: 'f_solution', label: 'Proposed Solution', placeholder: 'What is your solution? Describe it clearly enough that someone unfamiliar could understand it in 2 minutes.', hint: 'Focus on the core idea first, not implementation details.' },
   { key: 'f_impact', label: 'Expected Impact', placeholder: 'If your solution works, what changes? Who benefits? By how much? Can you quantify the impact?', hint: 'Use numbers where possible. "Reduces X by Y%" is stronger than "improves X".' },
-]
-
-const STAGE2_FIELDS = [
   { key: 'f_rootcause', label: 'Root Cause Analysis', placeholder: 'Why does this problem exist? What are the underlying causes — not just symptoms? Use a 5-Why or fishbone approach if helpful.', hint: 'Surface-level causes lead to surface-level solutions. Go deeper.' },
   { key: 'f_feasibility', label: 'Feasibility Assessment', placeholder: 'Is your solution technically, economically, and socially feasible? What resources, skills, and time would be needed? What already exists that you can build on?', hint: 'Be honest about what you don\'t know. Acknowledging uncertainty is strength.' },
   { key: 'f_risks', label: 'Risks & Limitations', placeholder: 'What could go wrong? What are the biggest risks to your solution? What assumptions are you making that could be wrong?', hint: 'Every solution has risks. The best submissions name them honestly.' },
@@ -64,14 +60,17 @@ export default function SubmitPage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
-  const [selectedMilestone, setSelectedMilestone] = useState(1)
-  const [stage, setStage] = useState<'draft' | 'full'>('draft')
   const [existing, setExisting] = useState<ExistingSubmission | null>(null)
   const [progressFiles, setProgressFiles] = useState<ProgressUploadItem[]>([])
+
+  const fieldRefs = useRef<Record<string, HTMLTextAreaElement | null>>({})
 
   // Form state
   const [fields, setFields] = useState<Record<string, string>>({
@@ -84,32 +83,31 @@ export default function SubmitPage() {
     f_implementation: '',
   })
 
-  const loadSubmission = useCallback(async (supabase: ReturnType<typeof createClient>, userId: string, milestone: number) => {
+  const loadSubmission = useCallback(async (supabase: ReturnType<typeof createClient>, userId: string) => {
     const { data } = await supabase
       .from('submissions')
       .select('*')
       .eq('problem_id', problemId)
       .eq('student_id', userId)
-      .eq('milestone', milestone)
-      .single()
+      .limit(1)
 
-    if (data) {
-      const parsedImplementation = parseProgressUploads(data.f_implementation ?? '')
-      setExisting(data as ExistingSubmission)
-      setStage(data.stage as 'draft' | 'full')
+    const sub = data?.[0]
+
+    if (sub) {
+      const parsedImplementation = parseProgressUploads(sub.f_implementation ?? '')
+      setExisting(sub as ExistingSubmission)
       setProgressFiles(parsedImplementation.files)
       setFields({
-        f_understanding: data.f_understanding ?? '',
-        f_solution: data.f_solution ?? '',
-        f_impact: data.f_impact ?? '',
-        f_rootcause: data.f_rootcause ?? '',
-        f_feasibility: data.f_feasibility ?? '',
-        f_risks: data.f_risks ?? '',
+        f_understanding: sub.f_understanding ?? '',
+        f_solution: sub.f_solution ?? '',
+        f_impact: sub.f_impact ?? '',
+        f_rootcause: sub.f_rootcause ?? '',
+        f_feasibility: sub.f_feasibility ?? '',
+        f_risks: sub.f_risks ?? '',
         f_implementation: parsedImplementation.text,
       })
     } else {
       setExisting(null)
-      setStage('draft')
       setProgressFiles([])
       setFields({
         f_understanding: '', f_solution: '', f_impact: '',
@@ -156,29 +154,44 @@ export default function SubmitPage() {
 
       const { data: prob } = await supabase
         .from('problems')
-        .select('id, title, domain, milestones, deadline')
+        .select('id, title, domain, deadline')
         .eq('id', problemId)
         .single()
       setProblem(prob)
 
-      // Load existing submission for milestone 1
-      await loadSubmission(supabase, authUser.id, 1)
+      await loadSubmission(supabase, authUser.id)
       setLoading(false)
     }
     load()
   }, [loadSubmission, problemId, router])
 
-  async function handleMilestoneChange(m: number) {
-    setSelectedMilestone(m)
-    setSaved(false)
-    const supabase = createClient()
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (authUser && problem) {
-      await loadSubmission(supabase, authUser.id, m)
+  const completedFields = ALL_FIELDS.filter(f => fields[f.key]?.trim()).length
+  const isAllFieldsCompleted = completedFields === 7
+
+  const handleFieldChange = (key: string, value: string) => {
+    setFields(prev => ({ ...prev, [key]: value }))
+    if (fieldErrors[key]) {
+      setFieldErrors(prev => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
     }
+    if (error) setError('')
   }
 
   async function handleProgressUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!isAllFieldsCompleted) {
+      setError('Please complete all 7 solution fields above before uploading supporting PDF documents.')
+      const firstMissing = ALL_FIELDS.find(f => !fields[f.key]?.trim())
+      if (firstMissing && fieldRefs.current[firstMissing.key]) {
+        fieldRefs.current[firstMissing.key]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        fieldRefs.current[firstMissing.key]?.focus()
+      }
+      e.target.value = ''
+      return
+    }
+
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -203,7 +216,7 @@ export default function SubmitPage() {
 
     if (!res.ok) {
       const text = await res.text().catch(() => '')
-      let message = `Progress upload failed (${res.status}).`
+      let message = `File upload failed (${res.status}).`
       if (text) {
         try {
           const data = JSON.parse(text)
@@ -235,14 +248,15 @@ export default function SubmitPage() {
     if (!user || !problem) return
     setSaving(true)
     setError('')
+    setDraftSaved(false)
 
     const supabase = createClient()
 
     const payload = {
       problem_id: problemId,
       student_id: user.id,
-      milestone: selectedMilestone,
-      total_milestones: problem.milestones,
+      milestone: 1,
+      total_milestones: 1,
       dept: user.dept ?? 'Unknown',
       year: user.year ?? 'Unknown',
       stage: 'draft' as const,
@@ -250,11 +264,15 @@ export default function SubmitPage() {
       f_understanding: fields.f_understanding,
       f_solution: fields.f_solution,
       f_impact: fields.f_impact,
+      f_rootcause: fields.f_rootcause,
+      f_feasibility: fields.f_feasibility,
+      f_risks: fields.f_risks,
       f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
     }
 
     if (existing) {
-      await supabase.from('submissions').update(payload).eq('id', existing.id)
+      const { error: updateError } = await supabase.from('submissions').update(payload).eq('id', existing.id)
+      if (updateError) { setError(updateError.message); setSaving(false); return }
     } else {
       const { data, error: insertError } = await supabase
         .from('submissions')
@@ -265,57 +283,90 @@ export default function SubmitPage() {
       if (data) setExisting(data as ExistingSubmission)
     }
 
-    setSaved(true)
-    setStage('draft')
+    setDraftSaved(true)
     setSaving(false)
   }
 
-  async function submitFull() {
+  async function submitSolution() {
     if (!user || !problem) return
-    if (!existing) { setError('Please save your Stage 1 draft first.'); return }
 
-    const missing = STAGE2_FIELDS.filter(f => !fields[f.key]?.trim())
-    if (missing.length > 0) {
-      setError(`Please complete: ${missing.map(f => f.label).join(', ')}`)
+    const newErrors: Record<string, string> = {}
+    let firstErrorKey: string | null = null
+
+    for (const field of ALL_FIELDS) {
+      if (!fields[field.key]?.trim()) {
+        newErrors[field.key] = `${field.label} is required.`
+        if (!firstErrorKey) {
+          firstErrorKey = field.key
+        }
+      }
+    }
+
+    if (firstErrorKey) {
+      setFieldErrors(newErrors)
+      setError('Please complete all 7 fields before submitting your solution.')
+      
+      const el = fieldRefs.current[firstErrorKey]
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.focus()
+      }
       return
     }
 
-    setSaving(true)
+    setSubmitting(true)
     setError('')
+    setDraftSaved(false)
 
     const supabase = createClient()
 
-    await supabase.from('submissions').update({
-      stage: 'full',
-      status: 'pending',
+    const payload = {
+      problem_id: problemId,
+      student_id: user.id,
+      milestone: 1,
+      total_milestones: 1,
+      dept: user.dept ?? 'Unknown',
+      year: user.year ?? 'Unknown',
+      stage: 'full' as const,
+      status: 'pending' as const,
+      f_understanding: fields.f_understanding,
+      f_solution: fields.f_solution,
+      f_impact: fields.f_impact,
       f_rootcause: fields.f_rootcause,
       f_feasibility: fields.f_feasibility,
       f_risks: fields.f_risks,
       f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
-    }).eq('id', existing.id)
+    }
 
-    setSaved(true)
-    setStage('full')
-    setSaving(false)
+    if (existing) {
+      const { error: updateError } = await supabase.from('submissions').update(payload).eq('id', existing.id)
+      if (updateError) { setError(updateError.message); setSubmitting(false); return }
+    } else {
+      const { data, error: insertError } = await supabase
+        .from('submissions')
+        .insert(payload)
+        .select()
+        .single()
+      if (insertError) { setError(insertError.message); setSubmitting(false); return }
+      if (data) setExisting(data as ExistingSubmission)
+    }
 
-    // Redirect to dashboard after 1.5s
+    setSubmitted(true)
+    setSubmitting(false)
+
     setTimeout(() => router.push('/dashboard'), 1500)
   }
 
-  const stage1Complete = fields.f_understanding.trim() && fields.f_solution.trim() && fields.f_impact.trim()
-  const stage2Complete = STAGE2_FIELDS.every(f => fields[f.key]?.trim())
-  const completedFields = Object.values(fields).filter(v => v.trim()).length
-
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#9CA3A0' }}>Loading...</div>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#9CA3A0' }}>Loading solution workspace...</div>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif', paddingBottom: 100 }}>
 
-      {/* Nav */}
+      {/* Navigation Header */}
       <nav style={{
         minHeight: 66,
         height: 'auto',
@@ -326,7 +377,8 @@ export default function SubmitPage() {
         columnGap: 16,
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
+        background: 'rgba(250,248,244,0.96)',
+        backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(28,20,16,0.07)',
         position: 'sticky', top: 0, zIndex: 100
       }}>
@@ -340,187 +392,335 @@ export default function SubmitPage() {
           <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', rowGap: 8 }}>
-          {/* Progress indicator */}
           <div style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
-            color: '#2D6A4F', background: '#EAF4EE',
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 500,
+            color: isAllFieldsCompleted ? '#2D6A4F' : '#B45309',
+            background: isAllFieldsCompleted ? '#EAF4EE' : '#FEF3C7',
+            border: `1px solid ${isAllFieldsCompleted ? 'rgba(45,106,79,0.2)' : 'rgba(217,119,6,0.2)'}`,
             padding: '6px 14px', borderRadius: 999
           }}>
-            {completedFields} / 7 fields
+            {completedFields} / 7 Fields Completed
           </div>
-          <div className="sn-nav-actions" style={{ display: 'flex', alignItems: 'center' }}>
-            <Link href={`/problems/${problemId}`} style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>
-              ← Back to problem
-            </Link>
-          </div>
+          <Link href={`/problems/${problemId}`} style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38', textDecoration: 'none' }}>
+            ← Back to Problem Details
+          </Link>
         </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href={`/problems/${problemId}`}>Back to problem</Link>
-          </div>
-        </details>
       </nav>
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: 'clamp(28px, 5vw, 44px) clamp(16px, 4vw, 24px)' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 36 }}>
-          <div style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-          color: '#2D6A4F', letterSpacing: '0.1em',
-          textTransform: 'uppercase', marginBottom: 10
+        {/* Main Header Banner */}
+        <div style={{
+          background: '#fff',
+          border: '1.5px solid rgba(28,20,16,0.08)',
+          borderRadius: 18,
+          padding: '28px 30px',
+          marginBottom: 32,
+          boxShadow: '0 4px 20px rgba(28,20,16,0.03)'
         }}>
-            {'// submitting a solution'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+            <span style={{
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 600,
+              color: '#2D6A4F', background: '#EAF4EE', padding: '4px 10px', borderRadius: 6
+            }}>
+              Solution Workspace
+            </span>
+            {problem?.domain && (
+              <span style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                color: '#6A5F58', background: '#F2EEE8', padding: '4px 10px', borderRadius: 6
+              }}>
+                {problem.domain}
+              </span>
+            )}
           </div>
+
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: 'clamp(26px, 5.5vw, 32px)', fontWeight: 400,
+            fontSize: 'clamp(26px, 5vw, 36px)', fontWeight: 400,
             color: '#1C1410', letterSpacing: '-0.3px',
-            lineHeight: 1.2, marginBottom: 8
+            lineHeight: 1.25, marginBottom: 10
           }}>
             {problem?.title}
           </h1>
-          <p style={{ fontSize: 14, color: '#9CA3A0' }}>
-            {user?.name} · {user?.dept} · {user?.year}
-          </p>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 16, flexWrap: 'wrap', paddingTop: 14, marginTop: 14,
+            borderTop: '1px solid rgba(28,20,16,0.06)'
+          }}>
+            <div style={{ fontSize: 13, color: '#4A3F38' }}>
+              <strong>Builder:</strong> {user?.name} {user?.dept ? `(${user.dept} · ${user.year})` : ''}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexGrow: 1, maxWidth: 280 }}>
+              <div style={{
+                flexGrow: 1, height: 8, background: '#EAE5DC', borderRadius: 999, overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${(completedFields / 7) * 100}%`,
+                  background: isAllFieldsCompleted ? '#2D6A4F' : '#F4A723',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: '#6A5F58', fontWeight: 600 }}>
+                {Math.round((completedFields / 7) * 100)}%
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* Milestone selector */}
-        {problem && problem.milestones > 1 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap', rowGap: 8 }}>
-            {Array.from({ length: problem.milestones }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => handleMilestoneChange(i + 1)}
-                style={{
-                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
-                  padding: '8px 20px', borderRadius: 999, cursor: 'pointer',
-                  border: `1.5px solid ${selectedMilestone === i + 1 ? '#2D6A4F' : 'rgba(28,20,16,0.12)'}`,
-                  background: selectedMilestone === i + 1 ? '#2D6A4F' : '#fff',
-                  color: selectedMilestone === i + 1 ? '#fff' : '#4A3F38',
-                }}
-              >
-                Milestone {i + 1}
-              </button>
-            ))}
+        {/* Global Error Banner */}
+        {error && (
+          <div style={{
+            background: '#FEF2F2', border: '1.5px solid #FCA5A5',
+            borderRadius: 12, padding: '14px 18px', marginBottom: 28,
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#991B1B'
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div style={{ flexGrow: 1, fontWeight: 500 }}>{error}</div>
           </div>
         )}
 
-        {/* Stage indicator */}
-        <div style={{
-          display: 'flex', gap: 8, flexWrap: 'wrap',
-          background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
-          borderRadius: 12, padding: 6, marginBottom: 32
-        }}>
-          {[
-            { id: 'draft', label: 'Stage 1 — Idea Draft', desc: '3 fields · ~10 min', done: !!stage1Complete },
-            { id: 'full', label: 'Stage 2 — Full Submission', desc: '4 fields · ~30 min', done: !!stage2Complete },
-          ].map((s, i) => (
-            <div key={s.id} style={{
-              flex: '1 1 260px', padding: '14px 20px', borderRadius: 8,
-              background: stage === s.id ? '#1C1410' : 'transparent',
-              cursor: 'pointer'
-            }} onClick={() => existing && setStage(s.id as 'draft' | 'full')}>
-              <div style={{
-                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
-                color: stage === s.id ? '#FAF8F4' : '#4A3F38',
-                marginBottom: 2
-              }}>
-                {s.done ? '✓ ' : `${i + 1}. `}{s.label}
-              </div>
-              <div style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                color: stage === s.id ? 'rgba(250,248,244,0.4)' : '#9CA3A0'
-              }}>
-                {s.desc}
-              </div>
+        {/* Draft Saved Banner */}
+        {draftSaved && (
+          <div style={{
+            background: '#ECFDF5', border: '1.5px solid #6EE7B7',
+            borderRadius: 12, padding: '14px 18px', marginBottom: 28,
+            display: 'flex', alignItems: 'center', gap: 12,
+            fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#065F46', fontWeight: 500
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div>Draft saved successfully! You can return to edit and submit at any time.</div>
+          </div>
+        )}
+
+        {/* Submitted Banner */}
+        {submitted && (
+          <div style={{
+            background: '#ECFDF5', border: '1.5px solid #34D399',
+            borderRadius: 12, padding: '16px 20px', marginBottom: 28,
+            display: 'flex', alignItems: 'center', gap: 12,
+            fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#047857', fontWeight: 600
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <div>Solution submitted for judging! Redirecting to your dashboard...</div>
+          </div>
+        )}
+
+        {/* 7 Framework Fields */}
+        <div style={{ marginBottom: 36 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 20, flexWrap: 'wrap', gap: 10
+          }}>
+            <div>
+              <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410' }}>
+                7-Field Solution Framework
+              </h2>
+              <p style={{ fontSize: 13, color: '#6A5F58', marginTop: 2 }}>
+                Complete all seven fields to provide a structured, defensible solution proposal.
+              </p>
             </div>
-          ))}
+          </div>
+
+          <div style={{ display: 'grid', gap: 24 }}>
+            {ALL_FIELDS.map((field, i) => {
+              const value = fields[field.key] ?? ''
+              const isFilled = value.trim().length > 0
+              const fieldErr = fieldErrors[field.key]
+
+              return (
+                <div
+                  key={field.key}
+                  style={{
+                    background: '#fff',
+                    border: `1.5px solid ${fieldErr ? '#EF4444' : isFilled ? 'rgba(45,106,79,0.25)' : 'rgba(28,20,16,0.09)'}`,
+                    borderRadius: 14,
+                    padding: '24px',
+                    boxShadow: fieldErr ? '0 0 0 3px rgba(239,68,68,0.1)' : '0 2px 12px rgba(28,20,16,0.02)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700,
+                        color: isFilled ? '#2D6A4F' : '#6A5F58',
+                        background: isFilled ? '#EAF4EE' : '#F2EEE8',
+                        padding: '3px 9px', borderRadius: 6
+                      }}>
+                        Field {i + 1} of 7
+                      </span>
+                      <h3 style={{
+                        fontFamily: 'Sora, sans-serif', fontSize: 16,
+                        fontWeight: 600, color: '#1C1410'
+                      }}>
+                        {field.label}
+                      </h3>
+                    </div>
+
+                    <span style={{
+                      fontSize: 12, fontWeight: 600,
+                      color: isFilled ? '#2D6A4F' : '#9CA3A0',
+                      display: 'inline-flex', alignItems: 'center', gap: 4
+                    }}>
+                      {isFilled ? (
+                        <>
+                          Completed <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </>
+                      ) : 'Required'}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
+                    fontFamily: 'DM Sans, sans-serif', fontSize: 13,
+                    color: '#6A5F58', marginBottom: 12, lineHeight: 1.5
+                  }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6A5F58" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    <span>{field.hint}</span>
+                  </div>
+
+                  <textarea
+                    ref={el => { fieldRefs.current[field.key] = el }}
+                    value={value}
+                    onChange={e => handleFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={5}
+                    style={{
+                      width: '100%', fontFamily: 'DM Sans, sans-serif',
+                      fontSize: 14, color: '#1C1410',
+                      background: fieldErr ? '#FEF2F2' : '#FAF8F4',
+                      border: `1.5px solid ${fieldErr ? '#FCA5A5' : 'rgba(28,20,16,0.12)'}`,
+                      borderRadius: 10, padding: '14px 16px',
+                      resize: 'vertical', outline: 'none',
+                      boxSizing: 'border-box', lineHeight: 1.65,
+                      transition: 'border-color 0.2s, background-color 0.2s'
+                    }}
+                    onFocus={e => {
+                      if (!fieldErr) e.target.style.borderColor = '#2D6A4F'
+                    }}
+                    onBlur={e => {
+                      if (!fieldErr) e.target.style.borderColor = 'rgba(28,20,16,0.12)'
+                    }}
+                  />
+
+                  {fieldErr && (
+                    <div style={{
+                      fontSize: 13, color: '#DC2626', fontWeight: 500,
+                      marginTop: 8, display: 'flex', alignItems: 'center', gap: 6
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> {fieldErr}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
 
+        {/* PDF & Supporting Documents Upload (At the end, unlocked when all 7 fields complete) */}
         <div style={{
-          background: '#fff',
-          border: '1.5px solid rgba(28,20,16,0.07)',
-          borderRadius: 12,
-          padding: '22px 22px',
-          marginBottom: 28
+          background: isAllFieldsCompleted ? '#fff' : '#F9F8F6',
+          border: `1.5px solid ${isAllFieldsCompleted ? 'rgba(45,106,79,0.3)' : 'rgba(28,20,16,0.08)'}`,
+          borderRadius: 14,
+          padding: '24px 26px',
+          marginBottom: 36,
+          boxShadow: isAllFieldsCompleted ? '0 4px 16px rgba(45,106,79,0.05)' : 'none',
+          transition: 'all 0.2s ease'
         }}>
-          <div style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 11,
-            color: '#2D6A4F',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            marginBottom: 10
-          }}>
-            {'// progress uploads'}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <h3 style={{
+                fontFamily: 'Sora, sans-serif',
+                fontSize: 16,
+                fontWeight: 600,
+                color: '#1C1410'
+              }}>
+                Upload PDF & Supporting Evidence (Optional)
+              </h3>
+            </div>
+            <span style={{
+              fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 600,
+              color: isAllFieldsCompleted ? '#2D6A4F' : '#9CA3A0',
+              background: isAllFieldsCompleted ? '#EAF4EE' : '#EAE7E1',
+              padding: '3px 10px', borderRadius: 6
+            }}>
+              {isAllFieldsCompleted ? 'Unlocked' : 'Requires All 7 Fields'}
+            </span>
           </div>
-          <div style={{
-            fontFamily: 'Sora, sans-serif',
-            fontSize: 16,
-            fontWeight: 600,
-            color: '#1C1410',
-            marginBottom: 8
-          }}>
-            Upload files that show your progress
-          </div>
-          <p style={{ fontSize: 13, color: '#6A5F58', marginBottom: 14, lineHeight: 1.6 }}>
-            Add PDFs, docs, sheets, slides, ZIPs, or images that show how your solution is evolving.
+
+          <p style={{ fontSize: 13, color: '#6A5F58', marginBottom: 16, lineHeight: 1.6 }}>
+            {isAllFieldsCompleted
+              ? 'Attach your detailed PDF report, presentation slides, diagrams, or dataset spreadsheets to accompany your submission.'
+              : 'Complete all 7 framework fields above to unlock uploading PDF reports and supporting documents.'}
           </p>
+
           <input
             type="file"
             accept={PROBLEM_PROGRESS_ACCEPT}
             onChange={handleProgressUpload}
-            disabled={uploadingFiles}
+            disabled={uploadingFiles || !isAllFieldsCompleted}
             style={{
               width: '100%',
               fontFamily: 'DM Sans, sans-serif',
               fontSize: 14,
-              color: '#1C1410',
-              background: '#FAF8F4',
-              border: '1.5px solid rgba(28,20,16,0.12)',
-              borderRadius: 8,
-              padding: '11px 14px',
+              color: isAllFieldsCompleted ? '#1C1410' : '#9CA3A0',
+              background: isAllFieldsCompleted ? '#FAF8F4' : '#EFECE6',
+              border: `1.5px dashed ${isAllFieldsCompleted ? 'rgba(45,106,79,0.35)' : 'rgba(28,20,16,0.15)'}`,
+              borderRadius: 10,
+              padding: '14px 16px',
               outline: 'none',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              cursor: isAllFieldsCompleted ? 'pointer' : 'not-allowed'
             }}
           />
-          <div style={{ fontSize: 12, color: '#9CA3A0', marginTop: 8 }}>
-            {uploadingFiles ? 'Uploading file...' : `${progressFiles.length} file${progressFiles.length === 1 ? '' : 's'} attached to this milestone.`}
+
+          <div style={{ fontSize: 12, color: '#9CA3A0', marginTop: 10 }}>
+            {!isAllFieldsCompleted ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> File upload is locked until fields 1 through 7 are completed.
+              </span>
+            ) : uploadingFiles
+              ? 'Uploading document...'
+              : `${progressFiles.length} file${progressFiles.length === 1 ? '' : 's'} attached.`}
           </div>
 
           {progressFiles.length > 0 && (
-            <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+            <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
               {progressFiles.map(file => (
                 <div key={file.url} style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: 12,
-                  padding: '12px 14px',
+                  padding: '12px 16px',
                   background: '#FAF8F4',
                   borderRadius: 10,
-                  border: '1px solid rgba(28,20,16,0.06)',
+                  border: '1px solid rgba(45,106,79,0.18)',
                   flexWrap: 'wrap'
                 }}>
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: '#2D6A4F',
-                      textDecoration: 'none'
-                    }}
-                  >
-                    {file.name}
-                  </a>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: '#2D6A4F',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      {file.name}
+                    </a>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeProgressFile(file.url)}
@@ -528,11 +728,11 @@ export default function SubmitPage() {
                       fontFamily: 'DM Sans, sans-serif',
                       fontSize: 12,
                       fontWeight: 600,
-                      color: '#1C1410',
+                      color: '#DC2626',
                       background: '#fff',
-                      border: '1px solid rgba(28,20,16,0.12)',
-                      borderRadius: 999,
-                      padding: '6px 12px',
+                      border: '1px solid rgba(220,38,38,0.2)',
+                      borderRadius: 6,
+                      padding: '5px 12px',
                       cursor: 'pointer'
                     }}
                   >
@@ -544,219 +744,71 @@ export default function SubmitPage() {
           )}
         </div>
 
-        {/* Error */}
-        {error && (
+        {/* Action Buttons Bar */}
+        <div style={{
+          position: 'sticky',
+          bottom: 20,
+          background: '#fff',
+          border: '1.5px solid rgba(28,20,16,0.1)',
+          borderRadius: 16,
+          padding: '18px 24px',
+          boxShadow: '0 10px 30px rgba(28,20,16,0.08)',
+          zIndex: 90
+        }}>
           <div style={{
-            background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)',
-            borderRadius: 8, padding: '12px 16px', marginBottom: 24,
-            fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#DC2626'
+            display: 'flex',
+            gap: 14,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            rowGap: 12
           }}>
-            {error}
-          </div>
-        )}
-
-        {/* Success */}
-        {saved && stage === 'full' && (
-          <div style={{
-            background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)',
-            borderRadius: 8, padding: '12px 16px', marginBottom: 24,
-            fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#16A34A'
-          }}>
-            ✓ Full submission saved! Redirecting to dashboard...
-          </div>
-        )}
-
-        {/* Stage 1 Fields */}
-        {stage === 'draft' && (
-          <div>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-              color: '#9CA3A0', letterSpacing: '0.1em',
-              textTransform: 'uppercase', marginBottom: 20
-            }}>
-              Stage 1 — Idea Draft
+            <div style={{ fontSize: 13, color: '#6A5F58' }}>
+              {isAllFieldsCompleted ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2D6A4F', fontWeight: 500 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  All 7 fields completed. Ready for submission!
+                </span>
+              ) : `${7 - completedFields} field${7 - completedFields === 1 ? '' : 's'} remaining.`}
             </div>
 
-            {STAGE1_FIELDS.map((field, i) => (
-              <div key={field.key} style={{ marginBottom: 28 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                    color: '#2D6A4F', background: '#EAF4EE',
-                    padding: '2px 8px', borderRadius: 4
-                  }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <label style={{
-                    fontFamily: 'Sora, sans-serif', fontSize: 14,
-                    fontWeight: 600, color: '#1C1410'
-                  }}>
-                    {field.label}
-                  </label>
-                </div>
-                <p style={{
-                  fontFamily: 'DM Sans, sans-serif', fontSize: 12,
-                  color: '#9CA3A0', marginBottom: 8, fontStyle: 'italic'
-                }}>
-                  💡 {field.hint}
-                </p>
-                <textarea
-                  value={fields[field.key]}
-                  onChange={e => setFields(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  rows={5}
-                  style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 14, color: '#1C1410',
-                    background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)',
-                    borderRadius: 10, padding: '14px 16px',
-                    resize: 'vertical', outline: 'none',
-                    boxSizing: 'border-box', lineHeight: 1.65,
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#2D6A4F'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.1)'}
-                />
-              </div>
-            ))}
-
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', rowGap: 10 }}>
-              <button onClick={saveDraft} disabled={saving || !stage1Complete} style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
-                color: '#1C1410', background: saving ? '#F9C05A' : '#F4A723',
-                border: 'none', borderRadius: 8,
-                padding: '13px 32px', cursor: saving ? 'not-allowed' : 'pointer',
-                flex: '1 1 220px',
-                boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
-              }}>
-                {saving ? 'Saving...' : saved ? '✓ Saved — Continue to Stage 2 →' : 'Save Draft →'}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', flexGrow: 1, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={saving || submitting}
+                style={{
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600,
+                  color: '#1C1410', background: saving ? '#E2E8F0' : '#F6F2EB',
+                  border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8,
+                  padding: '12px 24px', cursor: (saving || submitting) ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s'
+                }}
+              >
+                {saving ? 'Saving Draft...' : 'Save Draft'}
               </button>
 
-              {saved && (
-                <button onClick={() => setStage('full')} style={{
-                  fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
-                  color: '#FAF8F4', background: '#2D6A4F',
+              <button
+                type="button"
+                onClick={submitSolution}
+                disabled={saving || submitting}
+                style={{
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600,
+                  color: '#1C1410',
+                  background: submitting ? '#F9C05A' : '#F4A723',
                   border: 'none', borderRadius: 8,
-                  padding: '13px 32px', cursor: 'pointer',
-                  flex: '1 1 220px'
-                }}>
-                  Go to Stage 2 →
-                </button>
-              )}
-            </div>
-
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif', fontSize: 12,
-              color: '#9CA3A0', marginTop: 14
-            }}>
-              Your draft is saved privately. Only Stage 2 submissions enter the judging queue.
-            </p>
-          </div>
-        )}
-
-        {/* Stage 2 Fields */}
-        {stage === 'full' && (
-          <div>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-              color: '#9CA3A0', letterSpacing: '0.1em',
-              textTransform: 'uppercase', marginBottom: 20
-            }}>
-              Stage 2 — Full Submission
-            </div>
-
-            {/* Stage 1 summary */}
-            <div style={{
-              background: '#EAF4EE', border: '1px solid rgba(45,106,79,0.15)',
-              borderRadius: 10, padding: '16px 20px', marginBottom: 28
-            }}>
-              <div style={{
-                fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600,
-                color: '#2D6A4F', marginBottom: 4
-              }}>
-                ✓ Stage 1 complete
-              </div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#2D6A4F', opacity: 0.7 }}>
-                Problem Understanding, Proposed Solution, and Expected Impact saved.
-              </div>
-            </div>
-
-            {STAGE2_FIELDS.map((field, i) => (
-              <div key={field.key} style={{ marginBottom: 28 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{
-                    fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                    color: '#F4A723', background: 'rgba(244,167,35,0.1)',
-                    padding: '2px 8px', borderRadius: 4
-                  }}>
-                    {String(i + 4).padStart(2, '0')}
-                  </span>
-                  <label style={{
-                    fontFamily: 'Sora, sans-serif', fontSize: 14,
-                    fontWeight: 600, color: '#1C1410'
-                  }}>
-                    {field.label}
-                  </label>
-                </div>
-                <p style={{
-                  fontFamily: 'DM Sans, sans-serif', fontSize: 12,
-                  color: '#9CA3A0', marginBottom: 8, fontStyle: 'italic'
-                }}>
-                  💡 {field.hint}
-                </p>
-                <textarea
-                  value={fields[field.key]}
-                  onChange={e => setFields(prev => ({ ...prev, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  rows={5}
-                  style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 14, color: '#1C1410',
-                    background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)',
-                    borderRadius: 10, padding: '14px 16px',
-                    resize: 'vertical', outline: 'none',
-                    boxSizing: 'border-box', lineHeight: 1.65,
-                    transition: 'border-color 0.2s'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#F4A723'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.1)'}
-                />
-              </div>
-            ))}
-
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', rowGap: 10 }}>
-              <button onClick={() => setStage('draft')} style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500,
-                color: '#4A3F38', background: '#fff',
-                border: '1.5px solid rgba(28,20,16,0.12)',
-                borderRadius: 8, padding: '13px 24px', cursor: 'pointer',
-                flex: '1 1 220px'
-              }}>
-                ← Back to Stage 1
-              </button>
-
-              <button onClick={submitFull} disabled={saving || !stage2Complete} style={{
-                fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600,
-                color: '#1C1410',
-                background: stage2Complete ? '#F4A723' : 'rgba(244,167,35,0.3)',
-                border: 'none', borderRadius: 8,
-                padding: '13px 32px',
-                cursor: stage2Complete ? 'pointer' : 'not-allowed',
-                flex: '1 1 220px',
-                boxShadow: stage2Complete ? '0 2px 10px rgba(244,167,35,0.3)' : 'none'
-              }}>
-                {saving ? 'Submitting...' : 'Submit for Judging →'}
+                  padding: '12px 28px',
+                  cursor: (saving || submitting) ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 10px rgba(244,167,35,0.3)',
+                  transition: 'background 0.2s, transform 0.1s'
+                }}
+              >
+                {submitting ? 'Submitting Solution...' : 'Submit Solution for Judging →'}
               </button>
             </div>
-
-            <p style={{
-              fontFamily: 'DM Sans, sans-serif', fontSize: 12,
-              color: '#9CA3A0', marginTop: 14
-            }}>
-              Once submitted, your solution enters the blind judging queue. All 7 fields are required.
-            </p>
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   )

@@ -146,19 +146,6 @@ export default function ProblemCard({ problem }: { problem: ProblemCardData }) {
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: 14,
                 fontWeight: 500,
-                color: '#2D6A4F',
-              }}>
-                {problem.milestones}
-              </span>
-              <span style={{ fontSize: 11, color: '#9CA3A0', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                milestones
-              </span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 14,
-                fontWeight: 500,
                 color: '#1C1410',
               }}>
                 {problem.submission_count}
