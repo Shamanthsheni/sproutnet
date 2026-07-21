@@ -669,6 +669,162 @@ export default function ProblemDetailPage() {
               </div>
             </div>
 
+            {/* Modern Comment Composer at TOP of Discussion Section */}
+            {user ? (
+              <div id="discussion-composer" style={{
+                background: '#fff',
+                border: '1.5px solid rgba(45,106,79,0.2)',
+                borderRadius: 16,
+                padding: '20px 22px',
+                marginBottom: 24,
+                boxShadow: '0 4px 20px rgba(45,106,79,0.06)'
+              }}>
+                {/* Header User Row & Formatting Tools */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                      fontFamily: 'Sora, sans-serif', fontSize: 11, fontWeight: 700
+                    }}>
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1410' }}>
+                      Add to discussion as <span style={{ color: '#2D6A4F' }}>{user.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Rich Text Toolbar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FAF8F4', borderRadius: 8, padding: 3, border: '1px solid rgba(28,20,16,0.06)' }}>
+                    <button
+                      type="button"
+                      title="Bold"
+                      onClick={() => setCommentBody(prev => `${prev} **bold** `)}
+                      style={{ fontSize: 12, fontWeight: 800, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      title="Italic"
+                      onClick={() => setCommentBody(prev => `${prev} *italic* `)}
+                      style={{ fontSize: 12, fontStyle: 'italic', fontWeight: 700, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      title="Inline Code"
+                      onClick={() => setCommentBody(prev => `${prev} \`code\` `)}
+                      style={{ fontSize: 12, fontFamily: 'monospace', color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
+                    >
+                      &lt;/&gt;
+                    </button>
+                    <button
+                      type="button"
+                      title="Quote"
+                      onClick={() => setCommentBody(prev => `${prev}\n> quote\n`)}
+                      style={{ fontSize: 12, fontFamily: 'serif', fontWeight: 700, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
+                    >
+                      &ldquo;&rdquo;
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  value={commentBody}
+                  onChange={e => setCommentBody(e.target.value)}
+                  onKeyDown={e => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                      e.preventDefault()
+                      postComment()
+                    }
+                  }}
+                  placeholder="Share a thoughtful response, ask a question, or clarify solution scope... (Ctrl + Enter to send)"
+                  rows={3}
+                  style={{
+                    width: '100%', fontFamily: 'DM Sans, sans-serif',
+                    fontSize: 14, color: '#1C1410', lineHeight: 1.6,
+                    background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.1)',
+                    borderRadius: 12, padding: '12px 16px',
+                    resize: 'vertical', outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s ease'
+                  }}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ fontSize: 12, color: '#7A6F68', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      Markdown supported
+                    </span>
+                    {commentBody.length > 0 && (
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#9CA3A0', background: '#FAF8F4', padding: '2px 8px', borderRadius: 10 }}>
+                        {commentBody.length} chars
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {commentBody.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCommentBody('')}
+                        style={{
+                          fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
+                          color: '#7A6F68', background: 'transparent', border: 'none',
+                          padding: '6px 12px', cursor: 'pointer'
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={postComment}
+                      disabled={posting || !commentBody.trim()}
+                      style={{
+                        fontFamily: 'DM Sans, sans-serif',
+                        fontSize: 14, fontWeight: 700,
+                        color: '#1C1410', background: posting ? '#E2E8F0' : '#F4A723',
+                        border: 'none', borderRadius: 10,
+                        padding: '10px 22px', cursor: (posting || !commentBody.trim()) ? 'not-allowed' : 'pointer',
+                        boxShadow: (posting || !commentBody.trim()) ? 'none' : '0 4px 14px rgba(244,167,35,0.3)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {posting ? 'Posting...' : 'Publish Response →'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center', padding: '24px 20px',
+                background: 'linear-gradient(135deg, #FFFDF8 0%, #FAF8F4 100%)',
+                border: '1px solid rgba(28,20,16,0.08)',
+                borderRadius: 16, marginBottom: 24,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 4 }}>
+                  Join the SproutNet Community
+                </div>
+                <div style={{ fontSize: 13, color: '#7A6F68', marginBottom: 16 }}>
+                  Sign in to post replies, upvote helpful contributions, and connect with the problem author.
+                </div>
+                <Link href="/login" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  color: '#1C1410', background: '#F4A723',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
+                  padding: '10px 24px', borderRadius: 20, textDecoration: 'none',
+                  boxShadow: '0 4px 14px rgba(244,167,35,0.3)', transition: 'all 0.15s ease'
+                }}>
+                  Sign in to Participate →
+                </Link>
+              </div>
+            )}
+
             {/* Comment List */}
             {(() => {
               const matchesQuery = (c: Comment): boolean => {
@@ -982,163 +1138,6 @@ export default function ProblemDetailPage() {
                 </>
               )
             })()}
-
-            {/* Comment input */}
-            {/* Modern Floating Comment Composer */}
-            {user ? (
-              <div style={{
-                background: '#fff',
-                border: '1px solid rgba(28,20,16,0.1)',
-                borderRadius: 16,
-                padding: '20px 22px',
-                marginTop: 28,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
-              }}>
-                {/* Header User Row & Formatting Tools */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
-                      fontFamily: 'Sora, sans-serif', fontSize: 11, fontWeight: 700
-                    }}>
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1410' }}>
-                      Add to discussion as <span style={{ color: '#2D6A4F' }}>{user.name}</span>
-                    </div>
-                  </div>
-
-                  {/* Rich Text Toolbar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#FAF8F4', borderRadius: 8, padding: 3, border: '1px solid rgba(28,20,16,0.06)' }}>
-                    <button
-                      type="button"
-                      title="Bold"
-                      onClick={() => setCommentBody(prev => `${prev} **bold** `)}
-                      style={{ fontSize: 12, fontWeight: 800, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
-                    >
-                      B
-                    </button>
-                    <button
-                      type="button"
-                      title="Italic"
-                      onClick={() => setCommentBody(prev => `${prev} *italic* `)}
-                      style={{ fontSize: 12, fontStyle: 'italic', fontWeight: 700, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
-                    >
-                      I
-                    </button>
-                    <button
-                      type="button"
-                      title="Inline Code"
-                      onClick={() => setCommentBody(prev => `${prev} \`code\` `)}
-                      style={{ fontSize: 12, fontFamily: 'monospace', color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
-                    >
-                      &lt;/&gt;
-                    </button>
-                    <button
-                      type="button"
-                      title="Quote"
-                      onClick={() => setCommentBody(prev => `${prev}\n> quote\n`)}
-                      style={{ fontSize: 12, fontFamily: 'serif', fontWeight: 700, color: '#4A3F38', background: 'transparent', border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}
-                    >
-                      &ldquo;&rdquo;
-                    </button>
-                  </div>
-                </div>
-
-                <textarea
-                  value={commentBody}
-                  onChange={e => setCommentBody(e.target.value)}
-                  onKeyDown={e => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                      e.preventDefault()
-                      postComment()
-                    }
-                  }}
-                  placeholder="Share a thoughtful response, ask a question, or clarify solution scope... (Ctrl + Enter to send)"
-                  rows={3}
-                  style={{
-                    width: '100%', fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 14, color: '#1C1410', lineHeight: 1.6,
-                    background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.1)',
-                    borderRadius: 12, padding: '12px 16px',
-                    resize: 'vertical', outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s ease'
-                  }}
-                />
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, flexWrap: 'wrap', gap: 10 }}>
-                  <div style={{ fontSize: 12, color: '#7A6F68', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                      Markdown supported
-                    </span>
-                    {commentBody.length > 0 && (
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#9CA3A0', background: '#FAF8F4', padding: '2px 8px', borderRadius: 10 }}>
-                        {commentBody.length} chars
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {commentBody.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setCommentBody('')}
-                        style={{
-                          fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500,
-                          color: '#7A6F68', background: 'transparent', border: 'none',
-                          padding: '6px 12px', cursor: 'pointer'
-                        }}
-                      >
-                        Clear
-                      </button>
-                    )}
-                    <button
-                      onClick={postComment}
-                      disabled={posting || !commentBody.trim()}
-                      style={{
-                        fontFamily: 'DM Sans, sans-serif',
-                        fontSize: 14, fontWeight: 700,
-                        color: '#1C1410', background: posting ? '#E2E8F0' : '#F4A723',
-                        border: 'none', borderRadius: 10,
-                        padding: '10px 22px', cursor: (posting || !commentBody.trim()) ? 'not-allowed' : 'pointer',
-                        boxShadow: (posting || !commentBody.trim()) ? 'none' : '0 4px 14px rgba(244,167,35,0.3)',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {posting ? 'Posting...' : 'Publish Response →'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{
-                textAlign: 'center', padding: '32px 20px',
-                background: 'linear-gradient(135deg, #FFFDF8 0%, #FAF8F4 100%)',
-                border: '1px stroke rgba(28,20,16,0.08)',
-                borderRadius: 16, marginTop: 24,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
-              }}>
-                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 4 }}>
-                  Join the SproutNet Community
-                </div>
-                <div style={{ fontSize: 13, color: '#7A6F68', marginBottom: 16 }}>
-                  Sign in to post replies, upvote helpful contributions, and connect with the problem author.
-                </div>
-                <Link href="/login" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  color: '#1C1410', background: '#F4A723',
-                  fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
-                  padding: '10px 24px', borderRadius: 20, textDecoration: 'none',
-                  boxShadow: '0 4px 14px rgba(244,167,35,0.3)', transition: 'all 0.15s ease'
-                }}>
-                  Sign in to Participate →
-                </Link>
-              </div>
-            )}
           </div>
         </div>
 
