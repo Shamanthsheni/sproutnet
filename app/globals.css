@@ -24,3 +24,21 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media (max-width: 768px) {
+  .sn-problem-grid {
+    flex-direction: column !important;
+    gap: 20px !important;
+    padding: 16px 14px !important;
+  }
+  .sn-problem-sidebar {
+    order: -1 !important;
+    width: 100% !important;
+  }
+  .sn-comment-card {
+    padding: 14px 14px !important;
+  }
+  .sn-child-reply {
+    padding-left: 14px !important;
+  }
+}

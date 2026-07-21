@@ -467,7 +467,7 @@ export default function ProblemDetailPage() {
         </details>
       </nav>
 
-      <div style={{
+      <div className="sn-problem-grid" style={{
         maxWidth: 1100,
         margin: '0 auto',
         padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)',
@@ -1158,7 +1158,7 @@ export default function ProblemDetailPage() {
         </div>
 
         {/* RIGHT — Sidebar */}
-        <div style={{ flex: '0 1 320px', width: '100%' }}>
+        <div className="sn-problem-sidebar" style={{ flex: '0 1 320px', width: '100%' }}>
           {/* CTA Card */}
           <div style={{
             background: '#1C1410', borderRadius: 14,
