@@ -260,6 +260,18 @@ export default function ProblemDetailPage() {
     load()
   }, [id])
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.innerHeight + window.scrollY
+      const threshold = document.documentElement.offsetHeight - 400
+      if (scrollPosition >= threshold) {
+        setVisibleCommentCount(prev => prev + 5)
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   async function postComment() {
     if (!commentBody.trim() || !user) return
     setPosting(true)
@@ -884,7 +896,37 @@ export default function ProblemDetailPage() {
                 )
               }
 
-              return rootComments.map(c => renderCommentCard(c))
+              const visibleRootComments = rootComments.slice(0, visibleCommentCount)
+
+              return (
+                <>
+                  {visibleRootComments.map(c => renderCommentCard(c))}
+
+                  {rootComments.length > visibleCommentCount && (
+                    <div style={{ textAlign: 'center', margin: '24px 0 12px 0' }}>
+                      <button
+                        type="button"
+                        onClick={() => setVisibleCommentCount(prev => prev + 5)}
+                        style={{
+                          fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
+                          color: '#2D6A4F', background: '#EAF4EE',
+                          border: '1px solid rgba(45,106,79,0.2)', borderRadius: 20,
+                          padding: '10px 24px', cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(45,106,79,0.08)',
+                          display: 'inline-flex', alignItems: 'center', gap: 8,
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        Load More Discussions ({rootComments.length - visibleCommentCount} remaining)
+                      </button>
+                      <div style={{ fontSize: 11, color: '#9CA3A0', fontFamily: 'JetBrains Mono, monospace', marginTop: 6 }}>
+                        Scroll down to automatically reveal more
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
             })()}
 
             {/* Comment input */}
