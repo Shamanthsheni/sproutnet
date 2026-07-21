@@ -123,11 +123,12 @@ export default function ProblemDetailPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   // UX state
-  const [collapsedThreads, setCollapsedThreads] = useState<Set<string>>(new Set())
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set())
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
+  const [visibleCommentCount, setVisibleCommentCount] = useState(5)
 
-  const toggleThreadCollapse = (id: string) => {
-    setCollapsedThreads(prev => {
+  const toggleExpandReplies = (id: string) => {
+    setExpandedReplies(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -282,7 +283,10 @@ export default function ProblemDetailPage() {
       .insert({ problem_id: id, author_id: user.id, body: replyBody.trim(), parent_id: parentId })
       .select('id, body, created_at, author_id, parent_id, users(name, role)')
       .single()
-    if (data) setComments(prev => [...prev, data as unknown as Comment])
+    if (data) {
+      setComments(prev => [...prev, data as unknown as Comment])
+      setExpandedReplies(prev => new Set(prev).add(parentId))
+    }
     setReplyBody('')
     setReplyingToId(null)
     setPostingReply(false)
@@ -662,7 +666,7 @@ export default function ProblemDetailPage() {
                 const isLiked = likedCommentIds.has(c.id)
                 const likes = likeCounts[c.id] ?? 0
                 const childReplies = comments.filter(child => child.parent_id === c.id)
-                const isCollapsed = collapsedThreads.has(c.id)
+                const isRepliesExpanded = expandedReplies.has(c.id)
 
                 return (
                   <div key={c.id} style={{
@@ -735,23 +739,6 @@ export default function ProblemDetailPage() {
                             </div>
                           </div>
                         </div>
-
-                        {/* Thread collapse toggle if child replies exist */}
-                        {childReplies.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => toggleThreadCollapse(c.id)}
-                            style={{
-                              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                              color: '#6A5F58', background: '#EFECE6', border: 'none',
-                              borderRadius: 12, padding: '3px 10px', cursor: 'pointer',
-                              display: 'inline-flex', alignItems: 'center', gap: 4
-                            }}
-                          >
-                            <span>{isCollapsed ? '+' : '−'}</span>
-                            <span>{isCollapsed ? `Expand (${childReplies.length})` : 'Collapse'}</span>
-                          </button>
-                        )}
                       </div>
 
                       {/* Comment Body */}
@@ -800,6 +787,24 @@ export default function ProblemDetailPage() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
                           Reply
                         </button>
+
+                        {/* Link UI Reply Count Toggle */}
+                        {childReplies.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandReplies(c.id)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+                              color: '#2D6A4F', background: 'transparent',
+                              border: 'none', padding: '4px 8px', cursor: 'pointer',
+                              borderRadius: 6
+                            }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span>{isRepliesExpanded ? 'Hide replies' : `${childReplies.length} ${childReplies.length === 1 ? 'reply' : 'replies'}`}</span>
+                          </button>
+                        )}
 
                         {/* Copy Link Pill */}
                         <button
@@ -870,7 +875,7 @@ export default function ProblemDetailPage() {
                     </div>
 
                     {/* Thread Child Node Container */}
-                    {!isCollapsed && childReplies.length > 0 && (
+                    {isRepliesExpanded && childReplies.length > 0 && (
                       <div style={{ marginTop: 8 }}>
                         {childReplies.map(child => renderCommentCard(child, true))}
                       </div>
