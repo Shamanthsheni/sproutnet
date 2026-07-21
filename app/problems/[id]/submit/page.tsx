@@ -363,7 +363,7 @@ export default function SubmitPage() {
     load()
   }, [loadSubmission, problemId, router])
 
-  const completedFields = ALL_FIELDS.filter(f => fields[f.key]?.trim()).length
+  const completedFields = ALL_FIELDS.filter(f => getPlainText(fields[f.key] ?? '').length > 0).length
   const isAllFieldsCompleted = completedFields === 7
 
   const handleFieldChange = (key: string, value: string) => {
@@ -381,7 +381,7 @@ export default function SubmitPage() {
   async function handleProgressUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!isAllFieldsCompleted) {
       setError('Please complete all 7 solution fields above before uploading supporting PDF documents.')
-      const firstMissing = ALL_FIELDS.find(f => !fields[f.key]?.trim())
+      const firstMissing = ALL_FIELDS.find(f => !getPlainText(fields[f.key] ?? ''))
       if (firstMissing && fieldRefs.current[firstMissing.key]) {
         fieldRefs.current[firstMissing.key]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         fieldRefs.current[firstMissing.key]?.focus()
@@ -492,7 +492,7 @@ export default function SubmitPage() {
     let firstErrorKey: string | null = null
 
     for (const field of ALL_FIELDS) {
-      if (!fields[field.key]?.trim()) {
+      if (!getPlainText(fields[field.key] ?? '')) {
         newErrors[field.key] = `${field.label} is required.`
         if (!firstErrorKey) {
           firstErrorKey = field.key
@@ -606,6 +606,35 @@ export default function SubmitPage() {
       </nav>
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: 'clamp(28px, 5vw, 44px) clamp(16px, 4vw, 24px)' }}>
+
+        <style>{`
+        div[contenteditable]:empty:before {
+          content: attr(data-placeholder);
+          color: #9CA3A0;
+          pointer-events: none;
+          display: block;
+        }
+        div[contenteditable] blockquote {
+          border-left: 3px solid #2D6A4F;
+          margin: 6px 0;
+          padding-left: 12px;
+          color: #4A3F38;
+          font-style: italic;
+        }
+        div[contenteditable] ul {
+          padding-left: 20px;
+          margin: 6px 0;
+        }
+        div[contenteditable] b, div[contenteditable] strong {
+          font-weight: 700;
+        }
+        div[contenteditable] i, div[contenteditable] em {
+          font-style: italic;
+        }
+        div[contenteditable] u {
+          text-decoration: underline;
+        }
+      `}</style>
 
         {/* Main Header Banner */}
         <div style={{
