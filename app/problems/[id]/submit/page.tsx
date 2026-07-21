@@ -116,6 +116,109 @@ function RichTextEditor({
       background: fieldErr ? '#FEF2F2' : '#fff',
       transition: 'border-color 0.2s, box-shadow 0.2s'
     }}>
+      {/* Formatting Toolbar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 12px',
+        background: '#FAF8F4',
+        borderBottom: '1px solid rgba(28,20,16,0.08)',
+        gap: 8,
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); exec('bold') }}
+            title="Bold"
+            style={{
+              fontFamily: 'Sora, sans-serif', fontWeight: 800, fontSize: 13,
+              color: '#1C1410', background: 'transparent', border: 'none',
+              borderRadius: 4, padding: '4px 8px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,20,16,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            B
+          </button>
+
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); exec('italic') }}
+            title="Italic"
+            style={{
+              fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 600, fontSize: 13,
+              color: '#1C1410', background: 'transparent', border: 'none',
+              borderRadius: 4, padding: '4px 8px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,20,16,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            I
+          </button>
+
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); exec('underline') }}
+            title="Underline"
+            style={{
+              fontFamily: 'DM Sans, sans-serif', textDecoration: 'underline', fontWeight: 600, fontSize: 13,
+              color: '#1C1410', background: 'transparent', border: 'none',
+              borderRadius: 4, padding: '4px 8px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,20,16,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            U
+          </button>
+
+          <div style={{ width: 1, height: 16, background: 'rgba(28,20,16,0.12)', margin: '0 4px' }} />
+
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); exec('insertUnorderedList') }}
+            title="Bullet List"
+            style={{
+              fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+              color: '#4A3F38', background: 'transparent', border: 'none',
+              borderRadius: 4, padding: '4px 8px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 4
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,20,16,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            List
+          </button>
+
+          <button
+            type="button"
+            onMouseDown={e => { e.preventDefault(); exec('formatBlock', 'blockquote') }}
+            title="Quote"
+            style={{
+              fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 700,
+              color: '#4A3F38', background: 'transparent', border: 'none',
+              borderRadius: 4, padding: '4px 7px', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,20,16,0.08)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            “ Quote
+          </button>
+        </div>
+
+        <div style={{
+          fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+          color: '#9CA3A0', fontWeight: 500
+        }}>
+          {getWordCount()} words
+        </div>
+      </div>
       {/* Contenteditable Rich Text Area */}
       <div
         ref={el => {
