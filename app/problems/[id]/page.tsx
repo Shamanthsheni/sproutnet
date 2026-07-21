@@ -174,6 +174,7 @@ export default function ProblemDetailPage() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set())
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
   const [visibleCommentCount, setVisibleCommentCount] = useState(5)
+  const [showJumpToComposer, setShowJumpToComposer] = useState(false)
 
   const toggleExpandReplies = (id: string) => {
     setExpandedReplies(prev => {
@@ -182,6 +183,15 @@ export default function ProblemDetailPage() {
       else next.add(id)
       return next
     })
+  }
+
+  const scrollToComposer = () => {
+    const composerEl = document.getElementById('discussion-composer')
+    if (composerEl) {
+      composerEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const textarea = composerEl.querySelector('textarea')
+      if (textarea) textarea.focus()
+    }
   }
 
   useEffect(() => {
@@ -314,6 +324,12 @@ export default function ProblemDetailPage() {
       const threshold = document.documentElement.offsetHeight - 400
       if (scrollPosition >= threshold) {
         setVisibleCommentCount(prev => prev + 5)
+      }
+
+      const composerEl = document.getElementById('discussion-composer')
+      if (composerEl) {
+        const rect = composerEl.getBoundingClientRect()
+        setShowJumpToComposer(rect.bottom < 0)
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -1367,6 +1383,26 @@ export default function ProblemDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Jump to Response Button */}
+      {showJumpToComposer && (
+        <button
+          type="button"
+          onClick={scrollToComposer}
+          style={{
+            position: 'fixed', bottom: 24, right: 24, zIndex: 99,
+            fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
+            color: '#1C1410', background: '#F4A723',
+            border: 'none', borderRadius: 30, padding: '12px 20px',
+            boxShadow: '0 6px 24px rgba(244,167,35,0.45)',
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8,
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="7"/><line x1="10" y1="9" x2="14" y2="9"/></svg>
+          Post Response
+        </button>
+      )}
     </div>
   )
 }
