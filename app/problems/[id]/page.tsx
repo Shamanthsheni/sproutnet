@@ -329,7 +329,9 @@ export default function ProblemDetailPage() {
       const composerEl = document.getElementById('discussion-composer')
       if (composerEl) {
         const rect = composerEl.getBoundingClientRect()
-        setShowJumpToComposer(rect.bottom < 0)
+        setShowJumpToComposer(rect.bottom < 80)
+      } else {
+        setShowJumpToComposer(window.scrollY > 400)
       }
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -1390,7 +1392,7 @@ export default function ProblemDetailPage() {
           type="button"
           onClick={scrollToComposer}
           style={{
-            position: 'fixed', bottom: 24, right: 24, zIndex: 99,
+            position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
             fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700,
             color: '#1C1410', background: '#F4A723',
             border: 'none', borderRadius: 30, padding: '12px 20px',
