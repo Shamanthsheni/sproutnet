@@ -349,14 +349,22 @@ export default function BlogsFeed({
                     style={{ width: '100%', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 14, padding: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#1C1410', resize: 'vertical', outline: 'none', lineHeight: 1.7, marginBottom: 14 }}
                   />
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 13, color: '#7A7068' }}>Posts go straight into the shared feed for the whole community.</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <Link
+                        href="/blogs/new"
+                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#2D6A4F', background: 'rgba(45,106,79,0.1)', padding: '10px 16px', borderRadius: 10, textDecoration: 'none' }}
+                      >
+                        Rich editor →
+                      </Link>
+                      <span style={{ fontSize: 11, color: '#8A8078' }}>For longer posts with images</span>
+                    </div>
                     <button
                       type="button"
                       onClick={handleCreatePost}
                       disabled={submittingPost}
                       style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1410', background: submittingPost ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 10, padding: '12px 20px', cursor: submittingPost ? 'not-allowed' : 'pointer', boxShadow: '0 8px 18px rgba(244,167,35,0.22)' }}
                     >
-                      {submittingPost ? 'Publishing...' : 'Publish to Blogs ->'}
+                      {submittingPost ? 'Publishing...' : 'Quick Publish →'}
                     </button>
                   </div>
                 </>

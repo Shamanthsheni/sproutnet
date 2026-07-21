@@ -13,6 +13,15 @@ type Payload = {
   title?: string
   body?: string
   post_type?: string
+  // Rich editor fields (all optional — ignored when Supabase schema lacks them)
+  cover_image?: string | null
+  slug?: string
+  excerpt?: string
+  tags?: string[]
+  category?: string
+  seo_title?: string
+  seo_description?: string
+  status?: 'draft' | 'published'
 }
 
 type PatchPayload = {
@@ -20,6 +29,14 @@ type PatchPayload = {
   title?: string
   body?: string
   post_type?: string
+  cover_image?: string | null
+  slug?: string
+  excerpt?: string
+  tags?: string[]
+  category?: string
+  seo_title?: string
+  seo_description?: string
+  status?: 'draft' | 'published'
 }
 
 type DeletePayload = {

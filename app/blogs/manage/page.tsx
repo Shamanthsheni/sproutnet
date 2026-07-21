@@ -154,19 +154,34 @@ export default async function BlogsManagePage() {
                 Everything you publish appears here so you can refine, respond, and keep momentum.
               </div>
             </div>
-            <Link href="/blogs" style={{
-              fontFamily: 'DM Sans, sans-serif',
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#1C1410',
-              background: '#F6F2EB',
-              padding: '10px 16px',
-              borderRadius: 10,
-              textDecoration: 'none',
-              border: '1px solid rgba(28,20,16,0.08)',
-            }}>
-              Back to feed
-            </Link>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Link href="/blogs/new" style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#1C1410',
+                background: '#F4A723',
+                padding: '10px 18px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(244,167,35,0.24)',
+              }}>
+                Write new post →
+              </Link>
+              <Link href="/blogs" style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#1C1410',
+                background: '#F6F2EB',
+                padding: '10px 16px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                border: '1px solid rgba(28,20,16,0.08)',
+              }}>
+                Back to feed
+              </Link>
+            </div>
           </div>
         </section>
 
