@@ -737,7 +737,6 @@ export default function SubmitPage() {
                     }}
                   >
                     Remove
-                  </button>
                 </div>
               ))}
             </div>
@@ -747,32 +746,40 @@ export default function SubmitPage() {
         {/* Action Buttons Bar */}
         <div style={{
           position: 'sticky',
-          bottom: 20,
+          bottom: 'clamp(10px, 2vw, 20px)',
           background: '#fff',
           border: '1.5px solid rgba(28,20,16,0.1)',
           borderRadius: 16,
-          padding: '18px 24px',
+          padding: '14px clamp(14px, 3vw, 24px)',
           boxShadow: '0 10px 30px rgba(28,20,16,0.08)',
           zIndex: 90
         }}>
           <div style={{
             display: 'flex',
-            gap: 14,
+            gap: 12,
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            rowGap: 12
+            rowGap: 10
           }}>
-            <div style={{ fontSize: 13, color: '#6A5F58' }}>
+            <div style={{ fontSize: 13, color: '#6A5F58', flex: '1 1 180px' }}>
               {isAllFieldsCompleted ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2D6A4F', fontWeight: 500 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  All 7 fields completed. Ready for submission!
+                  All 7 fields completed.
                 </span>
               ) : `${7 - completedFields} field${7 - completedFields === 1 ? '' : 's'} remaining.`}
             </div>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <div style={{
+              display: 'flex',
+              gap: 10,
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              flex: '1 1 auto',
+              justifyContent: 'flex-end',
+              maxWidth: '100%'
+            }}>
               <button
                 type="button"
                 onClick={saveDraft}
@@ -781,11 +788,14 @@ export default function SubmitPage() {
                   fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600,
                   color: '#1C1410', background: saving ? '#E2E8F0' : '#F6F2EB',
                   border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8,
-                  padding: '12px 24px', cursor: (saving || submitting) ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.2s'
+                  padding: '11px clamp(12px, 2vw, 20px)',
+                  cursor: (saving || submitting) ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s',
+                  whiteSpace: 'nowrap',
+                  flex: '0 0 auto'
                 }}
               >
-                {saving ? 'Saving Draft...' : 'Save Draft'}
+                {saving ? 'Saving...' : 'Save Draft'}
               </button>
 
               <button
@@ -797,13 +807,17 @@ export default function SubmitPage() {
                   color: '#1C1410',
                   background: submitting ? '#F9C05A' : '#F4A723',
                   border: 'none', borderRadius: 8,
-                  padding: '12px 28px',
+                  padding: '11px clamp(14px, 3vw, 24px)',
                   cursor: (saving || submitting) ? 'not-allowed' : 'pointer',
                   boxShadow: '0 2px 10px rgba(244,167,35,0.3)',
-                  transition: 'background 0.2s, transform 0.1s'
+                  transition: 'background 0.2s, transform 0.1s',
+                  whiteSpace: 'nowrap',
+                  flex: '1 1 auto',
+                  textAlign: 'center',
+                  minWidth: 140
                 }}
               >
-                {submitting ? 'Submitting Solution...' : 'Submit Solution for Judging →'}
+                {submitting ? 'Submitting...' : 'Submit Solution →'}
               </button>
             </div>
           </div>
