@@ -51,6 +51,101 @@ const ALL_FIELDS = [
   { key: 'f_implementation', label: 'Implementation Plan', placeholder: 'How would this actually get built and deployed? What are the key steps, timeline, and team needed? What would you do first?', hint: 'Think in phases. What\'s the MVP? What comes after?' },
 ]
 
+function getPlainText(html: string) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+type RichTextEditorProps = {
+  fieldKey: string
+  value: string
+  placeholder: string
+  fieldErr?: string
+  onChange: (val: string) => void
+  onFocus?: () => void
+  editorRef: (el: HTMLDivElement | null) => void
+}
+
+function RichTextEditor({
+  value,
+  placeholder,
+  fieldErr,
+  onChange,
+  onFocus,
+  editorRef
+}: RichTextEditorProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const isInternalChange = useRef(false)
+
+  useEffect(() => {
+    if (containerRef.current && !isInternalChange.current) {
+      if (containerRef.current.innerHTML !== (value || '')) {
+        containerRef.current.innerHTML = value || ''
+      }
+    }
+    isInternalChange.current = false
+  }, [value])
+
+  const exec = (cmd: string, arg?: string) => {
+    containerRef.current?.focus()
+    document.execCommand(cmd, false, arg)
+    if (containerRef.current) {
+      isInternalChange.current = true
+      onChange(containerRef.current.innerHTML)
+    }
+  }
+
+  const handleInput = () => {
+    if (containerRef.current) {
+      isInternalChange.current = true
+      onChange(containerRef.current.innerHTML)
+    }
+  }
+
+  const getWordCount = () => {
+    const text = containerRef.current?.innerText?.trim() ?? ''
+    if (!text) return 0
+    return text.split(/\s+/).filter(Boolean).length
+  }
+
+  return (
+    <div style={{
+      border: `1.5px solid ${fieldErr ? '#FCA5A5' : 'rgba(28,20,16,0.14)'}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+      background: fieldErr ? '#FEF2F2' : '#fff',
+      transition: 'border-color 0.2s, box-shadow 0.2s'
+    }}>
+      {/* Contenteditable Rich Text Area */}
+      <div
+        ref={el => {
+          containerRef.current = el
+          editorRef(el)
+        }}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onFocus={onFocus}
+        data-placeholder={placeholder}
+        style={{
+          width: '100%',
+          minHeight: 120,
+          maxHeight: 380,
+          overflowY: 'auto',
+          fontFamily: 'DM Sans, sans-serif',
+          fontSize: 14,
+          color: '#1C1410',
+          background: 'transparent',
+          padding: '14px 16px',
+          outline: 'none',
+          boxSizing: 'border-box',
+          lineHeight: 1.65
+        }}
+      />
+    </div>
+  )
+}
+
 export default function SubmitPage() {
   const params = useParams()
   const router = useRouter()
@@ -70,7 +165,7 @@ export default function SubmitPage() {
   const [existing, setExisting] = useState<ExistingSubmission | null>(null)
   const [progressFiles, setProgressFiles] = useState<ProgressUploadItem[]>([])
 
-  const fieldRefs = useRef<Record<string, HTMLTextAreaElement | null>>({})
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
 
   // Form state
   const [fields, setFields] = useState<Record<string, string>>({
@@ -584,28 +679,14 @@ export default function SubmitPage() {
                     <span>{field.hint}</span>
                   </div>
 
-                  <textarea
-                    ref={el => { fieldRefs.current[field.key] = el }}
+                  {/* WYSIWYG Rich Text Editor */}
+                  <RichTextEditor
+                    fieldKey={field.key}
                     value={value}
-                    onChange={e => handleFieldChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    rows={5}
-                    style={{
-                      width: '100%', fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 14, color: '#1C1410',
-                      background: fieldErr ? '#FEF2F2' : '#FAF8F4',
-                      border: `1.5px solid ${fieldErr ? '#FCA5A5' : 'rgba(28,20,16,0.12)'}`,
-                      borderRadius: 10, padding: '14px 16px',
-                      resize: 'vertical', outline: 'none',
-                      boxSizing: 'border-box', lineHeight: 1.65,
-                      transition: 'border-color 0.2s, background-color 0.2s'
-                    }}
-                    onFocus={e => {
-                      if (!fieldErr) e.target.style.borderColor = '#2D6A4F'
-                    }}
-                    onBlur={e => {
-                      if (!fieldErr) e.target.style.borderColor = 'rgba(28,20,16,0.12)'
-                    }}
+                    fieldErr={fieldErr}
+                    onChange={val => handleFieldChange(field.key, val)}
+                    editorRef={el => { fieldRefs.current[field.key] = el }}
                   />
 
                   {fieldErr && (
