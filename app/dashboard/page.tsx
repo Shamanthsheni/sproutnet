@@ -30,10 +30,52 @@ export default async function DashboardPage() {
 
   if (!profile) redirect('/login')
   if (profile.role === 'poster') redirect('/poster/dashboard')
+  if (profile.role === 'mentor') redirect('/mentor/dashboard')
 
   const isStudent = profile.role === 'student'
   const isAdmin = profile.role === 'admin'
   let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean }> = []
+
+  let workspaces: any[] = []
+  if (isStudent) {
+    const { data: memberRows } = await admin
+      .from('team_members')
+      .select('team_id, workspace_id, role, teams(id, name, problem_id, problems(title, domain))')
+      .eq('user_id', user.id)
+      .not('workspace_id', 'is', null)
+      .order('created_at', { ascending: false })
+
+    if (memberRows) {
+      const wsIds = [...new Set(memberRows.map(r => r.workspace_id).filter(Boolean))]
+      const { data: wsData } = await admin
+        .from('workspaces')
+        .select('id, name, status, last_activity_at')
+        .in('id', wsIds)
+        .neq('status', 'disbanded')
+
+      const wsLookup = new Map((wsData || []).map(ws => [ws.id, ws]))
+
+      const wsMap = new Map<string, any>()
+      for (const row of memberRows) {
+        const ws = wsLookup.get(row.workspace_id || '')
+        if (ws && !wsMap.has(ws.id)) {
+          const team = (row as any).teams
+          wsMap.set(ws.id, {
+            id: ws.id,
+            name: ws.name || team?.name || 'Workspace',
+            status: ws.status,
+            team_id: row.team_id,
+            team_name: team?.name,
+            problem_title: team?.problems?.title,
+            problem_domain: team?.problems?.domain,
+            role: row.role,
+            last_activity_at: ws.last_activity_at,
+          })
+        }
+      }
+      workspaces = Array.from(wsMap.values())
+    }
+  }
 
   if (isStudent) {
     await syncCompletedEnrollments(admin, user.id)
@@ -123,6 +165,18 @@ export default async function DashboardPage() {
             {profile.is_master ? 'Master Admin' : profile.role}
           </span>
           <span style={{ fontSize: 14, color: '#4A3F38' }}>{profile.name}</span>
+          <Link href="/messages" style={{
+            fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723',
+            padding: '6px 14px', borderRadius: 8, textDecoration: 'none'
+          }}>
+            Messages
+          </Link>
+          <Link href="/notifications" style={{
+            fontSize: 13, fontWeight: 600, color: '#2D6A4F', background: '#EAF4EE',
+            padding: '6px 14px', borderRadius: 8, textDecoration: 'none'
+          }}>
+            Notifications
+          </Link>
           <form action="/api/auth/signout" method="POST">
             <button type="submit" style={{
               fontFamily: 'DM Sans, sans-serif',
@@ -392,12 +446,81 @@ export default async function DashboardPage() {
           </div>
         )}
 
+        {/* Student Workspaces */}
+        {isStudent && workspaces.length > 0 && (
+          <div style={{ marginBottom: 48 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F',
+                  textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8
+                }}>
+                  {'// team workspaces'}
+                </div>
+                <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: '#1C1410' }}>
+                  Your Workspaces
+                </h2>
+                <div style={{ fontSize: 13, color: '#7A7068', marginTop: 6 }}>
+                  Collaborate with your team in your shared workspace.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+              {workspaces.map(ws => (
+                <div key={ws.id} style={{
+                  background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '22px'
+                }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: '#2D6A4F', background: '#EAF4EE',
+                      padding: '3px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em'
+                    }}>
+                      {ws.problem_domain}
+                    </span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: '#1C1410', background: ws.role === 'leader' ? '#F4A723' : 'rgba(28,20,16,0.06)',
+                      padding: '3px 8px', borderRadius: 999, textTransform: 'capitalize'
+                    }}>
+                      {ws.role}
+                    </span>
+                  </div>
+
+                  <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410', marginBottom: 4 }}>
+                    {ws.name}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#4A3F38', marginBottom: 16 }}>
+                    {ws.problem_title}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontSize: 11, color: '#9CA3A0' }}>
+                      {ws.last_activity_at
+                        ? `Active ${new Date(ws.last_activity_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                        : 'No activity yet'}
+                    </div>
+                    <Link href={`/teams/${ws.team_id}`} style={{
+                      fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723',
+                      padding: '8px 14px', borderRadius: 8, textDecoration: 'none'
+                    }}>
+                      Open Workspace →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quick actions */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {isStudent && (
             <>
               <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Share knowledge, ask doubts, and join the community feed." />
               <ActionCard href="/problems" icon="🔍" title="Browse Problems" desc="See all open problems across 8 domains." />
+              <ActionCard href="/mentors" icon="🧭" title="Find a Mentor" desc="Browse expert mentors for your team." />
               <ActionCard href="/leaderboard" icon="🏆" title="Leaderboard" desc="See where you stand this season." />
               <ActionCard href={`/profile/${profile.profile_slug}`} icon="👤" title="Your Profile" desc="View your public builder profile." />
             </>
