@@ -19,24 +19,16 @@ type MentorProfile = {
 type Props = {
   mentors: MentorProfile[]
   currentUser: { id: string; name: string; role: string } | null
-  userTeams: Array<{ id: string; name: string }>
+  userTeams?: Array<{ id: string; name: string }>
   pendingMentorIds: string[]
+  connectedMentorIds?: string[]
 }
 
-export default function MentorsClient({ mentors, currentUser, userTeams, pendingMentorIds }: Props) {
+export default function MentorsClient({ mentors, currentUser, pendingMentorIds, connectedMentorIds = [] }: Props) {
   const [search, setSearch] = useState('')
   const [filterSkill, setFilterSkill] = useState('')
   const [filterTech, setFilterTech] = useState('')
   const [showAvailable, setShowAvailable] = useState(false)
-
-  // Request modal state
-  const [showRequestModal, setShowRequestModal] = useState(false)
-  const [selectedMentorId, setSelectedMentorId] = useState('')
-  const [selectedTeamId, setSelectedTeamId] = useState('')
-  const [requestMsg, setRequestMsg] = useState('')
-  const [requesting, setRequesting] = useState(false)
-  const [requestError, setRequestError] = useState('')
-  const [requestSuccess, setRequestSuccess] = useState('')
 
   // Individual connect modal state
   const [showConnectModal, setShowConnectModal] = useState(false)
@@ -74,47 +66,6 @@ export default function MentorsClient({ mentors, currentUser, userTeams, pending
     }
     return list
   }, [mentors, search, filterSkill, filterTech, showAvailable])
-
-  function openRequestModal(mentorId: string) {
-    if (!currentUser) return
-    setSelectedMentorId(mentorId)
-    setSelectedTeamId(userTeams[0]?.id || '')
-    setRequestMsg('')
-    setRequestError('')
-    setRequestSuccess('')
-    setShowRequestModal(true)
-  }
-
-  async function handleSendRequest(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedMentorId || !selectedTeamId) return
-
-    setRequesting(true)
-    setRequestError('')
-    setRequestSuccess('')
-
-    const res = await fetch('/api/teams/request-mentor', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        teamId: selectedTeamId,
-        mentorId: selectedMentorId,
-        message: requestMsg
-      })
-    })
-
-    const data = await res.json().catch(() => ({}))
-
-    if (!res.ok) {
-      setRequestError(data.error || 'Failed to send request.')
-      setRequesting(false)
-      return
-    }
-
-    setRequestSuccess('Request sent! The mentor will be notified.')
-    setRequesting(false)
-    setTimeout(() => setShowRequestModal(false), 1800)
-  }
 
   function openConnectModal(mentorId: string) {
     if (!currentUser) return
@@ -305,7 +256,16 @@ export default function MentorsClient({ mentors, currentUser, userTeams, pending
               <div style={{ flex: 1 }} />
               {currentUser?.role === 'student' ? (
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {pendingMentorIds.includes(m.user_id) ? (
+                  {connectedMentorIds.includes(m.user_id) ? (
+                    <span style={{
+                      fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
+                      color: '#2D6A4F', background: '#EAF4EE', border: '1px solid rgba(45,106,79,0.2)', borderRadius: 8,
+                      padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: 4
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Connected
+                    </span>
+                  ) : pendingMentorIds.includes(m.user_id) ? (
                     <span style={{
                       fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
                       color: '#D97706', background: 'rgba(244,167,35,0.1)', border: '1px solid rgba(244,167,35,0.2)', borderRadius: 8,
@@ -323,15 +283,6 @@ export default function MentorsClient({ mentors, currentUser, userTeams, pending
                       Connect
                     </button>
                   )}
-                  {userTeams.length > 0 && (
-                    <button onClick={() => openRequestModal(m.user_id)} style={{
-                      fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600,
-                      color: '#1C1410', background: '#F4A723', border: 'none', borderRadius: 8,
-                      padding: '8px 14px', cursor: 'pointer'
-                    }}>
-                      Request for Team
-                    </button>
-                  )}
                 </div>
               ) : currentUser && currentUser.role === 'mentor' ? (
                 <span style={{ fontSize: 11, color: '#9CA3A0' }}>
@@ -346,67 +297,6 @@ export default function MentorsClient({ mentors, currentUser, userTeams, pending
       {filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 0', color: '#9CA3A0' }}>
           No mentors match your current filters. Try adjusting your search criteria.
-        </div>
-      )}
-
-      {/* Request Mentor Modal */}
-      {showRequestModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(28,20,16,0.4)', backdropFilter: 'blur(3px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div style={{ width: 'min(480px, 92vw)', background: '#fff', borderRadius: 16, padding: '28px', border: '1.5px solid rgba(28,20,16,0.08)' }}>
-            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: '#1C1410', marginBottom: 8 }}>
-              Request Mentor Guidance
-            </h2>
-            <p style={{ fontSize: 14, color: '#4A3F38', marginBottom: 20 }}>
-              Choose a team to request mentorship from this expert.
-            </p>
-
-            <form onSubmit={handleSendRequest} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {requestError && <div style={{ color: '#DC2626', fontSize: 13, background: 'rgba(220,38,38,0.06)', padding: 10, borderRadius: 8 }}>{requestError}</div>}
-              {requestSuccess && <div style={{ color: '#16A34A', fontSize: 13, background: 'rgba(34,197,94,0.08)', padding: 10, borderRadius: 8 }}>{requestSuccess}</div>}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 13, fontWeight: 500, color: '#1C1410' }}>Select Team</label>
-                <select
-                  value={selectedTeamId}
-                  onChange={e => setSelectedTeamId(e.target.value)}
-                  required
-                  style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, padding: 10, border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8 }}
-                >
-                  <option value="">-- Choose a team --</option>
-                  {userTeams.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 13, fontWeight: 500, color: '#1C1410' }}>Request Message (optional)</label>
-                <textarea
-                  value={requestMsg}
-                  onChange={e => setRequestMsg(e.target.value)}
-                  rows={3}
-                  placeholder="Introduce your team and explain what guidance you need..."
-                  style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, padding: 10, border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 8 }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-                <button type="button" onClick={() => setShowRequestModal(false)} style={{
-                  padding: '9px 16px', background: '#fff', border: '1px solid rgba(28,20,16,0.12)', borderRadius: 8, cursor: 'pointer'
-                }}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={requesting} style={{
-                  padding: '9px 18px', background: '#F4A723', border: 'none', borderRadius: 8, fontWeight: 600, color: '#1C1410', cursor: 'pointer'
-                }}>
-                  {requesting ? 'Sending...' : 'Send Request →'}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 

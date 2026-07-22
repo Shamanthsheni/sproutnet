@@ -5,6 +5,8 @@ import { startTransition, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BLOGS_SETUP_REQUIRED_MESSAGE,
+  isBlogBodyEmpty,
+  getBlogBodyText,
   type BlogFeedPost,
   type BlogUserSummary,
 } from '@/lib/blogs'
@@ -68,7 +70,7 @@ export default function MyPostsPanel({
       ...prev,
       [post.id]: {
         title: prev[post.id]?.title ?? post.title,
-        body: prev[post.id]?.body ?? post.body,
+        body: prev[post.id]?.body ?? getBlogBodyText(post.body),
       },
     }))
     setEditingPostId(post.id)
@@ -102,8 +104,12 @@ export default function MyPostsPanel({
     const title = draft.title.trim()
     const body = draft.body.trim()
 
-    if (!title || !body) {
-      setActionError('Title and post body are required.')
+    if (!title) {
+      setActionError('Title is required.')
+      return
+    }
+    if (isBlogBodyEmpty(body)) {
+      setActionError('Post body is required.')
       return
     }
 
@@ -204,7 +210,7 @@ export default function MyPostsPanel({
                 const isEditing = editingPostId === post.id
                 const draft = drafts[post.id]
                 const titleValue = draft?.title ?? post.title
-                const bodyValue = draft?.body ?? post.body
+                const bodyValue = draft?.body ?? getBlogBodyText(post.body)
                 const isSaving = savingPostId === post.id
                 const isDeleting = deletingPostId === post.id
                 const showComments = Boolean(openComments[post.id])
@@ -330,7 +336,7 @@ export default function MyPostsPanel({
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: '#3F352E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                        {post.body}
+                        {getBlogBodyText(post.body)}
                       </div>
                     )}
 

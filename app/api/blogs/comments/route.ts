@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const { error } = await admin
+  const { data: insertedComment, error } = await admin
     .from('blog_comments')
     .insert({
       post_id: postId,
@@ -114,6 +114,8 @@ export async function POST(req: Request) {
       body,
       parent_comment_id: parentCommentId ?? null,
     })
+    .select('id, post_id, body, created_at, author_id, parent_comment_id')
+    .single()
 
   if (error) {
     if (isMissingBlogTablesError(error.message) && BLOGS_LOCAL_FALLBACK_ENABLED) {
@@ -135,6 +137,25 @@ export async function POST(req: Request) {
     const message = normalizeBlogSetupError(error.message)
     const status = isMissingBlogTablesError(error.message) ? 503 : 400
     return NextResponse.json({ error: message }, { status })
+  }
+
+  if (insertedComment) {
+    const { data: authorProfile } = await admin
+      .from('users')
+      .select('id, name, role, dept, year')
+      .eq('id', user.id)
+      .single()
+
+    return NextResponse.json({
+      ok: true,
+      comment: {
+        id: insertedComment.id,
+        body: insertedComment.body,
+        createdAt: insertedComment.created_at,
+        author: authorProfile ? { id: authorProfile.id, name: authorProfile.name, role: authorProfile.role, dept: authorProfile.dept, year: authorProfile.year } : null,
+        parentId: insertedComment.parent_comment_id || null,
+      }
+    })
   }
 
   return NextResponse.json({ ok: true })

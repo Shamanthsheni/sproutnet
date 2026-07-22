@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { type BlogUserSummary, type BlogFeedPost, normalizeBlogSetupError, isMissingBlogTablesError } from '@/lib/blogs'
+import { BLOGS_LOCAL_FALLBACK_ENABLED, getLocalBlogRows } from '@/lib/blogs-local.server'
 import BlogsFeed from '../blogs-feed'
 import MyPostsPanel from './my-posts-panel'
 
@@ -52,7 +53,31 @@ export default async function BlogsManagePage() {
 
       if (postsError) {
         if (isMissingBlogTablesError(postsError.message)) {
-          setupRequired = true
+          if (BLOGS_LOCAL_FALLBACK_ENABLED) {
+            setupRequired = false
+            const { posts: localPosts, comments: localComments, likes: localLikes } = await getLocalBlogRows()
+            const userLocalPosts = localPosts.filter(p => p.author_id === userId)
+            myPosts = userLocalPosts.map(post => {
+              const postComments = localComments.filter(c => c.post_id === post.id)
+              const postLikes = localLikes.filter(l => l.post_id === post.id)
+              return {
+                id: post.id,
+                title: post.title,
+                body: post.body,
+                postType: post.post_type === 'question' ? 'question' : 'knowledge',
+                createdAt: post.created_at,
+                author: viewer,
+                likesCount: postLikes.length,
+                commentsCount: postComments.length,
+                likedByViewer: postLikes.some(l => l.user_id === userId),
+                comments: [],
+                cover_image: post.cover_image ?? null,
+                excerpt: post.excerpt ?? null,
+              } satisfies BlogFeedPost
+            })
+          } else {
+            setupRequired = true
+          }
         } else {
           error = normalizeBlogSetupError(postsError.message)
         }

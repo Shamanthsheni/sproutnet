@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import {
   BLOGS_SETUP_REQUIRED_MESSAGE,
   BLOGS_SETUP_SQL_PATH,
+  isBlogBodyEmpty,
+  getBlogBodyText,
   type BlogFeedPost,
   type BlogUserSummary,
 } from '@/lib/blogs'
@@ -89,15 +91,7 @@ export default function BlogsFeed({
   const [postType, setPostType] = useState<'knowledge' | 'question'>('knowledge')
   const [postTitle, setPostTitle] = useState('')
   const [postBody, setPostBody] = useState('')
-  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
-  const [openComments, setOpenComments] = useState<Record<string, boolean>>({})
-  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({})
-  const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null)
   const [submittingPost, setSubmittingPost] = useState(false)
-  const [commentingPostId, setCommentingPostId] = useState<string | null>(null)
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
-  const [postingReplyId, setPostingReplyId] = useState<string | null>(null)
-  const [likingPostId, setLikingPostId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
 
   const dashboardHref = !viewer ? '/login' : viewer.role === 'poster' ? '/poster/dashboard' : '/dashboard'
@@ -109,6 +103,15 @@ export default function BlogsFeed({
     if (submittingPost) return
     if (setupRequired) {
       setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
+      return
+    }
+
+    if (!postTitle.trim()) {
+      setActionError('Post title is required.')
+      return
+    }
+    if (isBlogBodyEmpty(postBody)) {
+      setActionError('Post body cannot be empty.')
       return
     }
 
@@ -137,127 +140,7 @@ export default function BlogsFeed({
     startTransition(() => router.refresh())
   }
 
-  async function handleComment(postId: string) {
-    if (commentingPostId) return
-    if (setupRequired) {
-      setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
-      return
-    }
 
-    setCommentingPostId(postId)
-    setActionError('')
-
-    const res = await fetch('/api/blogs/comments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        post_id: postId,
-        body: commentDrafts[postId] ?? '',
-      }),
-    })
-
-    if (!res.ok) {
-      setActionError(await readErrorMessage(res, `Could not post the comment (${res.status}).`))
-      setCommentingPostId(null)
-      return
-    }
-
-    setCommentDrafts(prev => ({ ...prev, [postId]: '' }))
-    setCommentingPostId(null)
-    startTransition(() => router.refresh())
-  }
-
-  function toggleComments(postId: string) {
-    setOpenComments(prev => ({ ...prev, [postId]: !prev[postId] }))
-  }
-
-  function toggleReply(commentId: string) {
-    setReplyingCommentId(prev => (prev === commentId ? null : commentId))
-  }
-
-  async function handleLike(postId: string) {
-    if (likingPostId) return
-    if (setupRequired) {
-      setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
-      return
-    }
-
-    setLikingPostId(postId)
-    setActionError('')
-
-    const res = await fetch('/api/blogs/likes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ post_id: postId }),
-    })
-
-    if (!res.ok) {
-      setActionError(await readErrorMessage(res, `Could not update the like (${res.status}).`))
-      setLikingPostId(null)
-      return
-    }
-
-    setLikingPostId(null)
-    startTransition(() => router.refresh())
-  }
-
-  async function handleReply(postId: string, commentId: string) {
-    if (postingReplyId) return
-    if (setupRequired) {
-      setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
-      return
-    }
-
-    setPostingReplyId(commentId)
-    setActionError('')
-
-    const res = await fetch('/api/blogs/comments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        post_id: postId,
-        body: replyDrafts[commentId] ?? '',
-        parent_comment_id: commentId,
-      }),
-    })
-
-    if (!res.ok) {
-      setActionError(await readErrorMessage(res, `Could not post the reply (${res.status}).`))
-      setPostingReplyId(null)
-      return
-    }
-
-    setReplyDrafts(prev => ({ ...prev, [commentId]: '' }))
-    setReplyingCommentId(null)
-    setPostingReplyId(null)
-    startTransition(() => router.refresh())
-  }
-
-  async function handleDeleteComment(commentId: string) {
-    if (deletingCommentId) return
-    if (setupRequired) {
-      setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
-      return
-    }
-
-    setDeletingCommentId(commentId)
-    setActionError('')
-
-    const res = await fetch('/api/blogs/comments', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comment_id: commentId }),
-    })
-
-    if (!res.ok) {
-      setActionError(await readErrorMessage(res, `Could not delete the comment (${res.status}).`))
-      setDeletingCommentId(null)
-      return
-    }
-
-    setDeletingCommentId(null)
-    startTransition(() => router.refresh())
-  }
 
   return (
     <div
@@ -405,200 +288,39 @@ export default function BlogsFeed({
           ) : (
             posts.map(post => {
               const meta = POST_TYPE_META[post.postType]
-            const isCommenting = commentingPostId === post.id
-            const isLiking = likingPostId === post.id
-            const commentValue = commentDrafts[post.id] ?? ''
-            const isOpen = Boolean(openComments[post.id])
-            const commentsByParent = new Map<string, typeof post.comments>()
-            const rootComments = [] as typeof post.comments
-
-            for (const comment of post.comments) {
-              const parentId = comment.parentId ?? null
-              if (parentId) {
-                const list = commentsByParent.get(parentId) ?? []
-                list.push(comment)
-                commentsByParent.set(parentId, list)
-              } else {
-                rootComments.push(comment)
-              }
-            }
-
-            const renderCommentList = (list: typeof post.comments, depth: number) => list.map(comment => {
-              const canDelete = Boolean(viewer && comment.author?.id && viewer.id === comment.author.id)
-              const isDeleting = deletingCommentId === comment.id
-              const canReply = Boolean(viewer)
-              const isReplying = replyingCommentId === comment.id
-              const replyValue = replyDrafts[comment.id] ?? ''
-              const isPostingReply = postingReplyId === comment.id
-              const replies = commentsByParent.get(comment.id) ?? []
+              const plainBody = getBlogBodyText(post.body)
+              const excerpt = post.excerpt || plainBody.substring(0, 250) + (plainBody.length > 250 ? '...' : '')
 
               return (
-                <div key={comment.id} style={{ marginLeft: depth ? 18 : 0 }}>
-                  <div style={{ background: '#fff', border: '1px solid rgba(28,20,16,0.06)', borderRadius: 14, padding: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700, color: '#1C1410' }}>{comment.author?.name ?? 'SproutNet member'}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: 11, color: '#8A8078' }}>{formatRole(comment.author?.role)} - {formatDate(comment.createdAt)}</div>
-                        {canReply && (
-                          <button
-                            type="button"
-                            onClick={() => toggleReply(comment.id)}
-                            disabled={setupRequired}
-                            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#2D6A4F', background: 'rgba(45,106,79,0.12)', border: 'none', borderRadius: 999, padding: '6px 10px', cursor: setupRequired ? 'not-allowed' : 'pointer' }}
-                          >
-                            {isReplying ? 'Cancel' : 'Reply'}
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteComment(comment.id)}
-                            disabled={isDeleting}
-                            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, fontWeight: 700, color: '#B91C1C', background: 'rgba(185,28,28,0.08)', border: 'none', borderRadius: 999, padding: '6px 10px', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
-                          >
-                            {isDeleting ? 'Deleting...' : 'Delete'}
-                          </button>
-                        )}
+                <Link key={post.id} href={`/blogs/${post.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <article style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)', borderRadius: 20, padding: 22, boxShadow: '0 12px 30px rgba(28,20,16,0.04)', cursor: 'pointer' }}>
+                    {post.cover_image && (
+                      <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', marginBottom: 16, background: '#F6F2EB' }}>
+                        <img src={post.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
-                    </div>
-                    <div style={{ fontSize: 14, color: '#3F352E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{comment.body}</div>
-                    {isReplying && canReply && !setupRequired && (
-                      <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                        <textarea
-                          value={replyValue}
-                          onChange={e => setReplyDrafts(prev => ({ ...prev, [comment.id]: e.target.value }))}
-                          placeholder="Write a reply..."
-                          rows={3}
-                          style={{ width: '100%', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '10px 12px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410', background: '#fff', resize: 'vertical', outline: 'none', lineHeight: 1.6 }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleReply(post.id, comment.id)}
-                            disabled={isPostingReply}
-                            style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 700, color: '#FAF8F4', background: '#2D6A4F', border: 'none', borderRadius: 10, padding: '9px 14px', cursor: isPostingReply ? 'not-allowed' : 'pointer' }}
-                          >
-                            {isPostingReply ? 'Posting...' : 'Post reply'}
-                          </button>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
+                      <div style={{ display: 'flex', gap: 14, minWidth: 0 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: meta.background, color: meta.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+                          {initials(post.author?.name ?? 'SN')}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  {replies.length > 0 && (
-                    <div style={{ marginTop: 12, paddingLeft: 12, borderLeft: '2px solid rgba(28,20,16,0.06)', display: 'grid', gap: 12 }}>
-                      {renderCommentList(replies, depth + 1)}
-                    </div>
-                  )}
-                </div>
-              )
-            })
-
-              return (
-                <article key={post.id} style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)', borderRadius: 20, padding: 22, boxShadow: '0 12px 30px rgba(28,20,16,0.04)' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
-                    <div style={{ display: 'flex', gap: 14, minWidth: 0 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: meta.background, color: meta.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
-                        {initials(post.author?.name ?? 'SN')}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                          <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410' }}>{post.author?.name ?? 'SproutNet member'}</div>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: meta.accent, background: meta.background, padding: '4px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{meta.label}</span>
-                        </div>
-                        <div style={{ fontSize: 12, color: '#7A7068' }}>{formatRole(post.author?.role)} - {formatDate(post.createdAt)}</div>
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#6A5F58', background: '#F6F2EB', padding: '6px 10px', borderRadius: 999 }}>
-                      {post.commentsCount} comment{post.commentsCount === 1 ? '' : 's'}
-                    </div>
-                  </div>
-
-                  <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: '#1C1410', lineHeight: 1.2, marginBottom: 12 }}>{post.title}</h2>
-                  <p style={{ fontSize: 15, color: '#3F352E', lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{post.body}</p>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', paddingTop: 14, borderTop: '1px solid rgba(28,20,16,0.07)', marginBottom: 18 }}>
-                    {setupRequired ? (
-                      <button
-                        type="button"
-                        disabled
-                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#7A7068', background: '#F6F2EB', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: 'not-allowed' }}
-                      >
-                        Blogs unavailable
-                      </button>
-                    ) : viewer ? (
-                      <button
-                        type="button"
-                        onClick={() => handleLike(post.id)}
-                        disabled={isLiking}
-                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: post.likedByViewer ? '#1C1410' : '#7A7068', background: post.likedByViewer ? '#F4A723' : '#F6F2EB', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: isLiking ? 'not-allowed' : 'pointer' }}
-                      >
-                        {isLiking
-                          ? 'Updating...'
-                          : post.likedByViewer
-                            ? `Liked - ${post.likesCount}`
-                            : `Like - ${post.likesCount}`}
-                      </button>
-                    ) : (
-                      <Link
-                        href="/login"
-                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#2D6A4F', background: '#F6F2EB', borderRadius: 999, padding: '9px 14px', textDecoration: 'none' }}
-                      >
-                        Log in to like - {post.likesCount}
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => toggleComments(post.id)}
-                      style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#2D6A4F', background: '#FAF8F4', border: 'none', borderRadius: 999, padding: '9px 14px', cursor: 'pointer' }}
-                    >
-                      {isOpen ? `Hide comments (${post.commentsCount})` : `View comments (${post.commentsCount})`}
-                    </button>
-                  </div>
-
-                  {isOpen && (
-                    <div style={{ background: '#FAF8F4', borderRadius: 16, padding: 18 }}>
-                      <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1410', marginBottom: 14 }}>
-                        Discussion
-                      </div>
-                    {rootComments.length === 0 ? (
-                      <div style={{ fontSize: 13, color: '#7A7068', marginBottom: 14 }}>
-                        No comments yet{viewer ? '. Start the thread.' : '.'}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-                        {renderCommentList(rootComments, 0)}
-                      </div>
-                    )}
-                      {viewer && !setupRequired ? (
-                        <div style={{ display: 'grid', gap: 10 }}>
-                          <textarea
-                            value={commentValue}
-                            onChange={e => setCommentDrafts(prev => ({ ...prev, [post.id]: e.target.value }))}
-                            placeholder="Add a comment that moves the conversation forward..."
-                            rows={3}
-                            style={{ width: '100%', border: '1px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '12px 14px', fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: '#1C1410', background: '#fff', resize: 'vertical', outline: 'none', lineHeight: 1.65 }}
-                          />
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleComment(post.id)}
-                              disabled={isCommenting}
-                              style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#FAF8F4', background: '#2D6A4F', border: 'none', borderRadius: 10, padding: '10px 16px', cursor: isCommenting ? 'not-allowed' : 'pointer' }}
-                            >
-                              {isCommenting ? 'Posting...' : 'Post comment'}
-                            </button>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410' }}>{post.author?.name ?? 'SproutNet member'}</div>
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: meta.accent, background: meta.background, padding: '4px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{meta.label}</span>
                           </div>
+                          <div style={{ fontSize: 12, color: '#7A7068' }}>{formatRole(post.author?.role)} - {formatDate(post.createdAt)}</div>
                         </div>
-                      ) : setupRequired ? (
-                        <div style={{ fontSize: 13, color: '#7A7068' }}>Commenting opens after the Blogs migration is applied.</div>
-                      ) : (
-                        <Link href="/login" style={{ display: 'inline-block', fontSize: 13, fontWeight: 700, color: '#2D6A4F', textDecoration: 'none' }}>
-                          {'Log in to comment ->'}
-                        </Link>
-                      )}
+                      </div>
+                      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#6A5F58', background: '#F6F2EB', padding: '6px 10px', borderRadius: 999 }}>
+                        {post.commentsCount} comment{post.commentsCount === 1 ? '' : 's'} · {post.likesCount} like{post.likesCount === 1 ? '' : 's'}
+                      </div>
                     </div>
-                  )}
-                </article>
+
+                    <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, color: '#1C1410', lineHeight: 1.2, marginBottom: 12 }}>{post.title}</h2>
+                    <p style={{ fontSize: 15, color: '#3F352E', lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 0 }}>{excerpt}</p>
+                  </article>
+                </Link>
               )
             })
           )

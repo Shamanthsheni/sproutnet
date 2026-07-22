@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
@@ -299,7 +300,9 @@ export default async function DashboardPage() {
                 padding: '28px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>🧭</div>
+                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                  <CompassIcon size={36} />
+                </div>
                 <div style={{
                   fontFamily: 'Sora, sans-serif',
                   fontSize: 18,
@@ -518,19 +521,19 @@ export default async function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           {isStudent && (
             <>
-              <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Share knowledge, ask doubts, and join the community feed." />
-              <ActionCard href="/problems" icon="🔍" title="Browse Problems" desc="See all open problems across 8 domains." />
-              <ActionCard href="/mentors" icon="🧭" title="Find a Mentor" desc="Browse expert mentors for your team." />
-              <ActionCard href="/leaderboard" icon="🏆" title="Leaderboard" desc="See where you stand this season." />
-              <ActionCard href={`/profile/${profile.profile_slug}`} icon="👤" title="Your Profile" desc="View your public builder profile." />
+              <ActionCard href="/blogs" icon={<BlogIcon />} title="Blogs" desc="Share knowledge, ask doubts, and join the community feed." />
+              <ActionCard href="/problems" icon={<SearchIcon />} title="Browse Problems" desc="See all open problems across 8 domains." />
+              <ActionCard href="/mentors" icon={<CompassIcon />} title="Find a Mentor" desc="Browse expert mentors for your team." />
+              <ActionCard href="/leaderboard" icon={<TrophyIcon />} title="Leaderboard" desc="See where you stand this season." />
+              <ActionCard href={`/profile/${profile.profile_slug}`} icon={<ProfileIcon />} title="Your Profile" desc="View your public builder profile." />
             </>
           )}
           {isAdmin && (
             <>
-              <ActionCard href="/blogs" icon="📝" title="Blogs" desc="Read and join the shared community feed." />
-              <ActionCard href="/admin/problems" icon="✅" title="Approve Problems" desc="Review and approve pending problem posts." />
-              <ActionCard href="/admin/judging" icon="⚖️" title="Judge Submissions" desc="Score submissions assigned to admin." />
-              <ActionCard href="/admin/analytics" icon="📊" title="Analytics" desc="Platform-wide stats and domain breakdown." />
+              <ActionCard href="/blogs" icon={<BlogIcon />} title="Blogs" desc="Read and join the shared community feed." />
+              <ActionCard href="/admin/problems" icon={<CheckIcon />} title="Approve Problems" desc="Review and approve pending problem posts." />
+              <ActionCard href="/admin/judging" icon={<ScaleIcon />} title="Judge Submissions" desc="Score submissions assigned to admin." />
+              <ActionCard href="/admin/analytics" icon={<ChartIcon />} title="Analytics" desc="Platform-wide stats and domain breakdown." />
             </>
           )}
         </div>
@@ -542,7 +545,7 @@ export default async function DashboardPage() {
 
 function ActionCard({ href, icon, title, desc }: {
   href: string
-  icon: string
+  icon: ReactNode
   title: string
   desc: string
 }) {
@@ -555,7 +558,7 @@ function ActionCard({ href, icon, title, desc }: {
       textDecoration: 'none',
       display: 'block',
     }}>
-      <div style={{ fontSize: 28, marginBottom: 12 }}>{icon}</div>
+      <div style={{ marginBottom: 12 }}>{icon}</div>
       <div style={{
         fontFamily: 'Sora, sans-serif',
         fontSize: 15,
@@ -570,4 +573,36 @@ function ActionCard({ href, icon, title, desc }: {
       </div>
     </Link>
   )
+}
+
+function BlogIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+}
+
+function SearchIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+}
+
+function CompassIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+}
+
+function TrophyIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#F4A723" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+}
+
+function ProfileIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+}
+
+function CheckIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+}
+
+function ScaleIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20v-4"/><path d="M6 20v-8"/><path d="M2 20h20"/><path d="M2 4l6 4 4-4 4 4 6-4"/></svg>
+}
+
+function ChartIcon({ size = 28 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
 }

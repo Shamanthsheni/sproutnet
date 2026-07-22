@@ -34,6 +34,7 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
   const [attachment, setAttachment] = useState<{ url: string; name: string; size: number; type: string } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const channelRef = useRef<any>(null)
 
   // Fetch initial messages & subscribe to changes
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
     loadMessages()
 
     // Realtime Postgres Changes + Typing Broadcast Channel
-    channel = supabase.channel(`chat:${conversationId}`)
+    const channelInstance = supabase.channel(`chat:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, async (payload) => {
         const newMsg = payload.new as Message
         // Fetch sender name
@@ -82,10 +83,26 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
           }, 3000)
         }
       })
-      .subscribe()
+      .on('broadcast', { event: 'reaction' }, (payload) => {
+        const { messageId, emoji, user_id, reacted } = payload.payload
+        setMessages(prev => prev.map(msg => {
+          if (msg.id !== messageId) return msg
+          const existing = msg.reactions || []
+          if (reacted) {
+            if (existing.some(r => r.emoji === emoji && r.user_id === user_id)) return msg
+            return { ...msg, reactions: [...existing, { id: '', emoji, user_id }] }
+          } else {
+            return { ...msg, reactions: existing.filter(r => !(r.emoji === emoji && r.user_id === user_id)) }
+          }
+        }))
+      })
+
+    channelRef.current = channelInstance
+    channelInstance.subscribe()
 
     return () => {
-      if (channel) supabase.removeChannel(channel)
+      if (channelInstance) supabase.removeChannel(channelInstance)
+      channelRef.current = null
     }
   }, [conversationId, currentUserId])
 
@@ -98,11 +115,13 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
   // Handle Typing indicator broadcast
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setInputText(e.target.value)
-    supabase.channel(`chat:${conversationId}`).send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { userId: currentUserId, userName: currentUserName }
-    })
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId: currentUserId, userName: currentUserName }
+      })
+    }
   }
 
   // Handle File Upload
@@ -171,14 +190,7 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
     setReplyTo(null)
   }
 
-  // Emoji Reaction
-  async function handleAddReaction(messageId: string, emoji: string) {
-    await supabase.from('message_reactions').insert({
-      message_id: messageId,
-      user_id: currentUserId,
-      emoji
-    })
-  }
+
 
   const filteredMessages = messages.filter(m => 
     !searchQuery || m.content.toLowerCase().includes(searchQuery.toLowerCase()) || m.sender_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -193,7 +205,7 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
         padding: '12px 18px', background: '#FAF8F4', borderBottom: '1px solid rgba(28,20,16,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
         <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 700, color: '#1C1410' }}>
-          💬 Realtime Team Chat
+          Realtime Chat
         </div>
         <input
           type="text"
@@ -244,14 +256,9 @@ export default function RealtimeChat({ conversationId, currentUserId, currentUse
                   )}
                 </div>
 
-                {/* Reactions */}
-                <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                  {['👍', '🔥', '💡', '✅'].map(emoji => (
-                    <button key={emoji} onClick={() => handleAddReaction(msg.id, emoji)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: 0.7 }}>
-                      {emoji}
-                    </button>
-                  ))}
-                  <button onClick={() => setReplyTo(msg)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9CA3A0', marginLeft: 6 }}>
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button onClick={() => setReplyTo(msg)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9CA3A0', padding: '2px 6px' }}>
                     Reply
                   </button>
                 </div>

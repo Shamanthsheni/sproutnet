@@ -17,12 +17,64 @@ export default async function MessagesPage() {
     .select('conversation_id, conversations(*, workspaces(team_id, teams(name)))')
     .eq('user_id', user.id)
 
-  const conversations = (memberRows || []).map((m: any) => ({
-    id: m.conversation_id,
-    type: m.conversations?.type,
-    name: m.conversations?.name || m.conversations?.workspaces?.teams?.name || 'General Channel',
-    teamName: m.conversations?.workspaces?.teams?.name || 'Workspace'
-  }))
+  const convIds = (memberRows || []).map(m => m.conversation_id)
+
+  // For DM conversations, fetch the other participant's name
+  const dmOtherNames = new Map<string, string>()
+  if (convIds.length > 0) {
+    const dmConvIds = (memberRows || [])
+      .filter(m => {
+        const c = m.conversations
+        const conv = (Array.isArray(c) ? c[0] : c) as Record<string, unknown> | null
+        return conv?.type === 'dm'
+      })
+      .map(m => m.conversation_id)
+
+    if (dmConvIds.length > 0) {
+      const { data: dmMembers } = await admin
+        .from('conversation_members')
+        .select('conversation_id, user_id')
+        .in('conversation_id', dmConvIds)
+        .neq('user_id', user.id)
+
+      const otherUserIds = dmMembers?.map(dm => dm.user_id) || []
+      if (otherUserIds.length > 0) {
+        const { data: otherUsers } = await admin
+          .from('users')
+          .select('id, name')
+          .in('id', otherUserIds)
+
+        const userMap = new Map((otherUsers || []).map(u => [u.id, u.name]))
+        for (const dm of dmMembers || []) {
+          dmOtherNames.set(dm.conversation_id, userMap.get(dm.user_id) || 'Unknown')
+        }
+      }
+    }
+  }
+
+  const conversations = (memberRows || [])
+    .filter((m: any) => {
+      const convRaw = m.conversations
+      const conv = (Array.isArray(convRaw) ? convRaw[0] : convRaw) as Record<string, unknown> | null
+      return conv?.type === 'dm'
+    })
+    .map((m: Record<string, unknown>) => {
+      const convRaw = m.conversations
+      const conv = (Array.isArray(convRaw) ? convRaw[0] : convRaw) as Record<string, unknown> | null
+      const convName = (conv?.name as string) || ''
+      const convType = conv?.type as string | undefined
+      const ws = conv?.workspaces as Record<string, unknown> | null
+      const team = ws?.teams as Record<string, unknown> | null
+      const teamName = (team?.name as string) || ''
+      const dmName = convName ? '' : (convType === 'dm' ? (dmOtherNames.get(m.conversation_id as string) || 'Direct Message') : '')
+      const resolvedName = convName || dmName || teamName || 'General Channel'
+      return {
+        id: m.conversation_id as string,
+        type: convType || '',
+        name: resolvedName,
+        teamName: teamName || 'Workspace'
+      }
+    })
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>

@@ -1,7 +1,7 @@
 // Run: npx tsx scripts/run-migration.ts <sql-file>
 import { config } from 'dotenv'
 import { resolve } from 'path'
-config({ path: resolve(import.meta.dirname!, '../.env') })
+config({ path: resolve(import.meta.dirname!, '../.env.local') })
 
 import { readFileSync } from 'fs'
 import pg from 'pg'

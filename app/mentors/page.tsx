@@ -56,16 +56,36 @@ export default async function MentorsDirectoryPage() {
     users: Array.isArray(m.users) ? (m.users[0] || null) : (m.users || null)
   }))
 
-  // Fetch pending connection requests for the current student
+  // Fetch pending & accepted connection requests for the current student
   let pendingMentorIds: string[] = []
+  let connectedMentorIds: string[] = []
   if (currentUser?.role === 'student') {
-    const { data: pendingReqs } = await admin
+    const { data: notifs } = await admin
       .from('notifications')
-      .select('user_id')
+      .select('user_id, metadata')
       .eq('event_type', 'MENTOR_CONNECT_REQUEST')
       .filter('metadata->>student_id', 'eq', currentUser.id)
-    if (pendingReqs) {
-      pendingMentorIds = pendingReqs.map((n: any) => n.user_id).filter(Boolean)
+
+    if (notifs) {
+      const accepted = notifs.filter((n: any) => n.metadata?.response === 'accepted').map((n: any) => n.user_id).filter(Boolean)
+      const pending = notifs.filter((n: any) => !n.metadata?.response).map((n: any) => n.user_id).filter(Boolean)
+      connectedMentorIds = accepted
+      pendingMentorIds = pending
+    }
+
+    // Also check for accepted notifications (from respond-connect)
+    if (connectedMentorIds.length === 0) {
+      const { data: acceptedNotifs } = await admin
+        .from('notifications')
+        .select('metadata')
+        .eq('event_type', 'MENTOR_ACCEPTED')
+        .eq('user_id', currentUser.id)
+      if (acceptedNotifs) {
+        for (const n of acceptedNotifs) {
+          const mid = (n as any).metadata?.mentor_id
+          if (mid) connectedMentorIds.push(mid)
+        }
+      }
     }
   }
 
@@ -115,6 +135,7 @@ export default async function MentorsDirectoryPage() {
         currentUser={currentUser}
         userTeams={userTeams}
         pendingMentorIds={pendingMentorIds}
+        connectedMentorIds={connectedMentorIds}
       />
     </div>
   )

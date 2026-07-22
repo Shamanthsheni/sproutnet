@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import RealtimeChat from '@/app/components/realtime-chat'
 
@@ -28,6 +28,11 @@ export default function TeamWorkspaceClient({
   const [mentorSubmitting, setMentorSubmitting] = useState(false)
   const [mentorError, setMentorError] = useState('')
   const [mentorSuccess, setMentorSuccess] = useState('')
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   function handleCopyInvite() {
     navigator.clipboard.writeText(team.invite_code)
@@ -218,7 +223,7 @@ export default function TeamWorkspaceClient({
                     <div key={log.id} style={{ fontSize: 12, color: '#4A3F38', borderBottom: '1px dashed rgba(28,20,16,0.08)', paddingBottom: 6 }}>
                       <div>{log.description}</div>
                       <div style={{ fontSize: 10, color: '#9CA3A0', marginTop: 2 }}>
-                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isMounted ? new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </div>
                     </div>
                   ))

@@ -254,15 +254,16 @@ export default function ProblemDetailPage() {
       [commentId]: newCount
     }))
 
-    // Async DB update
-    const supabase = createClient()
+    // Use API route with admin client
     try {
-      if (isCurrentlyLiked) {
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
-        await supabase.from('discussion_likes').delete().eq('discussion_id', commentId).eq('user_id', user.id)
-      } else {
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
-        await supabase.from('discussion_likes').insert({ discussion_id: commentId, user_id: user.id })
+      const res = await fetch('/api/discussion/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLikeCounts(prev => ({ ...prev, [commentId]: data.likes_count }))
       }
     } catch {
       // Ignore network errors, optimistic state remains smooth
@@ -325,13 +326,22 @@ export default function ProblemDetailPage() {
         }
       }
 
-      // Load comments
-      const { data: disc } = await supabase
-        .from('discussion')
-        .select('id, body, created_at, author_id, parent_id, users(name, role)')
-        .eq('problem_id', id)
-        .order('created_at', { ascending: true })
-      const loadedComments = (disc as unknown as Comment[]) ?? []
+      // Load comments via API
+      let loadedComments: Comment[] = []
+      try {
+        const discRes = await fetch(`/api/discussion?problem_id=${id}`)
+        if (discRes.ok) {
+          const discData = await discRes.json()
+          loadedComments = discData.comments ?? []
+        }
+      } catch {
+        const { data: disc } = await supabase
+          .from('discussion')
+          .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+          .eq('problem_id', id)
+          .order('created_at', { ascending: true })
+        loadedComments = (disc as unknown as Comment[]) ?? []
+      }
       setComments(loadedComments)
       
       const counts: Record<string, number> = {}
@@ -368,13 +378,25 @@ export default function ProblemDetailPage() {
   async function postComment() {
     if (!commentBody.trim() || !user) return
     setPosting(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('discussion')
-      .insert({ problem_id: id, author_id: user.id, body: commentBody.trim(), parent_id: null })
-      .select('id, body, created_at, author_id, parent_id, users(name, role)')
-      .single()
-    if (data) setComments(prev => [...prev, data as unknown as Comment])
+    try {
+      const res = await fetch('/api/discussion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_id: id,
+          body: commentBody.trim(),
+          parent_id: null,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.comment) {
+          setComments(prev => [...prev, data.comment as Comment])
+        }
+      }
+    } catch {
+      // ignore
+    }
     setCommentBody('')
     setPosting(false)
   }
@@ -382,15 +404,25 @@ export default function ProblemDetailPage() {
   async function postReply(parentId: string) {
     if (!replyBody.trim() || !user) return
     setPostingReply(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('discussion')
-      .insert({ problem_id: id, author_id: user.id, body: replyBody.trim(), parent_id: parentId })
-      .select('id, body, created_at, author_id, parent_id, users(name, role)')
-      .single()
-    if (data) {
-      setComments(prev => [...prev, data as unknown as Comment])
-      setExpandedReplies(prev => new Set(prev).add(parentId))
+    try {
+      const res = await fetch('/api/discussion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_id: id,
+          body: replyBody.trim(),
+          parent_id: parentId,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.comment) {
+          setComments(prev => [...prev, data.comment as Comment])
+          setExpandedReplies(prev => new Set(prev).add(parentId))
+        }
+      }
+    } catch {
+      // ignore
     }
     setReplyBody('')
     setReplyingToId(null)

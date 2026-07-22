@@ -429,26 +429,32 @@ export default function PostProblemForm({ posterName }: Props) {
             </Field>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            <Field label="Team Mode">
+          <div style={{ marginBottom: 12 }}>
+            <Field label="Participation Type">
               <select value={teamMode} onChange={e => setTeamMode(e.target.value)} style={inputStyle}>
-                <option value="solo">Solo Only</option>
+                <option value="solo">Individual Only</option>
                 <option value="team">Team Only</option>
-                <option value="both">Solo & Team Allowed</option>
+                <option value="both">Both Individual & Team</option>
               </select>
             </Field>
-
-            {(teamMode === 'team' || teamMode === 'both') && (
-              <>
-                <Field label="Min Team Size">
-                  <input type="number" min="1" max="10" value={minTeamSize} onChange={e => setMinTeamSize(e.target.value)} style={inputStyle} />
-                </Field>
-                <Field label="Max Team Size">
-                  <input type="number" min="1" max="10" value={maxTeamSize} onChange={e => setMaxTeamSize(e.target.value)} style={inputStyle} />
-                </Field>
-              </>
+            {teamMode !== 'solo' && (
+              <div style={{ fontSize: 12, color: '#7A7068', marginTop: 6, lineHeight: 1.5 }}>
+                For teams: The leader signs up first and receives a unique <strong>team invite code</strong>.
+                Other members join by entering this code. Team size can be 2-10 members.
+              </div>
             )}
           </div>
+
+          {(teamMode === 'team' || teamMode === 'both') && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+              <Field label="Min Team Size">
+                <input type="number" min="2" max="10" value={minTeamSize} onChange={e => setMinTeamSize(e.target.value)} style={inputStyle} />
+              </Field>
+              <Field label="Max Team Size">
+                <input type="number" min="2" max="10" value={maxTeamSize} onChange={e => setMaxTeamSize(e.target.value)} style={inputStyle} />
+              </Field>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410' }}>
