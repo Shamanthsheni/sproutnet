@@ -64,6 +64,19 @@ export default function LoginPage() {
                 Sign in to post a problem and review submissions.
               </div>
             </a>
+
+            <a href="/login/mentor" style={{
+              display: 'block', textDecoration: 'none',
+              border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '18px 20px',
+              background: '#FAF8F4'
+            }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410' }}>
+                I&apos;m a Mentor
+              </div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', marginTop: 6, fontWeight: 300 }}>
+                Sign in to guide student teams and review requests.
+              </div>
+            </a>
           </div>
 
           <div style={{ borderTop: '1px solid rgba(28,20,16,0.07)', margin: '24px 0' }} />
