@@ -1,0 +1,733 @@
+{
+  "phase": "Workspace Foundation — Phase 1",
+  "title": "Implement Workspace-First Architecture for SproutNet",
+  "objective": "Refactor the existing collaboration model so that Workspace becomes the central entity for all collaboration features instead of Team. The current codebase already has workspaces, teams, conversations, messages, mentor_assignments, activity_logs, notifications, and workspace_files tables via the v2 migration. Now we need to extend this foundation into a full Workspace-first architecture.",
+  "codebaseAnalysis": {
+    "alreadyImplemented": {
+      "databaseTables": [
+        "workspaces (linked 1:1 to teams via team_id, has JSONB settings)",
+        "teams (problem_id, leader_id, status, invite_code)",
+        "team_members (role: leader/member)",
+        "mentor_profiles (bio, skills, technologies, availability_status, max_active_teams)",
+        "mentor_requests (team_id, mentor_id, status: pending/accepted/rejected)",
+        "mentor_assignments (team_id, mentor_id, assigned_at)",
+        "team_invites (email-based invites)",
+        "team_join_requests",
+        "conversations (type: channel/dm/group_dm/announcement, workspace_id FK)",
+        "messages (parent_id for threading, is_pinned, is_edited)",
+        "conversation_members (last_read_message_id, last_read_at)",
+        "message_reactions (emoji reactions, unique per user+message+emoji)",
+        "message_attachments (file_url, file_name, file_size, file_type)",
+        "workspace_files (workspace_id, uploader_id, file_url, category)",
+        "notifications (event_type, title, body, link_url, metadata JSONB, is_read)",
+        "activity_logs (workspace_id, actor_id, action_type, description, metadata JSONB)",
+        "enrollments (student_id, problem_id, status: active/cancelled/completed/removed)",
+        "submissions",
+        "blog_posts, blog_comments, blog_post_likes",
+        "discussion, discussion_likes"
+      ],
+      "apiRoutes": [
+        "POST /api/auth/signout",
+        "POST /api/teams/create (creates team + workspace + general channel + activity log)",
+        "POST /api/teams/join (invite code, adds to workspace channel, notifies leader)",
+        "POST /api/teams/request-mentor (creates mentor_request, notifies mentor)",
+        "POST /api/mentors/profile (upserts mentor_profiles)",
+        "POST /api/mentors/request (accept/reject; creates mentor_assignment + adds mentor to workspace channel)",
+        "POST /api/problems/create, update, status, delete, thumbnail",
+        "POST /api/enrollments/create, cancel, remove, status",
+        "POST /api/submissions/progress-upload",
+        "POST /api/blogs/posts, comments, likes, images"
+      ],
+      "appPages": [
+        "/dashboard (student/admin dashboard with enrolled problems)",
+        "/teams/[id] (team workspace portal with members, mentors, activity, chat)",
+        "/messages (unified messaging with conversation sidebar + realtime chat)",
+        "/notifications (notification center with read-on-view)",
+        "/mentor/dashboard (assigned teams + pending requests + stats)",
+        "/mentor/profile (edit mentor profile and availability)",
+        "/problems, /problems/[id], /problems/[id]/submit",
+        "/poster/dashboard, /poster/problems, /poster/post-problem, /poster/solutions",
+        "/admin, /admin/problems, /admin/judging, /admin/analytics",
+        "/blogs, /blogs/new, /blogs/manage",
+        "/profile/[slug]",
+        "/leaderboard, /how-it-works, /about"
+      ],
+      "components": [
+        "RealtimeChat (full realtime chat with reactions, attachments, typing indicators, threaded replies, search)",
+        "MessagesWorkspaceClient (conversation sidebar + active chat view)",
+        "CancelEnrollmentButton"
+      ],
+      "patterns": [
+        "Server components: createClient() for auth + createAdminClient() for data (bypasses RLS)",
+        "Client components: createClient() from lib/supabase/client.ts for realtime subscriptions + direct queries",
+        "Inline styles throughout (no Tailwind classes)",
+        "Admin client used everywhere for simplicity (even non-admin operations)",
+        "proxy.ts middleware (NOT middleware.ts) for auth routing"
+      ]
+    },
+    "missingOrIncomplete": {
+      "workspaceModel": [
+        "Workspace has only team_id FK + settings JSONB — no name, description, status, or metadata fields",
+        "Workspace is passive; Team is still the visible entity",
+        "No workspace-level roles beyond leader/member on team_members",
+        "No workspace milestones table",
+        "No workspace progress tracking (progress is tied to submissions, not workspace)",
+        "No workspace announcements"
+      ],
+      "permissionsAndRoles": [
+        "Permissions are hardcoded role checks (leader vs member vs mentor vs admin)",
+        "No RBAC table or permission system",
+        "No co-leader role",
+        "team_members.role only has 'leader' and 'member'",
+        "Poster has no workspace access (read-only)"
+      ],
+      "apiEndpoints": [
+        "No leave team endpoint",
+        "No transfer leadership endpoint",
+        "No remove workspace member endpoint",
+        "No workspace update endpoint (name, description, status, etc.)",
+        "No channel CRUD endpoints",
+        "No milestones CRUD endpoints",
+        "No file management endpoints beyond workspace_files",
+        "No announcement endpoints",
+        "No mentor removal endpoint"
+      ],
+      "mentorTracking": [
+        "mentor_assignments only has team_id, mentor_id, assigned_at",
+        "Missing: assigned_by, ended_at, ended_reason, assignment_status (active/ended)"
+      ],
+      "security": [
+        "RLS policies are incomplete — many tables only have 1-2 sample policies",
+        "No policies on workspace_files, activity_logs, team_members, team_invites, team_join_requests",
+        "Admin client is used for ALL data access (even user-owned reads) bypassing RLS entirely",
+        "No rate limiting or spam prevention"
+      ],
+      "conversations": [
+        "No system conversation type in the CHECK constraint",
+        "No message_type field (text, image, file, system)",
+        "No edited_at or deleted_at on messages",
+        "No unread_count on conversation_members (only last_read_message_id)"
+      ],
+      "audit": [
+        "activity_logs exists but there's no platform-level audit_logs table for admin actions",
+        "No deletion tracking or soft deletes"
+      ]
+    }
+  },
+  "architecture": {
+    "current": {
+      "flow": "Problem → Enrollment → Team → Workspace (passive, minimal)",
+      "description": "Team is the primary entity visible to users. Workspace exists as a thin container with only settings JSONB."
+    },
+    "target": {
+      "flow": "Problem → Enrollment → Workspace (active, central entity)",
+      "description": "Workspace becomes the primary entity. Team is a metadata attribute of Workspace. Members belong to Workspace. Channels, files, milestones, progress, announcements, and activity all belong to Workspace."
+    },
+    "principles": [
+      "Preserve existing tables; do not drop or rename them",
+      "Extend via new columns and new tables only",
+      "All existing API routes must continue working unchanged",
+      "Existing pages must render with zero modifications",
+      "Add new API routes alongside existing ones — never modify existing route handlers",
+      "The admin client pattern is intentional; do not replace it with RLS-dependent patterns",
+      "Inline styles and existing font conventions must be maintained"
+    ]
+  },
+  "database": {
+    "strategy": "Extend existing tables with new columns. Add new tables where functionality is genuinely missing. Never drop or restructure existing columns.",
+    "existingTablesToExtend": {
+      "workspaces": {
+        "reason": "Workspace is currently a stub with only team_id + settings. Needs full metadata to become the central entity.",
+        "addColumns": [
+          "name TEXT NOT NULL DEFAULT ''",
+          "description TEXT",
+          "status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('draft', 'forming', 'active', 'submitted', 'completed', 'archived', 'disbanded'))",
+          "visibility TEXT NOT NULL DEFAULT 'team' CHECK (visibility IN ('team', 'public'))",
+          "max_members INT NOT NULL DEFAULT 4",
+          "max_mentors INT NOT NULL DEFAULT 3",
+          "created_by UUID REFERENCES public.users(id) ON DELETE SET NULL",
+          "last_activity_at TIMESTAMPTZ DEFAULT NOW()"
+        ],
+        "backfillNote": "Existing workspaces get default values on migration; all current workspaces remain functional."
+      },
+      "team_members": {
+        "reason": "Needs co-leader role and workspace-level access for posters/mentors",
+        "modifyRoleCheck": "Expand role CHECK to IN ('leader', 'co_leader', 'member', 'mentor', 'poster')",
+        "addColumns": [
+          "workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE",
+          "display_name TEXT" 
+        ]
+      },
+      "mentor_assignments": {
+        "reason": "Needs tracking metadata for historical audit",
+        "addColumns": [
+          "assigned_by UUID REFERENCES public.users(id) ON DELETE SET NULL",
+          "assignment_status TEXT NOT NULL DEFAULT 'active' CHECK (assignment_status IN ('active', 'ended'))",
+          "ended_at TIMESTAMPTZ",
+          "ended_reason TEXT"
+        ]
+      },
+      "messages": {
+        "reason": "Needs richer message typing and soft delete for moderation",
+        "addColumns": [
+          "message_type TEXT NOT NULL DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'system', 'announcement'))",
+          "edited_at TIMESTAMPTZ",
+          "deleted_at TIMESTAMPTZ",
+          "metadata JSONB NOT NULL DEFAULT '{}'::jsonb"
+        ]
+      },
+      "conversation_members": {
+        "reason": "Unread count needs O(1) access for badge display",
+        "addColumns": [
+          "unread_count INT NOT NULL DEFAULT 0",
+          "notifications_enabled BOOLEAN NOT NULL DEFAULT true"
+        ]
+      },
+      "conversations": {
+        "reason": "System channel type needed for automated messages",
+        "modifyTypeCheck": "Expand type CHECK to IN ('channel', 'dm', 'group_dm', 'announcement', 'system')"
+      },
+      "team_invites": {
+        "reason": "Invites should reference workspace for consistency",
+        "addColumns": [
+          "workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE"
+        ]
+      },
+      "team_join_requests": {
+        "reason": "Join requests should reference workspace for consistency",
+        "addColumns": [
+          "workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE"
+        ]
+      }
+    },
+    "newTables": {
+      "workspace_milestones": {
+        "reason": "Workspace needs its own milestone tracking independent of problem-level milestones. Problem milestones define requirements; workspace milestones track actual progress.",
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE",
+          "title TEXT NOT NULL",
+          "description TEXT",
+          "status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'skipped'))",
+          "due_date TIMESTAMPTZ",
+          "completed_by UUID REFERENCES public.users(id) ON DELETE SET NULL",
+          "completed_at TIMESTAMPTZ",
+          "created_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE",
+          "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+          "updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "indexes": [
+          "idx_workspace_milestones_workspace ON public.workspace_milestones(workspace_id)",
+          "idx_workspace_milestones_status ON public.workspace_milestones(status)"
+        ]
+      },
+      "workspace_announcements": {
+        "reason": "Structured announcements with expiration and pinning support, separate from chat messages.",
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE",
+          "author_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE",
+          "title TEXT NOT NULL",
+          "content TEXT NOT NULL",
+          "announcement_type TEXT NOT NULL DEFAULT 'general' CHECK (announcement_type IN ('general', 'poster', 'system', 'deadline'))",
+          "is_pinned BOOLEAN NOT NULL DEFAULT false",
+          "expires_at TIMESTAMPTZ",
+          "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+          "updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "indexes": [
+          "idx_workspace_announcements_workspace ON public.workspace_announcements(workspace_id, created_at DESC)",
+          "idx_workspace_announcements_pinned ON public.workspace_announcements(workspace_id) WHERE is_pinned = true"
+        ]
+      },
+      "workspace_progress": {
+        "reason": "Tracks overall workspace progress percentage and current stage. Derivable from milestones but cached for O(1) reads.",
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "workspace_id UUID NOT NULL UNIQUE REFERENCES public.workspaces(id) ON DELETE CASCADE",
+          "progress_percentage INT NOT NULL DEFAULT 0",
+          "current_stage TEXT NOT NULL DEFAULT 'ideation'",
+          "last_submission_at TIMESTAMPTZ",
+          "reviewer_feedback TEXT",
+          "poster_feedback TEXT",
+          "updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "note": "This table is updated by triggers on workspace_milestones and submissions for the workspace's team"
+      },
+      "audit_logs": {
+        "reason": "Platform-level admin audit trail separate from user-facing activity_logs. Used for moderation, debugging, and compliance.",
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "actor_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE",
+          "action_type TEXT NOT NULL",
+          "entity_type TEXT NOT NULL",
+          "entity_id UUID",
+          "description TEXT NOT NULL",
+          "metadata JSONB NOT NULL DEFAULT '{}'::jsonb",
+          "ip_address TEXT",
+          "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "indexes": [
+          "idx_audit_logs_actor ON public.audit_logs(actor_id, created_at DESC)",
+          "idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id)",
+          "idx_audit_logs_created ON public.audit_logs(created_at DESC)"
+        ]
+      },
+      "workspace_invites": {
+        "reason": "Clean invite model scoped to workspace rather than team. Replaces direct use of team_invites for workspace flows.",
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE",
+          "invited_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE",
+          "email TEXT NOT NULL",
+          "role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'co_leader'))",
+          "status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'expired'))",
+          "expires_at TIMESTAMPTZ",
+          "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "indexes": [
+          "idx_workspace_invites_workspace ON public.workspace_invites(workspace_id)",
+          "idx_workspace_invites_email ON public.workspace_invites(email)"
+        ]
+      }
+    },
+    "newIndexes": [
+      "idx_workspace_members_workspace ON public.team_members(workspace_id) WHERE workspace_id IS NOT NULL",
+      "idx_workspace_members_user ON public.team_members(user_id, workspace_id) WHERE workspace_id IS NOT NULL",
+      "idx_team_members_workspace_role ON public.team_members(workspace_id, role)",
+      "idx_notifications_user_created ON public.notifications(user_id, created_at DESC)",
+      "idx_workspace_files_category ON public.workspace_files(workspace_id, category)",
+      "idx_activity_logs_workspace_created ON public.activity_logs(workspace_id, created_at DESC)",
+      "idx_messages_conversation_deleted ON public.messages(conversation_id, created_at DESC) WHERE deleted_at IS NULL"
+    ],
+    "rlsPolicies": {
+      "strategy": "Add comprehensive RLS policies that mirror the existing admin-client pattern as a fallback. Primary access control continues in application code (admin client). RLS is defense-in-depth, not the primary auth layer.",
+      "requiredPolicies": [
+        "workspaces: SELECT if member/mentor/admin of linked team or user is admin",
+        "workspaces: UPDATE if leader of linked team or admin",
+        "workspace_milestones: SELECT if workspace member, INSERT/UPDATE if leader/co_leader/mentor",
+        "workspace_announcements: SELECT if workspace member, INSERT if leader/co_leader/poster/admin",
+        "workspace_progress: SELECT if workspace member, UPDATE if leader/mentor/poster",
+        "workspace_files: SELECT if workspace member, INSERT/DELETE if workspace member (own uploads) or leader",
+        "workspace_invites: SELECT/INSERT if workspace leader/co_leader, UPDATE if invited email user"
+      ]
+    }
+  },
+  "apiEndpoints": {
+    "strategy": "Add new endpoints under /api/workspaces/. Do not modify existing endpoints in /api/teams/.",
+    "newEndpoints": [
+      {
+        "method": "GET",
+        "path": "/api/workspaces",
+        "handler": "List workspaces for the current user (as member, leader, mentor, or poster)",
+        "auth": "Authenticated"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]",
+        "handler": "Get workspace details including members, mentors, progress, recent activity",
+        "auth": "Workspace member or mentor"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspaces/[id]",
+        "handler": "Update workspace name, description, status, visibility, max_members, max_mentors",
+        "auth": "Workspace leader or admin"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]",
+        "handler": "Disband/archive workspace (soft delete, sets status to disbanded)",
+        "auth": "Workspace leader or admin"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/members",
+        "handler": "List workspace members with roles",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspaces/[id]/members/[userId]/role",
+        "handler": "Change member role (leader can promote to co_leader, demote, etc.)",
+        "auth": "Workspace leader"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]/members/[userId]",
+        "handler": "Remove member from workspace",
+        "auth": "Workspace leader or self"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/leave",
+        "handler": "Current user leaves workspace (fails if leader — must transfer first)",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/transfer",
+        "handler": "Transfer workspace leadership to another member",
+        "auth": "Workspace leader"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/milestones",
+        "handler": "List milestone",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/milestones",
+        "handler": "Create milestone",
+        "auth": "Workspace leader or co_leader"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/workspaces/[id]/milestones/[milestoneId]",
+        "handler": "Update milestone (title, description, status, due_date)",
+        "auth": "Workspace leader, co_leader, or mentor"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]/milestones/[milestoneId]",
+        "handler": "Delete milestone",
+        "auth": "Workspace leader or co_leader"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/announcements",
+        "handler": "List active announcements",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/announcements",
+        "handler": "Post announcement",
+        "auth": "Workspace leader, poster, or admin"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]/announcements/[announcementId]",
+        "handler": "Delete or expire announcement",
+        "auth": "Author or workspace leader"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/progress",
+        "handler": "Get workspace progress",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "PUT",
+        "path": "/api/workspaces/[id]/progress",
+        "handler": "Update workspace progress (current_stage, reviewer_feedback, poster_feedback)",
+        "auth": "Mentor or poster"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/activity",
+        "handler": "Get paginated activity log for workspace",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/files",
+        "handler": "List workspace files with pagination and category filter",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/invites",
+        "handler": "Create workspace invite (generates code or sends email)",
+        "auth": "Workspace leader or co_leader"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/invites/accept",
+        "handler": "Accept workspace invite by code",
+        "auth": "Authenticated student"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/mentors",
+        "handler": "Assign mentor to workspace (wraps mentor_assignments + adds to channels)",
+        "auth": "Workspace leader"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]/mentors/[mentorId]",
+        "handler": "Remove mentor from workspace",
+        "auth": "Workspace leader or admin"
+      },
+      {
+        "method": "GET",
+        "path": "/api/workspaces/[id]/channels",
+        "handler": "List workspace conversations/channels",
+        "auth": "Workspace member"
+      },
+      {
+        "method": "POST",
+        "path": "/api/workspaces/[id]/channels",
+        "handler": "Create new channel in workspace",
+        "auth": "Workspace leader or co_leader"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/workspaces/[id]/channels/[channelId]",
+        "handler": "Delete/archive a channel (cannot delete general channel)",
+        "auth": "Workspace leader"
+      }
+    ]
+  },
+  "permissions": {
+    "strategy": "Implement a role-permission lookup table that future features can extend without code changes. Keep the existing hardcoded checks as a fallback.",
+    "tables": [
+      {
+        "name": "workspace_roles",
+        "existing": false,
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "name TEXT NOT NULL UNIQUE CHECK (name IN ('leader', 'co_leader', 'member', 'mentor', 'poster', 'admin'))",
+          "description TEXT",
+          "is_system BOOLEAN NOT NULL DEFAULT false",
+          "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+        ],
+        "reason": "Central role registry for extensibility"
+      },
+      {
+        "name": "workspace_role_permissions",
+        "existing": false,
+        "columns": [
+          "id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+          "role_id UUID NOT NULL REFERENCES public.workspace_roles(id) ON DELETE CASCADE",
+          "permission TEXT NOT NULL",
+          "UNIQUE(role_id, permission)"
+        ],
+        "reason": "Maps roles to granular permissions without hardcoding"
+      }
+    ],
+    "defaultPermissions": {
+      "leader": [
+        "workspace.read", "workspace.update", "workspace.delete",
+        "workspace.invite", "workspace.remove_member", "workspace.manage_roles",
+        "workspace.create_channel", "workspace.delete_channel",
+        "workspace.upload_file", "workspace.delete_file",
+        "workspace.create_milestone", "workspace.update_milestone", "workspace.delete_milestone",
+        "workspace.post_announcement", "workspace.delete_announcement",
+        "workspace.assign_mentor", "workspace.remove_mentor",
+        "workspace.manage_settings", "workspace.transfer_leadership"
+      ],
+      "co_leader": [
+        "workspace.read", "workspace.update",
+        "workspace.invite", "workspace.remove_member",
+        "workspace.create_channel",
+        "workspace.upload_file", "workspace.delete_file",
+        "workspace.create_milestone", "workspace.update_milestone", "workspace.delete_milestone",
+        "workspace.post_announcement",
+        "workspace.manage_settings"
+      ],
+      "member": [
+        "workspace.read",
+        "workspace.upload_file",
+        "workspace.read_milestones", "workspace.update_milestone"
+      ],
+      "mentor": [
+        "workspace.read",
+        "workspace.upload_file",
+        "workspace.read_milestones", "workspace.update_milestone",
+        "workspace.manage_progress",
+        "workspace.manage_mentor_notes"
+      ],
+      "poster": [
+        "workspace.read",
+        "workspace.read_milestones",
+        "workspace.manage_progress",
+        "workspace.post_announcement"
+      ],
+      "admin": ["*"]
+    },
+    "checkFunction": {
+      "name": "check_workspace_permission",
+      "type": "PL/pgSQL function",
+      "signature": "check_workspace_permission(p_user_id UUID, p_workspace_id UUID, p_permission TEXT) RETURNS BOOLEAN",
+      "note": "Optional; can also be implemented in application code via a helper function"
+    }
+  },
+  "folderStructure": {
+    "existing": "Do not restructure existing folders. Only add new ones.",
+    "newFolders": [
+      {
+        "path": "app/api/workspaces/",
+        "files": [
+          "route.ts (GET - list workspaces)",
+          "[id]/route.ts (GET, PATCH, DELETE - single workspace)",
+          "[id]/members/route.ts (GET - list members)",
+          "[id]/members/[userId]/route.ts (PATCH - change role, DELETE - remove)",
+          "[id]/leave/route.ts (POST)",
+          "[id]/transfer/route.ts (POST)",
+          "[id]/milestones/route.ts (GET, POST)",
+          "[id]/milestones/[milestoneId]/route.ts (PATCH, DELETE)",
+          "[id]/announcements/route.ts (GET, POST)",
+          "[id]/announcements/[announcementId]/route.ts (DELETE)",
+          "[id]/progress/route.ts (GET, PUT)",
+          "[id]/activity/route.ts (GET)",
+          "[id]/files/route.ts (GET)",
+          "[id]/invites/route.ts (POST)",
+          "invites/accept/route.ts (POST)",
+          "[id]/mentors/route.ts (POST)",
+          "[id]/mentors/[mentorId]/route.ts (DELETE)",
+          "[id]/channels/route.ts (GET, POST)",
+          "[id]/channels/[channelId]/route.ts (DELETE)"
+        ]
+      },
+      {
+        "path": "lib/workspace/",
+        "files": [
+          "index.ts (re-export all helpers)",
+          "permissions.ts (checkWorkspacePermission, getWorkspaceRole)",
+          "activity.ts (logWorkspaceActivity helper)",
+          "members.ts (addMember, removeMember, changeRole helpers)",
+          "progress.ts (calculateProgress, updateProgress helpers)",
+          "notifications.ts (sendWorkspaceNotification helper)"
+        ]
+      },
+      {
+        "path": "app/workspaces/",
+        "note": "Future UI pages — not needed in Phase 1 architecture phase"
+      }
+    ]
+  },
+  "addedValuesToExistingPages": {
+    "teams/[id]/page.tsx": {
+      "changes": "Minimal. Add a redirect or wrapper that fetches workspace data and passes it to a new WorkspaceClient component (extracted from TeamWorkspaceClient). The workspace becomes the primary data source.",
+      "preserve": "All existing props and rendering must continue to work"
+    },
+    "dashboard/page.tsx": {
+      "changes": "Add workspace cards next to enrolled problems. Show active workspaces with progress percentage, member count, and last activity.",
+      "preserve": "Existing enrolled problems list must remain unchanged"
+    }
+  },
+  "implementationOrder": [
+    {
+      "step": 1,
+      "name": "Database migration — extend existing tables",
+      "description": "Create a new migration file that ALTERs existing tables (workspaces, team_members, mentor_assignments, messages, conversation_members, conversations) adding new columns with DEFAULT values so existing rows are unaffected.",
+      "files": ["supabase/migrations/20260723_workspace_foundation.sql"]
+    },
+    {
+      "step": 2,
+      "name": "Database migration — new tables",
+      "description": "Add workspace_milestones, workspace_announcements, workspace_progress, audit_logs, workspace_invites, workspace_roles, workspace_role_permissions tables.",
+      "files": ["supabase/migrations/20260723_workspace_foundation.sql"]
+    },
+    {
+      "step": 3,
+      "name": "Database migration — indexes and RLS",
+      "description": "Add all new indexes and comprehensive RLS policies.",
+      "files": ["supabase/migrations/20260723_workspace_foundation.sql"]
+    },
+    {
+      "step": 4,
+      "name": "Lib helpers — permissions, activity, members, progress, notifications",
+      "description": "Create lib/workspace/ folder with modular helper functions. These encapsulate the permission checking logic and workspace operations.",
+      "files": [
+        "lib/workspace/index.ts",
+        "lib/workspace/permissions.ts",
+        "lib/workspace/activity.ts",
+        "lib/workspace/members.ts",
+        "lib/workspace/progress.ts",
+        "lib/workspace/notifications.ts"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "API routes — workspace CRUD + members",
+      "description": "Implement workspaces list, get, update, delete, member management, and leave/transfer endpoints.",
+      "files": [
+        "app/api/workspaces/route.ts",
+        "app/api/workspaces/[id]/route.ts",
+        "app/api/workspaces/[id]/members/route.ts",
+        "app/api/workspaces/[id]/members/[userId]/route.ts",
+        "app/api/workspaces/[id]/leave/route.ts",
+        "app/api/workspaces/[id]/transfer/route.ts"
+      ]
+    },
+    {
+      "step": 6,
+      "name": "API routes — milestones, announcements, progress, activity, files, invites, mentors, channels",
+      "description": "Implement remaining workspace feature endpoints.",
+      "files": [
+        "app/api/workspaces/[id]/milestones/route.ts",
+        "app/api/workspaces/[id]/milestones/[milestoneId]/route.ts",
+        "app/api/workspaces/[id]/announcements/route.ts",
+        "app/api/workspaces/[id]/announcements/[announcementId]/route.ts",
+        "app/api/workspaces/[id]/progress/route.ts",
+        "app/api/workspaces/[id]/activity/route.ts",
+        "app/api/workspaces/[id]/files/route.ts",
+        "app/api/workspaces/[id]/invites/route.ts",
+        "app/api/workspaces/invites/accept/route.ts",
+        "app/api/workspaces/[id]/mentors/route.ts",
+        "app/api/workspaces/[id]/mentors/[mentorId]/route.ts",
+        "app/api/workspaces/[id]/channels/route.ts",
+        "app/api/workspaces/[id]/channels/[channelId]/route.ts"
+      ]
+    },
+    {
+      "step": 7,
+      "name": "Integrate with existing pages",
+      "description": "Update dashboard to show workspaces, update teams/[id] to use workspace as primary entity, add workspace data to existing flows.",
+      "files": [
+        "app/dashboard/page.tsx (add workspace cards)",
+        "app/teams/[id]/page.tsx (enhance workspace data)",
+        "app/teams/[id]/team-workspace-client.tsx (enhance with workspace features)"
+      ]
+    },
+    {
+      "step": 8,
+      "name": "Update proxy.ts middleware",
+      "description": "Add workspace routes to public/protected route lists if needed. Add mentor workspace access routes.",
+      "files": ["proxy.ts"]
+    }
+  ],
+  "whatNotToDo": [
+    "Do NOT modify any existing API route handlers in app/api/teams/, app/api/enrollments/, app/api/problems/, app/api/submissions/, app/api/blogs/, app/api/mentors/",
+    "Do NOT drop or rename any existing database columns or tables",
+    "Do NOT change the existing authentication flow",
+    "Do NOT replace the admin client pattern — it is intentional for this project",
+    "Do NOT add Tailwind utility classes — use inline styles matching existing conventions",
+    "Do NOT implement UI in this phase unless it is minimal wiring (the prompt is architecture-only)",
+    "Do NOT create a messaging system redesign — conversations and realtime chat are already implemented"
+  ],
+  "futureCompatibility": {
+    "designPrinciple": "Every decision must enable forward-compatibility with:",
+    "futureModules": [
+      "Kanban board (workspace has milestones with status → natural Kanban)",
+      "Calendar (workspace milestones have due_date → calendar events)",
+      "AI Mentor (workspace activity + milestones + progress → AI context)",
+      "Video meetings (workspace channels can hold meeting links, WebRTC room IDs)",
+      "Shared documents (workspace files + rich content → collaborative docs)",
+      "Wiki (workspace announcements with markdown + pinned → wiki pages)",
+      "Task management (workspace milestones granular → tasks with assignees)",
+      "Issue tracking (workspace activity + messages → issue system)",
+      "GitHub integration (workspace metadata stores repo URL, webhook events)",
+      "Meeting notes (workspace-progress.reviewer_feedback + poster_feedback → structured notes)"
+    ]
+  },
+  "verification": [
+    "Existing npm run dev must start without errors",
+    "Existing npm run build must complete without errors",
+    "Existing npm run lint must pass",
+    "All existing API routes must return their original responses unchanged",
+    "New API routes must be testable via curl/Postman",
+    "The v2 migration SQL must run without errors against a fresh Supabase instance"
+  ],
+  "deliverables": [
+    "1. Database migration SQL file (extends existing schema, never breaks it)",
+    "2. lib/workspace/ helper modules (permissions, activity, members, progress, notifications)",
+    "3. 20+ new API endpoints under /api/workspaces/",
+    "4. Updated dashboard and workspace pages (minimal UI wiring)",
+    "5. Comprehensive RLS policies",
+    "6. Permission tables with role-permission mapping"
+  ]
+}
