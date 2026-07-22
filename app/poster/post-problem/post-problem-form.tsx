@@ -52,6 +52,12 @@ export default function PostProblemForm({ posterName }: Props) {
   const [thumbnailPreview, setThumbnailPreview] = useState('')
   const [thumbnailInputKey, setThumbnailInputKey] = useState(0)
 
+  const [teamMode, setTeamMode] = useState('solo')
+  const [minTeamSize, setMinTeamSize] = useState('1')
+  const [maxTeamSize, setMaxTeamSize] = useState('4')
+  const [mentorRequired, setMentorRequired] = useState(false)
+  const [maxMentorsPerTeam, setMaxMentorsPerTeam] = useState('1')
+
   async function handleThumbnailChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) {
@@ -154,6 +160,11 @@ export default function PostProblemForm({ posterName }: Props) {
       scope: scope.trim(),
       constraints: constraints.trim(),
       deliverables: deliverables.trim(),
+      team_mode: teamMode,
+      min_team_size: Number(minTeamSize) || 1,
+      max_team_size: Number(maxTeamSize) || 4,
+      mentor_required: mentorRequired,
+      max_mentors_per_team: Number(maxMentorsPerTeam) || 1,
     }
 
     const res = await fetch('/api/problems/create', {
@@ -416,6 +427,40 @@ export default function PostProblemForm({ posterName }: Props) {
                 {PROBLEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </Field>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <Field label="Team Mode">
+              <select value={teamMode} onChange={e => setTeamMode(e.target.value)} style={inputStyle}>
+                <option value="solo">Solo Only</option>
+                <option value="team">Team Only</option>
+                <option value="both">Solo & Team Allowed</option>
+              </select>
+            </Field>
+
+            {(teamMode === 'team' || teamMode === 'both') && (
+              <>
+                <Field label="Min Team Size">
+                  <input type="number" min="1" max="10" value={minTeamSize} onChange={e => setMinTeamSize(e.target.value)} style={inputStyle} />
+                </Field>
+                <Field label="Max Team Size">
+                  <input type="number" min="1" max="10" value={maxTeamSize} onChange={e => setMaxTeamSize(e.target.value)} style={inputStyle} />
+                </Field>
+              </>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: '#1C1410' }}>
+              <input type="checkbox" checked={mentorRequired} onChange={e => setMentorRequired(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#2D6A4F' }} />
+              Require Mentor Guidance for this Problem
+            </label>
+
+            {mentorRequired && (
+              <Field label="Max Mentors Per Team">
+                <input type="number" min="1" max="3" value={maxMentorsPerTeam} onChange={e => setMaxMentorsPerTeam(e.target.value)} style={inputStyle} />
+              </Field>
+            )}
           </div>
 
           {problemType === 'industry_challenge' && (
