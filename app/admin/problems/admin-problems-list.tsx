@@ -3,6 +3,21 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 
+async function evaluateProblem(problemId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch('/api/problems/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem_id: problemId }),
+    })
+    if (res.ok) return { ok: true }
+    const data = await res.json().catch(() => ({}))
+    return { ok: false, error: data.error ?? `Request failed (${res.status})` }
+  } catch {
+    return { ok: false, error: 'Network error' }
+  }
+}
+
 export type AdminProblemRow = {
   id: string
   title: string
@@ -21,11 +36,14 @@ export type AdminProblemRow = {
 export default function AdminProblemsList({ problems, loadError }: { problems: AdminProblemRow[]; loadError?: string | null }) {
   const [items, setItems] = useState(problems)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [evalBusyId, setEvalBusyId] = useState<string | null>(null)
 
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'open'>('all')
   const [domainFilter, setDomainFilter] = useState('All')
   const [typeFilter, setTypeFilter] = useState<'all' | 'public_impact' | 'industry_challenge'>('all')
+  const [seeding, setSeeding] = useState(false)
+  const [seedResult, setSeedResult] = useState<string | null>(null)
 
   const domains = useMemo(() => {
     const set = new Set(items.map(p => p.domain).filter(Boolean))
@@ -186,8 +204,46 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
             <option value="industry_challenge">Industry Challenge</option>
           </select>
         </div>
-        <div style={{ marginTop: 10, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
-          Showing {filtered.length} of {items.length}
+        <div style={{ marginTop: 10, fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <span>Showing {filtered.length} of {items.length}</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {seedResult && (
+              <span style={{ fontSize: 11, color: seedResult.includes('error') ? '#F87171' : '#34D399' }}>
+                {seedResult}
+              </span>
+            )}
+            <button
+              type="button"
+              disabled={seeding}
+              onClick={async () => {
+                setSeeding(true)
+                setSeedResult(null)
+                try {
+                  const res = await fetch('/api/problems/seed-test', { method: 'POST' })
+                  const data = await res.json()
+                  if (data.ok) {
+                    const ok = data.results.filter((r: any) => r.success).length
+                    const fail = data.results.filter((r: any) => !r.success).length
+                    setSeedResult(`Seeded ${ok} problem${ok !== 1 ? 's' : ''}${fail ? `, ${fail} failed` : ''}`)
+                    window.location.reload()
+                  } else {
+                    setSeedResult(`error: ${data.error ?? 'seed failed'}`)
+                  }
+                } catch {
+                  setSeedResult('error: network failure')
+                }
+                setSeeding(false)
+              }}
+              style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 600,
+                color: '#1C1410', background: '#F4A723', border: 'none', borderRadius: 6,
+                padding: '6px 14px', cursor: seeding ? 'not-allowed' : 'pointer',
+                opacity: seeding ? 0.6 : 1,
+              }}
+            >
+              {seeding ? 'Seeding...' : 'Seed Test Data'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -299,6 +355,28 @@ export default function AdminProblemsList({ problems, loadError }: { problems: A
                       className={`admin-btn ${isOpen ? 'admin-btn--warning' : 'admin-btn--primary'}`}
                     >
                       {isOpen ? 'Hold' : 'Publish'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={evalBusyId === problem.id}
+                      onClick={async () => {
+                        setEvalBusyId(problem.id)
+                        const result = await evaluateProblem(problem.id)
+                        if (result.ok) {
+                          window.location.reload()
+                        } else {
+                          alert(result.error ?? 'Re-evaluation failed')
+                        }
+                        setEvalBusyId(null)
+                      }}
+                      style={{
+                        fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 600,
+                        color: '#2D6A4F', background: '#EAF4EE', border: '1px solid rgba(45,106,79,0.2)',
+                        borderRadius: 6, padding: '4px 10px', cursor: evalBusyId === problem.id ? 'not-allowed' : 'pointer',
+                        opacity: evalBusyId === problem.id ? 0.6 : 1,
+                      }}
+                    >
+                      {evalBusyId === problem.id ? '...' : 'Re-evaluate'}
                     </button>
                     <button
                       type="button"
