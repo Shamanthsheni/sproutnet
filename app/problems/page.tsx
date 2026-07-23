@@ -71,7 +71,7 @@ export default async function ProblemsPage({
 
   try {
     const initialResult = await buildProblemsQuery(
-      'id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context'
+      'id, title, domain, problem_type, status, thumbnail_url, reward_amount, milestones, deadline, submission_count, context, difficulty_label, difficulty_score, impact_score, estimated_hours'
     )
 
     error = initialResult.error
@@ -81,7 +81,7 @@ export default async function ProblemsPage({
 
     if (error && isMissingProblemThumbnailColumnError(error.message)) {
       const fallback = await buildProblemsQuery(
-        'id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason'
+        'id, title, domain, problem_type, status, reward_amount, milestones, deadline, submission_count, context, rejected_reason, difficulty_label, difficulty_score, impact_score, estimated_hours'
       )
       error = fallback.error
       if (!error) {

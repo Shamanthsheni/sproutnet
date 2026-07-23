@@ -33,6 +33,12 @@ type Problem = {
   min_team_size?: number
   max_team_size?: number
   mentor_required?: boolean
+  difficulty_label?: string | null
+  difficulty_score?: number | null
+  impact_score?: number | null
+  estimated_hours?: number | null
+  estimated_weeks?: number | null
+  leaderboard_weight?: number | null
 }
 
 type Comment = {
@@ -1456,6 +1462,102 @@ export default function ProblemDetailPage() {
               </div>
             ))}
           </div>
+
+          {/* AI Evaluation Card */}
+          {problem.difficulty_label && (
+            <div style={{
+              background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
+              borderRadius: 14, padding: '24px', marginBottom: 20
+            }}>
+              <div style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                color: '#9CA3A0', letterSpacing: '0.1em',
+                textTransform: 'uppercase', marginBottom: 14
+              }}>
+                {'// ai evaluation'}
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <div style={{
+                  flex: 1, minWidth: 100, padding: 12, borderRadius: 10,
+                  background: problem.difficulty_label === 'Beginner' ? '#EAF4EE' :
+                    problem.difficulty_label === 'Intermediate' ? '#FFF8E7' :
+                    problem.difficulty_label === 'Advanced' ? '#FFF0F0' : '#F3E8FF',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600,
+                    color: problem.difficulty_label === 'Beginner' ? '#2D6A4F' :
+                      problem.difficulty_label === 'Intermediate' ? '#B8860B' :
+                      problem.difficulty_label === 'Advanced' ? '#C53030' : '#7C3AED',
+                    marginBottom: 4
+                  }}>
+                    {problem.difficulty_label}
+                  </div>
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                    color: '#4A3F38'
+                  }}>
+                    {problem.difficulty_score?.toFixed(1)} / 10
+                  </div>
+                </div>
+
+                <div style={{
+                  flex: 1, minWidth: 100, padding: 12, borderRadius: 10,
+                  background: '#F5F2EC', textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600,
+                    color: '#4A3F38', marginBottom: 4
+                  }}>
+                    Impact
+                  </div>
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                    color: '#4A3F38'
+                  }}>
+                    {problem.impact_score?.toFixed(1)} / 10
+                  </div>
+                </div>
+
+                {problem.estimated_hours && (
+                  <div style={{
+                    flex: 1, minWidth: 100, padding: 12, borderRadius: 10,
+                    background: '#F5F2EC', textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontFamily: 'Sora, sans-serif', fontSize: 12, fontWeight: 600,
+                      color: '#4A3F38', marginBottom: 4
+                    }}>
+                      Effort
+                    </div>
+                    <div style={{
+                      fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                      color: '#4A3F38'
+                    }}>
+                      ~{problem.estimated_hours}h
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {problem.leaderboard_weight && problem.leaderboard_weight > 1 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0',
+                  borderTop: '1px solid rgba(28,20,16,0.06)',
+                  fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#4A3F38'
+                }}>
+                  <span style={{ fontWeight: 600 }}>Leaderboard weight:</span>
+                  <span style={{
+                    fontFamily: 'JetBrains Mono, monospace', fontWeight: 600,
+                    color: '#2D6A4F'
+                  }}>
+                    ×{problem.leaderboard_weight}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 7-field framework reminder */}
           <div style={{

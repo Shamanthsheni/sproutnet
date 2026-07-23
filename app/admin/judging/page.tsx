@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { JudgeForm } from './judge-form'
 
 type SubmissionRow = {
   id: string
@@ -189,10 +190,11 @@ export default async function AdminJudgingPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Link href={`/problems/${sub.problem_id}`} className="admin-btn admin-linkbtn">
-                      View problem
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <Link href={`/problems/${sub.problem_id}`} className="admin-btn admin-linkbtn" style={{ fontSize: 11 }}>
+                      View
                     </Link>
+                    <JudgeForm submissionId={sub.id} />
                   </div>
                 </div>
               )
@@ -207,7 +209,8 @@ export default async function AdminJudgingPage() {
         fontSize: 12,
         color: 'var(--text-muted)'
       }}>
-        Scoring UI can be added once the submissions scoring fields are finalized in Supabase.
+        Click <strong>Judge</strong> on a submission to score it (0–10). Judged submissions are synced to the leaderboard automatically.
+        Requires the <code>score</code> column on the submissions table — run the latest migration if it does not exist.
       </div>
     </div>
   )

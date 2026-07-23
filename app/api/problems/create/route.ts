@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { type ProblemInput } from '@/lib/problem-evaluator'
+import { evaluateProblemWithAI } from '@/lib/ai-evaluator'
 import {
   decodeProblemThumbnailFallback,
   encodeProblemThumbnailFallback,
@@ -126,9 +128,14 @@ export async function POST(req: Request) {
   }
 
   let warning: string | null = null
-  let { error } = await admin
+  let insertedId: string | null = null
+  let insertError: { message: string; code?: string; details?: string; hint?: string } | null = null
+
+  const { data: inserted, error } = await admin
     .from('problems')
     .insert(insertData)
+    .select('id')
+    .single()
 
   if (error && isMissingProblemThumbnailColumnError(error.message)) {
     const fallbackInsertData = Object.fromEntries(
@@ -138,26 +145,74 @@ export async function POST(req: Request) {
       ...fallbackInsertData,
       rejected_reason: encodeProblemThumbnailFallback(thumbnailUrl),
     }
-    const retry = await admin.from('problems').insert(retryPayload)
-    error = retry.error
+    const retry = await admin.from('problems').insert(retryPayload).select('id').single()
+    insertError = retry.error
+    if (!insertError && retry.data) {
+      insertedId = retry.data.id
+    }
 
-    if (!error && thumbnailUrl && decodeProblemThumbnailFallback(retryPayload.rejected_reason) === thumbnailUrl) {
+    if (!insertError && thumbnailUrl && decodeProblemThumbnailFallback(retryPayload.rejected_reason) === thumbnailUrl) {
       warning = 'Problem saved using temporary thumbnail storage because the database migration has not been applied yet.'
     }
+  } else if (!error && inserted) {
+    insertedId = inserted.id
+  } else {
+    insertError = error
   }
 
-  if (error) {
+  const displayError = error && !isMissingProblemThumbnailColumnError(error.message) ? error : insertError
+
+  if (displayError) {
     console.error('Problem insert failed:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
+      message: displayError.message,
+      code: displayError.code,
+      details: displayError.details,
+      hint: displayError.hint,
     })
     return NextResponse.json(
-      { error: error.message, code: error.code, details: error.details, hint: error.hint },
+      { error: displayError.message, code: displayError.code, details: displayError.details, hint: displayError.hint },
       { status: 400 }
     )
   }
 
-  return NextResponse.json({ ok: true, warning })
+  if (insertedId) {
+    try {
+      const evalInput: ProblemInput = {
+        title: payload.title,
+        domain: payload.domain,
+        problem_type: payload.problem_type,
+        context: payload.context,
+        problem_stmt: payload.problem_stmt,
+        scope: payload.scope,
+        constraints: payload.constraints,
+        deliverables: payload.deliverables,
+        milestones: payload.milestones ?? 1,
+        deadline: payload.deadline,
+        team_mode: payload.team_mode,
+        min_team_size: payload.min_team_size,
+        max_team_size: payload.max_team_size,
+        mentor_required: payload.mentor_required,
+      }
+
+      const evaluation = await evaluateProblemWithAI(evalInput)
+
+      await admin
+        .from('problems')
+        .update({
+          difficulty_score: evaluation.difficulty_score,
+          difficulty_label: evaluation.difficulty,
+          leaderboard_weight: evaluation.leaderboard_weight,
+          impact_score: evaluation.impact_score,
+          estimated_hours: evaluation.estimated_hours,
+          estimated_weeks: evaluation.estimated_weeks,
+          evaluation_json: evaluation,
+          evaluated_at: new Date().toISOString(),
+        })
+        .eq('id', insertedId)
+    } catch (evalErr) {
+      console.error('Auto-evaluation failed:', evalErr)
+    }
+  }
+
+  return NextResponse.json({ ok: true, warning, problem_id: insertedId })
 }

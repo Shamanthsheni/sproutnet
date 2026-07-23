@@ -28,6 +28,17 @@ export type ProblemCardData = {
   submission_count: number
   context: string
   rejected_reason?: string | null
+  difficulty_label?: string | null
+  difficulty_score?: number | null
+  impact_score?: number | null
+  estimated_hours?: number | null
+}
+
+const DIFFICULTY_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  Beginner: { bg: '#EAF4EE', color: '#2D6A4F', border: 'rgba(45,106,79,0.2)' },
+  Intermediate: { bg: '#FFF8E7', color: '#B8860B', border: 'rgba(184,134,11,0.2)' },
+  Advanced: { bg: '#FFF0F0', color: '#C53030', border: 'rgba(197,48,48,0.2)' },
+  Expert: { bg: '#F3E8FF', color: '#7C3AED', border: 'rgba(124,58,237,0.2)' },
 }
 
 export default function ProblemCard({ problem }: { problem: ProblemCardData }) {
@@ -95,6 +106,21 @@ export default function ProblemCard({ problem }: { problem: ProblemCardData }) {
             }}>
               {isIndustry ? `💼 ₹${problem.reward_amount?.toLocaleString('en-IN')}` : '🌍 Public Impact'}
             </span>
+
+            {problem.difficulty_label && (
+              <span style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 11,
+                fontWeight: 600,
+                color: DIFFICULTY_COLORS[problem.difficulty_label]?.color ?? '#4A3F38',
+                background: DIFFICULTY_COLORS[problem.difficulty_label]?.bg ?? 'rgba(28,20,16,0.05)',
+                border: `1px solid ${DIFFICULTY_COLORS[problem.difficulty_label]?.border ?? 'rgba(28,20,16,0.1)'}`,
+                padding: '4px 10px',
+                borderRadius: 999,
+              }}>
+                {problem.difficulty_label}
+              </span>
+            )}
           </div>
 
           <h2 style={{

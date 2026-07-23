@@ -77,6 +77,22 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
 
         {user ? (
           <>
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#1C1410',
+                  background: '#EAF4EE',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  textDecoration: 'none',
+                }}
+              >
+                Admin Panel
+              </Link>
+            )}
             {isPoster && (
               <Link
                 href="/post-problem"
@@ -208,6 +224,7 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
           <Link href="/mentors">Mentors</Link>
           {user ? (
             <>
+              {user?.role === 'admin' && <Link href="/admin">Admin Panel</Link>}
               {isPoster && <Link href="/post-problem">Post a Problem</Link>}
               <Link href="/messages">Messages</Link>
               <Link href="/notifications">Notifications</Link>
