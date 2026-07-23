@@ -19,9 +19,43 @@ export default function MessagesWorkspaceClient({ conversations, currentUserId }
   const [activeConvId, setActiveConvId] = useState<string>(conversations[0]?.id || '')
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 20, height: '100%' }}>
-      {/* Conversations Sidebar */}
-      <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .messages-layout {
+              display: grid;
+              grid-template-columns: 280px 1fr;
+              gap: 20px;
+              height: 100%;
+            }
+            .messages-sidebar {
+              background: #fff;
+              border: 1.5px solid rgba(28,20,16,0.08);
+              border-radius: 14px;
+              padding: 16px;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            @media (max-width: 768px) {
+              .messages-layout {
+                grid-template-columns: 1fr;
+              }
+              .messages-sidebar {
+                max-height: 180px;
+                overflow-y: auto;
+              }
+            }
+          `,
+        }}
+      />
+      <div className="messages-layout">
+        {/* Conversations Sidebar */}
+        <div className="messages-sidebar">
+          <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: '#1C1410', marginBottom: 12 }}>
+            Conversations
+          </h3>
         <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 700, color: '#1C1410', marginBottom: 12 }}>
           Conversations
         </h3>
@@ -68,6 +102,7 @@ export default function MessagesWorkspaceClient({ conversations, currentUserId }
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

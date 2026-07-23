@@ -75,36 +75,7 @@ export default function TeamWorkspaceClient({
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Navbar */}
-      <nav style={{
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12,
-        background: 'rgba(250,248,244,0.94)', borderBottom: '1px solid rgba(28,20,16,0.07)'
-      }}>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#1C1410', fontWeight: 600 }}>
-          ← Back to Dashboard
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/messages" style={{
-            fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723',
-            padding: '4px 10px', borderRadius: 8, textDecoration: 'none'
-          }}>
-            Messages
-          </Link>
-          <Link href="/notifications" style={{
-            fontSize: 13, fontWeight: 600, color: '#2D6A4F', background: '#EAF4EE',
-            padding: '4px 10px', borderRadius: 8, textDecoration: 'none'
-          }}>
-            Notifications
-          </Link>
-          <span style={{ fontSize: 13, color: '#2D6A4F', background: '#EAF4EE', padding: '4px 10px', borderRadius: 999, fontWeight: 600 }}>
-            Team Workspace
-          </span>
-        </div>
-      </nav>
-
-      <div style={{ maxWidth: 1200, margin: '32px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: 1200, margin: '32px auto', padding: '0 20px' }}>
         
         {/* Header Card */}
         <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 16, padding: '28px', marginBottom: 28 }}>
@@ -140,8 +111,31 @@ export default function TeamWorkspaceClient({
           </div>
         </div>
 
-        {/* Workspace Layout Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24 }}>
+        <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .team-layout {
+              display: grid;
+              grid-template-columns: 320px 1fr;
+              gap: 24px;
+            }
+            .team-chat {
+              min-height: 400px;
+            }
+            @media (max-width: 768px) {
+              .team-layout {
+                grid-template-columns: 1fr;
+              }
+              .team-chat {
+                min-height: 300px;
+              }
+            }
+          `,
+        }}
+      />
+
+      {/* Workspace Layout Grid */}
+      <div className="team-layout">
           
           {/* Left Column: Roster, Mentors, Activity */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -234,7 +228,7 @@ export default function TeamWorkspaceClient({
           </div>
 
           {/* Right Column: Embedded Realtime Chat */}
-          <div style={{ height: 600 }}>
+          <div className="team-chat">
             {channelId ? (
               <RealtimeChat
                 conversationId={channelId}
@@ -248,7 +242,6 @@ export default function TeamWorkspaceClient({
           </div>
 
         </div>
-      </div>
 
       {/* Request Mentor Modal */}
       {showMentorModal && (

@@ -27,28 +27,7 @@ export default async function NotificationsPage() {
   const items = notifications || []
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
-      <nav style={{
-        padding: '12px clamp(16px, 4vw, 52px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: 'rgba(250,248,244,0.94)', borderBottom: '1px solid rgba(28,20,16,0.07)'
-      }}>
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#1C1410', fontWeight: 600 }}>
-          ← Back to Dashboard
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/messages" style={{
-            fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723',
-            padding: '4px 10px', borderRadius: 8, textDecoration: 'none'
-          }}>
-            Messages
-          </Link>
-          <span style={{ fontSize: 13, color: '#2D6A4F', background: '#EAF4EE', padding: '4px 10px', borderRadius: 999, fontWeight: 600 }}>
-            Notification Center
-          </span>
-        </div>
-      </nav>
-
-      <div style={{ maxWidth: 720, margin: '40px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: 720, margin: '40px auto', padding: '0 20px' }}>
         <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 36, color: '#1C1410', marginBottom: 8 }}>
           Notifications
         </h1>
@@ -64,7 +43,7 @@ export default async function NotificationsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {items.map(n => (
               <div key={n.id} style={{
-                background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 12, padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16
+                background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 12, padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap'
               }}>
                 <div>
                   <div style={{ fontSize: 11, color: '#2D6A4F', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
@@ -93,6 +72,5 @@ export default async function NotificationsPage() {
           </div>
         )}
       </div>
-    </div>
   )
 }
