@@ -5,7 +5,16 @@ import Link from 'next/link'
 export default async function LandingPage() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  let user: { id: string; name?: string; role?: string; is_master?: boolean; profile_slug?: string | null } | null = null
+  if (authUser) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, name, role, is_master, profile_slug')
+      .eq('id', authUser.id)
+      .single()
+    user = profile
+  }
 
   const { count: totalProblems } = await supabase
     .from('problems')

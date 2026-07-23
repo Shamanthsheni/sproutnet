@@ -25,7 +25,7 @@ export default async function BlogsPage() {
     if (user) {
       const { data: profile } = await supabase
         .from('users')
-        .select('id, name, role, dept, year')
+        .select('id, name, role, dept, year, profile_slug')
         .eq('id', user.id)
         .single()
 

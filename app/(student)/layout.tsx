@@ -10,7 +10,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   if (user) {
     const { data } = await supabase
       .from('users')
-      .select('id, name, role, is_master')
+      .select('id, name, role, is_master, profile_slug')
       .eq('id', user.id)
       .single()
     profile = data
