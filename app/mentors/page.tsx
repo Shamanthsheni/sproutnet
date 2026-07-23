@@ -10,13 +10,13 @@ export default async function MentorsDirectoryPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  let currentUser: { id: string; name: string; role: string } | null = null
+  let currentUser: { id: string; name: string; role: string; profile_slug?: string | null } | null = null
   let userTeams: Array<{ id: string; name: string }> = []
 
   if (user) {
     const { data: profile } = await supabase
       .from('users')
-      .select('id, name, role')
+      .select('id, name, role, profile_slug')
       .eq('id', user.id)
       .single()
     if (profile) {

@@ -55,6 +55,7 @@ type User = {
   id: string
   role: string
   name: string
+  profile_slug?: string | null
 }
 
 function renderDomainIcon(domain: string) {
@@ -297,7 +298,7 @@ export default function ProblemDetailPage() {
       if (authUser) {
         const { data: profile } = await supabase
           .from('users')
-          .select('id, role, name')
+          .select('id, role, name, profile_slug')
           .eq('id', authUser.id)
           .single()
         setUser(profile)

@@ -9,6 +9,7 @@ export type BlogUserSummary = {
   role: string
   dept: string | null
   year: string | null
+  profile_slug?: string | null
 }
 
 export type BlogCommentItem = {

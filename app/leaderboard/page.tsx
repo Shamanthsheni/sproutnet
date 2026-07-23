@@ -62,11 +62,11 @@ export default async function LeaderboardPage() {
   const admin = createAdminClient()
 
   const { data: { user: authUser } } = await supabase.auth.getUser()
-  let user: { id: string; name: string; role: string; is_master?: boolean } | null = null
+  let user: { id: string; name: string; role: string; is_master?: boolean; profile_slug?: string | null } | null = null
   if (authUser) {
     const { data: profile } = await supabase
       .from('users')
-      .select('id, name, role, is_master')
+      .select('id, name, role, is_master, profile_slug')
       .eq('id', authUser.id)
       .single()
     user = profile
