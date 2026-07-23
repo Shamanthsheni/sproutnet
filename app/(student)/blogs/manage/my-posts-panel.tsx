@@ -169,9 +169,7 @@ export default function MyPostsPanel({
 
   return (
     <section style={{ background: '#fff', borderRadius: 20, padding: 22, border: '1px solid rgba(28,20,16,0.08)', boxShadow: '0 10px 24px rgba(28,20,16,0.05)' }}>
-      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-        {'// your posts'}
-      </div>
+
       <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410', marginBottom: 10 }}>
         Previous posts
       </div>

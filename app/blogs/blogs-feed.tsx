@@ -177,9 +177,7 @@ export default function BlogsFeed({
         {showComposer && (
           viewer ? (
             <section style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)', borderRadius: 20, padding: 24, boxShadow: '0 10px 32px rgba(28,20,16,0.05)' }}>
-              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-                {'// write a post'}
-              </div>
+
               <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: '#1C1410', marginBottom: 10 }}>
                 {setupRequired ? 'Publishing opens after the Blogs migration runs' : 'What do you want the community to see today?'}
               </div>
@@ -330,9 +328,7 @@ export default function BlogsFeed({
       {showSidebar && (
         <aside style={{ display: 'grid', gap: 18 }}>
           <section style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)', borderRadius: 18, padding: 22 }}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-              {'// feed snapshot'}
-            </div>
+
             {setupRequired ? (
               <>
                 <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, color: '#1C1410', marginBottom: 10 }}>Setup pending</div>
@@ -353,9 +349,7 @@ export default function BlogsFeed({
           </section>
 
           <section style={{ background: 'linear-gradient(135deg, #1C1410 0%, #2D6A4F 100%)', borderRadius: 18, padding: 22, color: '#FAF8F4' }}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(250,248,244,0.42)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>
-              {'// how to post well'}
-            </div>
+
             <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 14 }}>Strong posts help faster</div>
             <div style={{ display: 'grid', gap: 12 }}>
               {[

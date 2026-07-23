@@ -106,16 +106,7 @@ export default async function ProblemsPage({
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
         <div style={{ marginBottom: 40 }}>
-          <div style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 11,
-            color: '#2D6A4F',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            marginBottom: 12,
-          }}>
-            {'// open problems · season 1'}
-          </div>
+
           <h1 style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
             fontSize: 'clamp(32px, 7vw, 48px)',

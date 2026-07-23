@@ -229,16 +229,7 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
               border: '1.5px solid rgba(28,20,16,0.08)',
               boxShadow: '0 20px 60px rgba(28,20,16,0.2)'
             }}>
-              <div style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 11,
-                color: '#2D6A4F',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                marginBottom: 10
-              }}>
-                {'// updated'}
-              </div>
+
               <div style={{
                 fontFamily: "'Instrument Serif', Georgia, serif",
                 fontSize: 26,

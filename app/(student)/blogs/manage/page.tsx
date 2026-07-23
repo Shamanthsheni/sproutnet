@@ -174,9 +174,7 @@ export default async function BlogsManagePage() {
           marginBottom: 24,
           border: '1px solid rgba(28,20,16,0.08)',
         }}>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2D6A4F', marginBottom: 10 }}>
-            {'// your blog desk'}
-          </div>
+
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 24, fontWeight: 700, color: '#1C1410', marginBottom: 6 }}>

@@ -125,9 +125,7 @@ export default function MentorsClient({ mentors, currentUser, pendingMentorIds, 
 
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
-          {'// find your guide'}
-        </div>
+
         <h1 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 'clamp(30px, 5vw, 40px)', fontWeight: 400, color: '#1C1410', marginBottom: 8 }}>
           Browse Mentors
         </h1>

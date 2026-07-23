@@ -181,16 +181,7 @@ export default async function DashboardPage() {
               marginBottom: 18
             }}>
               <div>
-                <div style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 11,
-                  color: '#2D6A4F',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginBottom: 8
-                }}>
-                  {'// enrolled problems'}
-                </div>
+
                 <h2 style={{
                   fontFamily: 'Sora, sans-serif',
                   fontSize: 20,
@@ -378,12 +369,7 @@ export default async function DashboardPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18
             }}>
               <div>
-                <div style={{
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F',
-                  textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8
-                }}>
-                  {'// team workspaces'}
-                </div>
+
                 <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 700, color: '#1C1410' }}>
                   Your Workspaces
                 </h2>
