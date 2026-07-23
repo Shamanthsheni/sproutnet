@@ -8,6 +8,7 @@ export type NavbarUser = {
   name?: string
   role?: string
   is_master?: boolean
+  profile_slug?: string | null
 }
 
 export default function Navbar({ user }: { user?: NavbarUser | null }) {
@@ -29,6 +30,14 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
   const dashboardHref = isPoster ? '/poster/dashboard' : '/dashboard'
   const roleLabel = user?.is_master ? 'Master Admin' : user?.role
   const hasProfile = user?.name && user?.role
+
+  const AVATAR_COLORS = ['#2D6A4F', '#1E40AF', '#9C6344', '#6B4C2A', '#3D8A65', '#4A3F38', '#7C3AED', '#BE123C']
+  function avatarColor(name: string) {
+    return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+  }
+  function initials(name: string) {
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  }
 
   return (
     <nav
@@ -125,7 +134,25 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
                 {roleLabel}
               </span>
             )}
-            {user?.name && <span style={{ fontSize: 14, color: '#4A3F38' }}>{user.name}</span>}
+            {user?.name && (
+              <Link
+                href={`/profile/${user.profile_slug || user.id}`}
+                style={{
+                  fontSize: 14, color: '#4A3F38', textDecoration: 'none',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                <span style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: avatarColor(user.name),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0,
+                }}>
+                  {initials(user.name)}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#4A3F38' }}>{user.name}</span>
+              </Link>
+            )}
             <Link
               href="/messages"
               style={{
@@ -224,6 +251,7 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
           <Link href="/mentors">Mentors</Link>
           {user ? (
             <>
+              <Link href={`/profile/${user.profile_slug || user.id}`}>Profile</Link>
               {user?.role === 'admin' && <Link href="/admin">Admin Panel</Link>}
               {isPoster && <Link href="/post-problem">Post a Problem</Link>}
               <Link href="/messages">Messages</Link>
