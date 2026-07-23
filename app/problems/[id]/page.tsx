@@ -326,7 +326,7 @@ export default function ProblemDetailPage() {
         }
       }
 
-      // Load comments via API
+// Load comments via API
       let loadedComments: Comment[] = []
       try {
         const discRes = await fetch(`/api/discussion?problem_id=${id}`)
