@@ -225,9 +225,7 @@ export function MetadataForm({ value, onChange, title }: MetadataFormProps) {
           </Field>
 
           <div style={{ marginTop: 4, marginBottom: 12, borderTop: '1px solid rgba(28,20,16,0.07)', paddingTop: 16 }}>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#2D6A4F', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>
-              {'// SEO'}
-            </div>
+
 
             <Field
               label="SEO Title"

@@ -1250,13 +1250,7 @@ export default function ProblemDetailPage() {
             background: '#1C1410', borderRadius: 14,
             padding: '28px', marginBottom: 20
           }}>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-              color: 'rgba(250,248,244,0.4)', letterSpacing: '0.1em',
-              textTransform: 'uppercase', marginBottom: 14
-            }}>
-              {'// ready to build?'}
-            </div>
+
             <div style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
               fontSize: 22, color: '#FAF8F4',
@@ -1470,13 +1464,7 @@ export default function ProblemDetailPage() {
               background: '#fff', border: '1.5px solid rgba(28,20,16,0.07)',
               borderRadius: 14, padding: '24px', marginBottom: 20
             }}>
-              <div style={{
-                fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
-                color: '#9CA3A0', letterSpacing: '0.1em',
-                textTransform: 'uppercase', marginBottom: 14
-              }}>
-                {'// ai evaluation'}
-              </div>
+
 
               <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                 <div style={{

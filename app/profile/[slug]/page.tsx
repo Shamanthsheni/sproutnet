@@ -123,7 +123,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     .order('created_at', { ascending: false })
     .limit(10)
 
-  const submissions = ((submissionRows ?? []) as Array<{
+  const submissions = ((submissionRows ?? []) as any as Array<{
     id: string; score: number | null; status: string; created_at: string;
     problems: { title: string | null } | null
   }>).map(s => ({
@@ -141,7 +141,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     .neq('status', 'completed')
     .limit(10)
 
-  const enrollments = ((enrollRows ?? []) as Array<{
+  const enrollments = ((enrollRows ?? []) as any as Array<{
     problem_id: string; milestone: number;
     problems: { title: string | null; total_milestones: number | null } | null
   }>).map(e => ({

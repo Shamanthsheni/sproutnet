@@ -201,7 +201,7 @@ footer{background:var(--soil);padding:52px}
 
       <div className="reality">
         <div className="r-inner">
-          <div className="r-label">{'// why this exists'}</div>
+
           <div className="r-item" suppressHydrationWarning><div className="r-num">01</div><div className="r-text">Exams test memory. SproutNet tests <em>judgment.</em></div></div>
           <div className="r-item" suppressHydrationWarning><div className="r-num">02</div><div className="r-text">Assignments have right answers. <em>Real problems don&apos;t.</em></div></div>
           <div className="r-item" suppressHydrationWarning><div className="r-num">03</div><div className="r-text">You&apos;ve been trained to study India. Now <em>help fix it.</em></div></div>
@@ -210,7 +210,7 @@ footer{background:var(--soil);padding:52px}
 
       <section id="about" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv" suppressHydrationWarning>{'// what this is'}</div>
+
           <h2 className="s-title rv d1" suppressHydrationWarning>Not another hackathon.</h2>
           <p className="s-sub rv d2" suppressHydrationWarning>Three things make SproutNet different from every competition you&apos;ve seen.</p>
           <div className="what-grid">
@@ -223,7 +223,7 @@ footer{background:var(--soil);padding:52px}
 
       <section className="hiw" id="how-it-works" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv" suppressHydrationWarning>{'// the process'}</div>
+
           <h2 className="s-title rv d1" suppressHydrationWarning>Simple. Serious. Structured.</h2>
           <div className="hiw-grid">
             <div className="hiw-step rv d1" suppressHydrationWarning><div className="step-dot"><div className="step-n">01</div></div><div className="step-t">Browse real problems</div><div className="step-d">Vetted, fully scoped. Each one matters to someone real.</div></div>
@@ -237,7 +237,7 @@ footer{background:var(--soil);padding:52px}
 
       <section className="domains" suppressHydrationWarning>
         <div className="si-wrap">
-          <div className="s-label rv" suppressHydrationWarning>{'// problem domains'}</div>
+
           <h2 className="s-title rv d1" suppressHydrationWarning>What kind of problems?<br/>Indian ones.</h2>
           <p className="s-sub rv d2" suppressHydrationWarning>Eight starting domains. Every real Indian problem fits somewhere.</p>
           <div className="domain-mosaic rv d1" suppressHydrationWarning>
@@ -256,7 +256,7 @@ footer{background:var(--soil);padding:52px}
       <div className="thinking">
         <div className="th-inner">
           <div>
-            <div className="th-label">{'// the framework'}</div>
+
             <h2 className="th-title">We won&apos;t let you submit a <em>half-baked idea.</em></h2>
             <p className="th-sub">Every submission has 7 mandatory fields. You&apos;ll think harder than you ever have.</p>
             <p className="th-note">&quot;Most students have never been asked to think this completely. You&apos;ll leave knowing you did.&quot;</p>

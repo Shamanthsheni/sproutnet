@@ -75,16 +75,7 @@ export default async function BlogsPage() {
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(244,167,35,0.24) 0%, rgba(244,167,35,0) 70%)',
           }} />
-          <div style={{
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 11,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'rgba(250,248,244,0.48)',
-            marginBottom: 16,
-          }}>
-            {'// community blog feed'}
-          </div>
+
           <div style={{ maxWidth: 760 }}>
             <h1 style={{
               fontFamily: "'Instrument Serif', Georgia, serif",
