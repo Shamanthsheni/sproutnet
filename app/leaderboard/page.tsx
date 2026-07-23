@@ -1,8 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
+import Navbar from '@/app/components/navbar'
 import Link from 'next/link'
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
+
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  let user: { id: string; name: string; role: string; is_master?: boolean } | null = null
+  if (authUser) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, name, role, is_master')
+      .eq('id', authUser.id)
+      .single()
+    user = profile
+  }
 
   const { data: leaders } = await supabase
     .from('leaderboard')
@@ -28,51 +40,7 @@ export default async function LeaderboardPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* Nav */}
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-        <div className="sn-nav-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
-          <Link href="/problems" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>Problems</Link>
-          <Link href="/leaderboard" style={{ fontSize: 14, fontWeight: 500, color: '#1C1410', textDecoration: 'none' }}>Leaderboard</Link>
-          <Link href="/dashboard" style={{
-            fontSize: 14, fontWeight: 600, color: '#1C1410',
-            background: '#F4A723', padding: '8px 20px',
-            borderRadius: 6, textDecoration: 'none'
-          }}>Dashboard →</Link>
-        </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href="/problems">Problems</Link>
-            <Link href="/leaderboard">Leaderboard</Link>
-            <Link href="/dashboard" className="sn-menu-primary">Dashboard →</Link>
-          </div>
-        </details>
-      </nav>
+      <Navbar user={user} />
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: 'clamp(32px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
 
@@ -222,25 +190,51 @@ export default async function LeaderboardPage() {
         )}
 
         {/* Full table */}
-        {rest.length > 0 && (
-          <div style={{
-            background: '#fff',
-            border: '1.5px solid rgba(28,20,16,0.07)',
-            borderRadius: 14,
-            overflow: 'hidden',
-            overflowX: 'auto'
-          }}>
+        <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .lb-table {
+              background: #fff;
+              border: 1.5px solid rgba(28,20,16,0.07);
+              border-radius: 14px;
+              overflow: hidden;
+              overflow-x: auto;
+            }
+            .lb-row {
+              display: grid;
+              grid-template-columns: 52px 1fr 80px 80px 80px 100px;
+              min-width: 640px;
+              padding: 14px 24px;
+              border-bottom: 1px solid rgba(28,20,16,0.04);
+              align-items: center;
+            }
+            .lb-header {
+              display: grid;
+              grid-template-columns: 52px 1fr 80px 80px 80px 100px;
+              min-width: 640px;
+              padding: 12px 24px;
+              background: #F2EEE8;
+              border-bottom: 1px solid rgba(28,20,16,0.06);
+            }
+            @media (max-width: 540px) {
+              .lb-row,
+              .lb-header {
+                grid-template-columns: 36px 1fr 0px 0px 0px 80px;
+                min-width: unset;
+                padding: 10px 14px;
+              }
+              .lb-hide-mobile { display: none; }
+            }
+          `,
+        }}
+      />
+
+      {rest.length > 0 && (
+          <div className="lb-table">
             {/* Header */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '52px 1fr 80px 80px 80px 100px',
-              minWidth: 640,
-              padding: '12px 24px',
-              background: '#F2EEE8',
-              borderBottom: '1px solid rgba(28,20,16,0.06)'
-            }}>
-              {['#', 'Builder', 'Tried', 'Avg', 'Done', 'Score'].map(h => (
-                <div key={h} style={{
+            <div className="lb-header">
+{['#', 'Builder', 'Tried', 'Avg', 'Done', 'Score'].map((h, i) => (
+                  <div key={h} className={i >= 2 && i <= 4 ? 'lb-hide-mobile' : ''} style={{
                   fontFamily: 'JetBrains Mono, monospace',
                   fontSize: 10, color: '#9CA3A0',
                   textTransform: 'uppercase', letterSpacing: '0.08em'
@@ -253,14 +247,7 @@ export default async function LeaderboardPage() {
             {/* Rows */}
             {rest.map((leader) => (
               <Link key={leader.id} href={`/profile/${leader.profile_slug}`} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '52px 1fr 80px 80px 80px 100px',
-                  minWidth: 640,
-                  padding: '14px 24px',
-                  borderBottom: '1px solid rgba(28,20,16,0.04)',
-                  alignItems: 'center'
-                }}>
+                <div className="lb-row">
                   <div style={{
                     fontFamily: 'JetBrains Mono, monospace',
                     fontSize: 13, color: '#9CA3A0'
@@ -292,19 +279,19 @@ export default async function LeaderboardPage() {
                       </div>
                     </div>
                   </div>
-                  <div style={{
+                  <div className="lb-hide-mobile" style={{
                     fontFamily: 'JetBrains Mono, monospace',
                     fontSize: 12, color: '#4A3F38'
                   }}>
                     {leader.attempted}
                   </div>
-                  <div style={{
+                  <div className="lb-hide-mobile" style={{
                     fontFamily: 'JetBrains Mono, monospace',
                     fontSize: 12, color: '#4A3F38'
                   }}>
                     {Number(leader.avg_score).toFixed(1)}
                   </div>
-                  <div style={{
+                  <div className="lb-hide-mobile" style={{
                     fontFamily: 'JetBrains Mono, monospace',
                     fontSize: 12, color: '#4A3F38'
                   }}>

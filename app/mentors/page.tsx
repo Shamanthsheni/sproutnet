@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Navbar from '@/app/components/navbar'
 import MentorsClient from './mentors-client'
 
 export default async function MentorsDirectoryPage() {
@@ -92,43 +92,7 @@ export default async function MentorsDirectoryPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* Nav */}
-      <nav style={{
-        minHeight: 66, padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex', flexWrap: 'wrap', rowGap: 10, columnGap: 16,
-        alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)', borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>
-            SproutNet
-          </span>
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', rowGap: 8 }}>
-          {currentUser ? (
-            <>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', background: '#EAF4EE', padding: '4px 12px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {currentUser.role}
-              </span>
-              <span style={{ fontSize: 14, color: '#4A3F38' }}>{currentUser.name}</span>
-              <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723', padding: '8px 20px', borderRadius: 6, textDecoration: 'none' }}>
-                Dashboard
-              </Link>
-            </>
-          ) : (
-            <Link href="/login/student" style={{ fontSize: 13, fontWeight: 600, color: '#1C1410', background: '#F4A723', padding: '8px 20px', borderRadius: 6, textDecoration: 'none' }}>
-              Sign In
-            </Link>
-          )}
-        </div>
-      </nav>
+      <Navbar user={currentUser} />
 
       <MentorsClient
         mentors={mentors || []}

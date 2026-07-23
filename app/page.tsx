@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Navbar from '@/app/components/navbar'
 import Link from 'next/link'
 
 export default async function LandingPage() {
@@ -19,19 +20,7 @@ export default async function LandingPage() {
 html{scroll-behavior:smooth}
 body{font-family:var(--ff-body);background:var(--paper);color:var(--ink);overflow-x:hidden;-webkit-font-smoothing:antialiased}
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
-nav{position:fixed;top:0;left:0;right:0;z-index:800;height:66px;padding:0 52px;display:flex;align-items:center;justify-content:space-between;transition:background var(--ease),box-shadow var(--ease)}
-nav.scrolled{background:rgba(250,248,244,.95);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(28,20,16,.07)}
-.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-svg{width:34px;height:34px;flex-shrink:0}
-.nav-wm{font-family:var(--ff-head);font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.4px}
-.nav-links{display:flex;gap:32px;list-style:none}
-.nav-links a{font-family:var(--ff-body);font-size:14px;font-weight:500;color:var(--ink-mid);text-decoration:none;transition:color var(--ease)}
-.nav-links a:hover{color:var(--ink)}
-.nav-right{display:flex;align-items:center;gap:14px}
-.btn-ghost{font-family:var(--ff-body);font-size:14px;font-weight:500;color:var(--ink-mid);text-decoration:none;padding:8px 16px;border-radius:var(--r-sm);transition:color var(--ease),background var(--ease)}
-.btn-ghost:hover{color:var(--ink);background:rgba(28,20,16,.06)}
-.btn-nav{font-family:var(--ff-body);font-size:14px;font-weight:600;color:var(--soil);background:var(--marigold);text-decoration:none;padding:9px 22px;border-radius:var(--r-sm);box-shadow:0 1px 4px rgba(244,167,35,.3);transition:background var(--ease),transform var(--ease),box-shadow var(--ease)}
-.btn-nav:hover{background:var(--marigold-lt);transform:translateY(-1px);box-shadow:0 4px 14px rgba(244,167,35,.35)}
+
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 52px 72px;text-align:center;position:relative;overflow:hidden;background:var(--paper)}
 .hero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(45,106,79,.18) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
 .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(250,248,244,0) 0%,rgba(250,248,244,.96) 68%);pointer-events:none;z-index:1}
@@ -155,53 +144,12 @@ footer{background:var(--soil);padding:52px}
 .rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease-out,transform .6s ease-out}
 .rv.on{opacity:1;transform:translateY(0)}
 .rv.d1{transition-delay:.1s}.rv.d2{transition-delay:.2s}.rv.d3{transition-delay:.3s}
-@media(max-width:1024px){nav{padding:0 24px}section{padding:72px 24px}.what-grid{grid-template-columns:1fr}.hiw-grid{grid-template-columns:repeat(2,1fr);gap:32px}.hiw-grid::before{display:none}.th-inner{grid-template-columns:1fr;gap:48px}.stats-bar{padding:24px}.si-stat{padding:0 24px}.hero{padding:96px 24px 72px}.reality,.thinking,.closing{padding:72px 24px}footer{padding:40px 24px}.ft-inner{flex-direction:column;align-items:flex-start}}
-@media(max-width:900px){nav{height:auto;flex-wrap:wrap;row-gap:10px;padding:12px 20px}}
-@media(max-width:640px){.hiw-grid{grid-template-columns:1fr}.hero-ctas{flex-direction:column;width:100%}.btn-hp,.btn-hs{width:100%;justify-content:center}.stats-bar{flex-direction:column;gap:22px}.si-stat::after{display:none}.poster-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}.nav-right a{width:100%;justify-content:center}}
+@media(max-width:1024px){section{padding:72px 24px}.what-grid{grid-template-columns:1fr}.hiw-grid{grid-template-columns:repeat(2,1fr);gap:32px}.hiw-grid::before{display:none}.th-inner{grid-template-columns:1fr;gap:48px}.stats-bar{padding:24px}.si-stat{padding:0 24px}.hero{padding:96px 24px 72px}.reality,.thinking,.closing{padding:72px 24px}footer{padding:40px 24px}.ft-inner{flex-direction:column;align-items:flex-start}}
+
+@media(max-width:640px){.hiw-grid{grid-template-columns:1fr}.hero-ctas{flex-direction:column;width:100%}.btn-hp,.btn-hs{width:100%;justify-content:center}.stats-bar{flex-direction:column;gap:22px}.si-stat::after{display:none}.poster-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}}
       `}}/>
 
-      <nav id="nav" suppressHydrationWarning>
-        <Link href="/" className="nav-brand">
-          <svg className="logo-svg" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-            <line x1="11" y1="28.5" x2="23" y2="28.5" stroke="rgba(250,248,244,0.18)" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
-          <span className="nav-wm">SproutNet</span>
-        </Link>
-        <ul className="nav-links sn-nav-links">
-          <li><Link href="/how-it-works">How It Works</Link></li>
-          <li><Link href="/problems">Problems</Link></li>
-          <li><Link href="/blogs">Blogs</Link></li>
-          <li><Link href="/leaderboard">Leaderboard</Link></li>
-          <li><a href="#about">About</a></li>
-        </ul>
-        <div className="nav-right sn-nav-actions">
-          {!user && <Link href="/login" className="btn-ghost">Log in</Link>}
-          <Link href={user ? '/dashboard' : '/login/student'} className="btn-nav">
-            {user ? 'Dashboard →' : 'Start Solving →'}
-          </Link>
-        </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href="/how-it-works">How It Works</Link>
-            <Link href="/problems">Problems</Link>
-            <Link href="/blogs">Blogs</Link>
-            <Link href="/leaderboard">Leaderboard</Link>
-            <a href="#about">About</a>
-            {!user && <Link href="/login" className="sn-menu-ghost">Log in</Link>}
-            <Link href={user ? '/dashboard' : '/login/student'} className="sn-menu-primary">
-              {user ? 'Dashboard →' : 'Start Solving →'}
-            </Link>
-          </div>
-        </details>
-      </nav>
+      <Navbar user={user} />
 
       <section className="hero">
         <div className="hero-inner">
@@ -354,8 +302,6 @@ footer{background:var(--soil);padding:52px}
       </footer>
 
       <script dangerouslySetInnerHTML={{__html: `
-        const nav=document.getElementById('nav');
-        window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20),{passive:true});
         const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target)}})},{threshold:.1,rootMargin:'0px 0px -36px 0px'});
         document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
         const rItems=document.querySelectorAll('.r-item');
