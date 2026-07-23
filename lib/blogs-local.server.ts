@@ -11,6 +11,14 @@ export type LocalBlogPostRow = {
   post_type: string
   created_at: string
   author_id: string
+  cover_image?: string | null
+  slug?: string | null
+  excerpt?: string | null
+  tags?: string[]
+  category?: string | null
+  seo_title?: string | null
+  seo_description?: string | null
+  status?: string
 }
 
 export type LocalBlogCommentRow = {
@@ -75,6 +83,14 @@ export async function createLocalBlogPost(params: {
   title: string
   body: string
   postType: 'knowledge' | 'question'
+  coverImage?: string | null
+  slug?: string | null
+  excerpt?: string | null
+  tags?: string[]
+  category?: string | null
+  seoTitle?: string | null
+  seoDescription?: string | null
+  status?: string
 }) {
   const data = await readLocalData()
   const post: LocalBlogPostRow = {
@@ -84,6 +100,14 @@ export async function createLocalBlogPost(params: {
     body: params.body,
     post_type: params.postType,
     created_at: new Date().toISOString(),
+    cover_image: params.coverImage ?? null,
+    slug: params.slug ?? null,
+    excerpt: params.excerpt ?? null,
+    tags: params.tags ?? [],
+    category: params.category ?? null,
+    seo_title: params.seoTitle ?? null,
+    seo_description: params.seoDescription ?? null,
+    status: params.status ?? 'published',
   }
 
   data.posts.unshift(post)
@@ -98,6 +122,14 @@ export async function updateLocalBlogPost(params: {
   title?: string
   body?: string
   postType?: 'knowledge' | 'question'
+  coverImage?: string | null
+  slug?: string | null
+  excerpt?: string | null
+  tags?: string[]
+  category?: string | null
+  seoTitle?: string | null
+  seoDescription?: string | null
+  status?: string
 }) {
   const data = await readLocalData()
   const index = data.posts.findIndex(post => post.id === params.postId)
@@ -121,6 +153,38 @@ export async function updateLocalBlogPost(params: {
 
   if (typeof params.postType === 'string') {
     post.post_type = params.postType
+  }
+
+  if (params.coverImage !== undefined) {
+    post.cover_image = params.coverImage
+  }
+
+  if (params.slug !== undefined) {
+    post.slug = params.slug
+  }
+
+  if (params.excerpt !== undefined) {
+    post.excerpt = params.excerpt
+  }
+
+  if (params.tags !== undefined) {
+    post.tags = params.tags
+  }
+
+  if (params.category !== undefined) {
+    post.category = params.category
+  }
+
+  if (params.seoTitle !== undefined) {
+    post.seo_title = params.seoTitle
+  }
+
+  if (params.seoDescription !== undefined) {
+    post.seo_description = params.seoDescription
+  }
+
+  if (params.status !== undefined) {
+    post.status = params.status
   }
 
   data.posts[index] = post

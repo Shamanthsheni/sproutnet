@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Navbar, { type NavbarUser } from '@/app/components/navbar'
 
 type ProfileRow = {
   id: string
@@ -76,6 +77,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
   const userProfile = profile as ProfileRow
   const isOwnProfile = auth.user?.id === userProfile.id
 
+  let currentUser: NavbarUser | null = null
+  if (auth?.user) {
+    const { data: curProfile } = await supabase
+      .from('users')
+      .select('id, name, role, is_master')
+      .eq('id', auth.user.id)
+      .single()
+    if (curProfile) currentUser = curProfile as NavbarUser
+  }
+
   const { data: submissionRows } = await admin
     .from('submissions')
     .select('id, stage, milestone, status, created_at, problems(title, domain)')
@@ -101,54 +112,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', rowGap: 8 }}>
-          <Link href="/leaderboard" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>
-            Leaderboard
-          </Link>
-          <Link href="/problems" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>
-            Problems
-          </Link>
-          {isOwnProfile && (
-            <Link href="/dashboard" style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#1C1410',
-              background: '#F4A723',
-              padding: '8px 18px',
-              borderRadius: 8,
-              textDecoration: 'none',
-            }}>
-              Dashboard →
-            </Link>
-          )}
-        </div>
-      </nav>
+      <Navbar user={currentUser} />
 
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: 'clamp(28px, 6vw, 52px) clamp(16px, 4vw, 24px)' }}>
         <div style={{

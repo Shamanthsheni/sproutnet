@@ -31,6 +31,8 @@ export type BlogFeedPost = {
   commentsCount: number
   likedByViewer: boolean
   comments: BlogCommentItem[]
+  cover_image?: string | null
+  excerpt?: string | null
 }
 
 export function isMissingBlogTablesError(message: string | null | undefined) {
@@ -71,3 +73,75 @@ export function normalizeBlogSetupError(message: string | null | undefined) {
 
   return message ?? 'Could not load the blog feed.'
 }
+
+export function isBlogBodyEmpty(bodyJson: any): boolean {
+  if (!bodyJson) return true
+
+  // If it's a string, try to parse it first (since body is passed as a string from the API)
+  if (typeof bodyJson === 'string') {
+    const trimmed = bodyJson.trim()
+    if (!trimmed) return true
+    try {
+      bodyJson = JSON.parse(trimmed)
+    } catch {
+      // If it's not valid JSON, treat it as a plain string (which is not empty since trim() length > 0)
+      return false
+    }
+  }
+
+  // If we have a text node
+  if (bodyJson.type === 'text') {
+    return !bodyJson.text || bodyJson.text.trim().length === 0
+  }
+
+  // If it is an image node
+  if (bodyJson.type === 'image') {
+    return !bodyJson.attrs?.src
+  }
+
+  // If it has children (like a document, paragraph, list, etc.)
+  if (bodyJson.content && Array.isArray(bodyJson.content) && bodyJson.content.length > 0) {
+    return bodyJson.content.every((child: any) => isBlogBodyEmpty(child))
+  }
+
+  // Any other node type without children is considered empty
+  return true
+}
+
+export function getBlogBodyText(bodyJson: any): string {
+  if (!bodyJson) return ''
+
+  if (typeof bodyJson === 'string') {
+    const trimmed = bodyJson.trim()
+    if (!trimmed) return ''
+    try {
+      bodyJson = JSON.parse(trimmed)
+    } catch {
+      // If it's not valid JSON, treat it as plain text
+      return trimmed
+    }
+  }
+
+  // If we have a text node
+  if (bodyJson.type === 'text') {
+    return bodyJson.text ?? ''
+  }
+
+  // Recursively gather text from all children
+  let text = ''
+  if (bodyJson.content && Array.isArray(bodyJson.content)) {
+    const childrenText = bodyJson.content.map((child: any) => getBlogBodyText(child)).filter(Boolean)
+    
+    if (bodyJson.type === 'paragraph' || bodyJson.type === 'heading') {
+      text = childrenText.join('') + '\n'
+    } else if (bodyJson.type === 'listItem') {
+      text = '• ' + childrenText.join('') + '\n'
+    } else {
+      text = childrenText.join(' ')
+    }
+  }
+
+  return text.trim()
+}
+
+

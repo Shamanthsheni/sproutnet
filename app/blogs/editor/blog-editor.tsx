@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { startTransition } from 'react'
 import type { JSONContent } from '@tiptap/react'
-import type { BlogUserSummary } from '@/lib/blogs'
+import { type BlogUserSummary, isBlogBodyEmpty } from '@/lib/blogs'
 import { RichTextEditor } from './rich-text-editor'
 import { CoverImage } from './cover-image'
 import { MetadataForm, type BlogMetadata } from './metadata-form'
@@ -184,7 +184,7 @@ export default function BlogEditor({
       setActionError('Please add a title before publishing.')
       return
     }
-    if (!bodyJson || JSON.stringify(bodyJson) === JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] })) {
+    if (isBlogBodyEmpty(bodyJson)) {
       setActionError('The editor body is empty. Write something first.')
       return
     }

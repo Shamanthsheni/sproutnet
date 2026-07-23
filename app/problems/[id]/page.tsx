@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { decodeProblemThumbnailFallback } from '@/lib/problem-thumbnail'
 import CancelEnrollmentButton from '@/app/components/cancel-enrollment-button'
+import Navbar from '@/app/components/navbar'
 
 type Problem = {
   id: string
@@ -28,6 +29,10 @@ type Problem = {
   judge_type: string
   poster_id: string
   rejected_reason?: string | null
+  team_mode?: string
+  min_team_size?: number
+  max_team_size?: number
+  mentor_required?: boolean
 }
 
 type Comment = {
@@ -170,6 +175,19 @@ export default function ProblemDetailPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'top' | 'oldest'>('newest')
   const [searchQuery, setSearchQuery] = useState('')
 
+  // Team state
+  const [userTeam, setUserTeam] = useState<any>(null)
+  const [showCreateTeam, setShowCreateTeam] = useState(false)
+  const [showJoinTeam, setShowJoinTeam] = useState(false)
+  const [teamName, setTeamName] = useState('')
+  const [joinInviteCode, setJoinInviteCode] = useState('')
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false)
+  const [isJoiningTeam, setIsJoiningTeam] = useState(false)
+  const [createdInviteCode, setCreatedInviteCode] = useState('')
+  const [teamError, setTeamError] = useState('')
+  const [teamSuccess, setTeamSuccess] = useState('')
+  const [inviteCopied, setInviteCopied] = useState(false)
+
   // UX state
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set())
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null)
@@ -237,15 +255,16 @@ export default function ProblemDetailPage() {
       [commentId]: newCount
     }))
 
-    // Async DB update
-    const supabase = createClient()
+    // Use API route with admin client
     try {
-      if (isCurrentlyLiked) {
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
-        await supabase.from('discussion_likes').delete().eq('discussion_id', commentId).eq('user_id', user.id)
-      } else {
-        await supabase.from('discussion').update({ likes_count: newCount }).eq('id', commentId)
-        await supabase.from('discussion_likes').insert({ discussion_id: commentId, user_id: user.id })
+      const res = await fetch('/api/discussion/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setLikeCounts(prev => ({ ...prev, [commentId]: data.likes_count }))
       }
     } catch {
       // Ignore network errors, optimistic state remains smooth
@@ -295,18 +314,37 @@ export default function ProblemDetailPage() {
             setHasSubmitted(false)
             setIsCompleted(false)
           }
+
+          // Check if user is in a team for this problem
+          const { data: myTmRows } = await supabase
+            .from('team_members')
+            .select('team_id, role, teams!inner(id, name, invite_code, problem_id)')
+            .eq('user_id', profile.id)
+          if (myTmRows && prob) {
+            const match = myTmRows.find((r: any) => r.teams?.problem_id === prob.id)
+            if (match) setUserTeam(match)
+          }
         }
       }
 
-      // Load comments
-      const { data: disc } = await supabase
-        .from('discussion')
-        .select('id, body, created_at, author_id, parent_id, users(name, role)')
-        .eq('problem_id', id)
-        .order('created_at', { ascending: true })
-      const loadedComments = (disc as unknown as Comment[]) ?? []
+// Load comments via API
+      let loadedComments: Comment[] = []
+      try {
+        const discRes = await fetch(`/api/discussion?problem_id=${id}`)
+        if (discRes.ok) {
+          const discData = await discRes.json()
+          loadedComments = discData.comments ?? []
+        }
+      } catch {
+        const { data: disc } = await supabase
+          .from('discussion')
+          .select('id, body, created_at, author_id, parent_id, likes_count, users(name, role)')
+          .eq('problem_id', id)
+          .order('created_at', { ascending: true })
+        loadedComments = (disc as unknown as Comment[]) ?? []
+      }
       setComments(loadedComments)
-      
+
       const counts: Record<string, number> = {}
       loadedComments.forEach(c => {
         counts[c.id] = c.likes_count ?? 0
@@ -341,13 +379,25 @@ export default function ProblemDetailPage() {
   async function postComment() {
     if (!commentBody.trim() || !user) return
     setPosting(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('discussion')
-      .insert({ problem_id: id, author_id: user.id, body: commentBody.trim(), parent_id: null })
-      .select('id, body, created_at, author_id, parent_id, users(name, role)')
-      .single()
-    if (data) setComments(prev => [...prev, data as unknown as Comment])
+    try {
+      const res = await fetch('/api/discussion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_id: id,
+          body: commentBody.trim(),
+          parent_id: null,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.comment) {
+          setComments(prev => [...prev, data.comment as Comment])
+        }
+      }
+    } catch {
+      // ignore
+    }
     setCommentBody('')
     setPosting(false)
   }
@@ -355,22 +405,81 @@ export default function ProblemDetailPage() {
   async function postReply(parentId: string) {
     if (!replyBody.trim() || !user) return
     setPostingReply(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('discussion')
-      .insert({ problem_id: id, author_id: user.id, body: replyBody.trim(), parent_id: parentId })
-      .select('id, body, created_at, author_id, parent_id, users(name, role)')
-      .single()
-    if (data) {
-      setComments(prev => [...prev, data as unknown as Comment])
-      setExpandedReplies(prev => new Set(prev).add(parentId))
+    try {
+      const res = await fetch('/api/discussion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_id: id,
+          body: replyBody.trim(),
+          parent_id: parentId,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.comment) {
+          setComments(prev => [...prev, data.comment as Comment])
+          setExpandedReplies(prev => new Set(prev).add(parentId))
+        }
+      }
+    } catch {
+      // ignore
     }
     setReplyBody('')
     setReplyingToId(null)
     setPostingReply(false)
   }
 
-  async function enroll() {
+  async function createTeam() {
+    if (!user || !teamName.trim()) return
+    setIsCreatingTeam(true)
+    setTeamError('')
+    setTeamSuccess('')
+    const res = await fetch('/api/teams/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problemId: id, teamName: teamName.trim() })
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setTeamError(data.error || 'Failed to create team')
+      setIsCreatingTeam(false)
+      return
+    }
+    setCreatedInviteCode(data.inviteCode)
+    setTeamSuccess('Team created! Share the invite code with your teammates.')
+    setUserTeam({ team_id: data.teamId, role: 'leader', teams: { id: data.teamId, name: teamName.trim(), invite_code: data.inviteCode } })
+    setIsCreatingTeam(false)
+  }
+
+  async function joinTeam() {
+    if (!joinInviteCode.trim()) return
+    setIsJoiningTeam(true)
+    setTeamError('')
+    setTeamSuccess('')
+    const res = await fetch('/api/teams/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inviteCode: joinInviteCode.trim() })
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setTeamError(data.error || 'Failed to join team')
+      setIsJoiningTeam(false)
+      return
+    }
+    setTeamSuccess('Joined team successfully!')
+    setUserTeam({ team_id: data.teamId, role: 'member', teams: { id: data.teamId, name: data.teamName } })
+    setIsJoiningTeam(false)
+  }
+
+  function handleCopyInvite() {
+    navigator.clipboard.writeText(createdInviteCode)
+    setInviteCopied(true)
+    setTimeout(() => setInviteCopied(false), 2000)
+  }
+
+  async function handleEnrollSolo() {
     if (!user || user.role !== 'student') return
     setEnrolling(true)
     setEnrollError('')
@@ -423,51 +532,7 @@ export default function ProblemDetailPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF8F4', fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* Nav */}
-      <nav style={{
-        minHeight: 66,
-        height: 'auto',
-        padding: '12px clamp(16px, 4vw, 52px)',
-        display: 'flex',
-        flexWrap: 'wrap',
-        rowGap: 10,
-        columnGap: 16,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(250,248,244,0.94)',
-        borderBottom: '1px solid rgba(28,20,16,0.07)',
-        position: 'sticky', top: 0, zIndex: 100
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-            <rect width="34" height="34" rx="8" fill="#2D6A4F"/>
-            <line x1="17" y1="27" x2="17" y2="15" stroke="#FAF8F4" strokeWidth="1.7" strokeLinecap="round"/>
-            <path d="M17 21 C16 19 13 18 11 14.5 C11 14.5 15.5 13 17 17.5" fill="#F4A723"/>
-            <path d="M17 18 C18 15.5 21.5 14 24 10.5 C24 10.5 19.5 10 17 14.5" fill="rgba(250,248,244,0.88)"/>
-          </svg>
-          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 18, color: '#1C1410' }}>SproutNet</span>
-        </Link>
-        <div className="sn-nav-actions" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', rowGap: 8 }}>
-          <Link href="/problems" style={{ fontSize: 14, color: '#4A3F38', textDecoration: 'none' }}>← Problems</Link>
-          {user && (
-            <Link href="/dashboard" style={{
-              fontSize: 14, fontWeight: 600, color: '#1C1410',
-              background: '#F4A723', padding: '8px 20px',
-              borderRadius: 6, textDecoration: 'none'
-            }}>Dashboard</Link>
-          )}
-        </div>
-        <details className="sn-mobile-menu">
-          <summary aria-label="Open navigation menu">
-            <span className="sn-menu-icon" aria-hidden="true"></span>
-            <span className="sn-menu-label">Menu</span>
-          </summary>
-          <div className="sn-mobile-panel">
-            <Link href="/problems">Back to problems</Link>
-            {user && <Link href="/dashboard" className="sn-menu-primary">Dashboard</Link>}
-          </div>
-        </details>
-      </nav>
+      <Navbar user={user} />
 
       <div className="sn-problem-grid" style={{
         maxWidth: 1100,
@@ -522,6 +587,18 @@ export default function ProblemDetailPage() {
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }} />
               Open
             </span>
+            {(problem.team_mode === 'team' || problem.team_mode === 'both') && (
+              <span style={{
+                fontFamily: 'JetBrains Mono, monospace', fontSize: 11,
+                color: '#8B5CF6', background: 'rgba(139,92,246,0.08)',
+                border: '1px solid rgba(139,92,246,0.2)',
+                padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em',
+                display: 'inline-flex', alignItems: 'center', gap: 5
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                {problem.team_mode === 'team' ? 'Team' : 'Solo or Team'}
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -1183,29 +1260,11 @@ export default function ProblemDetailPage() {
 
             {user?.role === 'student' ? (
               isCompleted ? (
-                <div style={{
-                  display: 'grid',
-                  gap: 10,
-                  fontFamily: 'DM Sans, sans-serif',
-                }}>
-                  <div style={{
-                    textAlign: 'center',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: '#2D6A4F',
-                    background: '#EAF4EE',
-                    border: '1px solid rgba(45,106,79,0.15)',
-                    borderRadius: 8,
-                    padding: '14px',
-                  }}>
+                <div style={{ display: 'grid', gap: 10, fontFamily: 'DM Sans, sans-serif' }}>
+                  <div style={{ textAlign: 'center', fontSize: 14, fontWeight: 600, color: '#2D6A4F', background: '#EAF4EE', border: '1px solid rgba(45,106,79,0.15)', borderRadius: 8, padding: '14px' }}>
                     Problem completed
                   </div>
-                  <div style={{
-                    fontSize: 12,
-                    color: 'rgba(250,248,244,0.7)',
-                    textAlign: 'center',
-                    lineHeight: 1.6,
-                  }}>
+                  <div style={{ fontSize: 12, color: 'rgba(250,248,244,0.7)', textAlign: 'center', lineHeight: 1.6 }}>
                     You have already fully submitted this problem and can unlock a new enrollment slot.
                   </div>
                 </div>
@@ -1213,59 +1272,112 @@ export default function ProblemDetailPage() {
                 <div style={{ display: 'grid', gap: 10 }}>
                 <Link
                   href={`/problems/${problem.id}/submit`}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    textAlign: 'center',
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: '#1C1410',
-                    background: '#F4A723',
-                    borderRadius: 8,
-                    padding: '14px',
-                    textDecoration: 'none'
-                  }}
+                  style={{ display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', background: '#F4A723', borderRadius: 8, padding: '14px', textDecoration: 'none' }}
                 >
                   {hasSubmitted ? 'Continue Solving →' : 'Start Solving →'}
                 </Link>
                 <CancelEnrollmentButton
                   problemId={problem.id}
                   kind="block"
-                  onCancelled={() => {
-                    setIsEnrolled(false)
-                    setHasSubmitted(false)
-                    setIsCompleted(false)
-                  }}
+                  onCancelled={() => { setIsEnrolled(false); setHasSubmitted(false); setIsCompleted(false) }}
                 />
                 </div>
+              ) : problem.team_mode === 'team' || problem.team_mode === 'both' ? (
+                userTeam ? (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    <div style={{ textAlign: 'center', fontSize: 13, color: 'rgba(250,248,244,0.7)', fontFamily: 'DM Sans, sans-serif' }}>
+                      You are a member of <strong style={{ color: '#F4A723' }}>{userTeam.teams?.name}</strong>
+                    </div>
+                    <Link href={`/teams/${userTeam.team_id}`} style={{ display: 'block', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', background: '#F4A723', borderRadius: 8, padding: '14px', textDecoration: 'none' }}>
+                      Go to Workspace →
+                    </Link>
+                    {problem.team_mode === 'both' && !isEnrolled && (
+                      <button onClick={handleEnrollSolo} disabled={enrolling} style={{ width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: 'rgba(250,248,244,0.8)', background: 'transparent', border: '1px solid rgba(250,248,244,0.2)', borderRadius: 8, padding: '10px', cursor: enrolling ? 'not-allowed' : 'pointer' }}>
+                        {enrolling ? 'Enrolling...' : 'Or solve solo'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {problem.team_mode === 'both' && (
+                      <button onClick={handleEnrollSolo} disabled={enrolling} style={{ width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', background: enrolling ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8, padding: '12px', cursor: enrolling ? 'not-allowed' : 'pointer' }}>
+                        {enrolling ? 'Enrolling...' : 'Solve Solo →'}
+                      </button>
+                    )}
+                    {enrollError && <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#DC2626', textAlign: 'center' }}>{enrollError}</div>}
+                    <div style={{ textAlign: 'center', fontSize: 11, color: 'rgba(250,248,244,0.3)', fontFamily: 'JetBrains Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 0' }}>
+                      {problem.team_mode === 'both' ? 'or' : null}
+                    </div>
+                    {!showCreateTeam && !showJoinTeam ? (
+                      <div style={{ display: 'grid', gap: 6 }}>
+                        <button onClick={() => { setShowCreateTeam(true); setShowJoinTeam(false) }} style={{ width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#1C1410', background: '#2D6A4F', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer' }}>
+                          Create a Team →
+                        </button>
+                        <button onClick={() => { setShowJoinTeam(true); setShowCreateTeam(false) }} style={{ width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500, color: 'rgba(250,248,244,0.7)', background: 'transparent', border: '1px solid rgba(250,248,244,0.15)', borderRadius: 8, padding: '10px', cursor: 'pointer' }}>
+                          Join with Invite Code
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {showCreateTeam && !createdInviteCode && (
+                      <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+                        <input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Team name" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid #2D6A4F', borderRadius: 8, padding: '10px 12px', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={createTeam} disabled={isCreatingTeam || !teamName.trim()} style={{ flex: 1, fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#1C1410', background: isCreatingTeam ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8, padding: '10px', cursor: isCreatingTeam ? 'not-allowed' : 'pointer' }}>
+                            {isCreatingTeam ? 'Creating...' : 'Create'}
+                          </button>
+                          <button onClick={() => setShowCreateTeam(false)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(250,248,244,0.6)', background: 'transparent', border: '1px solid rgba(250,248,244,0.15)', borderRadius: 8, padding: '10px 12px', cursor: 'pointer' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {createdInviteCode && (
+                      <div style={{ display: 'grid', gap: 8, marginTop: 4, background: 'rgba(45,106,79,0.15)', borderRadius: 8, padding: '14px' }}>
+                        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#2D6A4F', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Invite Code</div>
+                        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 700, color: '#F4A723', letterSpacing: '0.12em', textAlign: 'center' }}>{createdInviteCode}</div>
+                        <button onClick={handleCopyInvite} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 600, color: '#1C1410', background: '#F4A723', border: 'none', borderRadius: 6, padding: '8px', cursor: 'pointer' }}>
+                          {inviteCopied ? 'Copied!' : 'Copy Invite Code'}
+                        </button>
+                        <Link href={`/teams/${userTeam?.team_id}`} style={{ textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#2D6A4F', textDecoration: 'none' }}>
+                          Go to Workspace →
+                        </Link>
+                      </div>
+                    )}
+
+                    {showJoinTeam && (
+                      <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+                        <input value={joinInviteCode} onChange={e => setJoinInviteCode(e.target.value)} placeholder="Enter invite code (e.g. SPROUT-XXXXXX)" style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: '#1C1410', background: '#FAF8F4', border: '1.5px solid #2D6A4F', borderRadius: 8, padding: '10px 12px', outline: 'none', textTransform: 'uppercase', width: '100%', boxSizing: 'border-box' }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={joinTeam} disabled={isJoiningTeam || !joinInviteCode.trim()} style={{ flex: 1, fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#1C1410', background: isJoiningTeam ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8, padding: '10px', cursor: isJoiningTeam ? 'not-allowed' : 'pointer' }}>
+                            {isJoiningTeam ? 'Joining...' : 'Join'}
+                          </button>
+                          <button onClick={() => setShowJoinTeam(false)} style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'rgba(250,248,244,0.6)', background: 'transparent', border: '1px solid rgba(250,248,244,0.15)', borderRadius: 8, padding: '10px 12px', cursor: 'pointer' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {teamError && (
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#DC2626', textAlign: 'center', marginTop: 4 }}>
+                        {teamError}
+                      </div>
+                    )}
+                    {teamSuccess && !createdInviteCode && (
+                      <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: '#2D6A4F', textAlign: 'center', marginTop: 4 }}>
+                        {teamSuccess}
+                      </div>
+                    )}
+                  </div>
+                )
               ) : (
                 <div>
-                  <button
-                    onClick={enroll}
-                    disabled={enrolling}
-                    style={{
-                      width: '100%', fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 15, fontWeight: 600,
-                      color: '#1C1410', background: enrolling ? '#F9C05A' : '#F4A723',
-                      border: 'none', borderRadius: 8,
-                      padding: '14px', cursor: enrolling ? 'not-allowed' : 'pointer'
-                    }}
-                  >
+                  <button onClick={handleEnrollSolo} disabled={enrolling} style={{ width: '100%', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', background: enrolling ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 8, padding: '14px', cursor: enrolling ? 'not-allowed' : 'pointer' }}>
                     {enrolling ? 'Enrolling...' : 'Enroll to Solve →'}
                   </button>
-                  {enrollError && (
-                    <div style={{
-                      marginTop: 10,
-                      fontFamily: 'DM Sans, sans-serif',
-                      fontSize: 12,
-                      color: '#DC2626',
-                      textAlign: 'center'
-                    }}>
-                      {enrollError}
-                    </div>
-                  )}
+                  {enrollError && <div style={{ marginTop: 10, fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: '#DC2626', textAlign: 'center' }}>{enrollError}</div>}
                 </div>
               )
             ) : !user ? (

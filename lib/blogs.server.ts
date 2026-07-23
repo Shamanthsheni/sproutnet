@@ -26,6 +26,8 @@ type BlogPostRow = {
   post_type: string
   created_at: string
   author_id: string
+  cover_image?: string | null
+  excerpt?: string | null
 }
 
 type BlogCommentRow = {
@@ -138,6 +140,8 @@ async function buildFeedFromRows(params: {
         commentsCount: postComments.length,
         likedByViewer: Boolean(params.viewerId && postLikes.some(like => like.user_id === params.viewerId)),
         comments: postComments,
+        cover_image: post.cover_image,
+        excerpt: post.excerpt,
       }
     }),
     error: null,
@@ -162,7 +166,7 @@ export async function getBlogFeed(viewerId?: string | null): Promise<BlogFeedRes
 
     const { data: postRows, error: postsError } = await admin
       .from('blog_posts')
-      .select('id, title, body, post_type, created_at, author_id')
+      .select('id, title, body, post_type, created_at, author_id, cover_image, excerpt')
       .order('created_at', { ascending: false })
       .limit(60)
 

@@ -33,6 +33,7 @@ export async function proxy(request: NextRequest) {
     '/login',
     '/login/student',
     '/login/poster',
+    '/login/mentor',
     '/join',
     '/problems',
     '/blogs',
@@ -40,6 +41,7 @@ export async function proxy(request: NextRequest) {
     '/impact',
     '/how-it-works',
     '/about',
+    '/mentors',
   ]
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || (pathname.startsWith('/problems/') && !pathname.endsWith('/submit'))
@@ -71,8 +73,14 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+    if (pathname === '/mentor' || pathname.startsWith('/mentor/')) {
+      if (role !== 'mentor' && role !== 'admin') {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+
     if (pathname.startsWith('/login') || pathname.startsWith('/join')) {
-      const target = role === 'poster' ? '/poster/dashboard' : '/dashboard'
+      const target = role === 'poster' ? '/poster/dashboard' : role === 'mentor' ? '/mentor/dashboard' : '/dashboard'
       return NextResponse.redirect(new URL(target, request.url))
     }
   }

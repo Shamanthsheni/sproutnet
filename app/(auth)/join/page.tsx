@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-type UserType = 'student' | 'poster' | null
+type UserType = 'student' | 'poster' | 'mentor' | null
 
 const DEPARTMENTS = [
   'Computer Science', 'Information Science', 'Electronics & Communication',
@@ -31,8 +31,14 @@ function JoinContent() {
   const [year, setYear] = useState('')
   const [city, setCity] = useState('')
   const [orgType, setOrgType] = useState('')
+  const [bio, setBio] = useState('')
+  const [skills, setSkills] = useState('')
+  const [technologies, setTechnologies] = useState('')
+  const [experienceYears, setExperienceYears] = useState('')
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
 
-  const userType = searchParams.get('role') === 'poster' ? 'poster' : selectedUserType
+  const userType = searchParams.get('role') === 'poster' ? 'poster' : searchParams.get('role') === 'mentor' ? 'mentor' : selectedUserType
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -70,16 +76,32 @@ function JoinContent() {
     }
 
     if (data.user) {
-      const updates: Record<string, string> = { name }
+      const updates: Record<string, string> = { name, role: userType! }
       if (userType === 'student') {
         updates.dept = dept
         updates.year = year
-      } else {
+      } else if (userType === 'poster') {
         updates.city = city
         updates.org_type = orgType
       }
       await supabase.from('users').update(updates).eq('id', data.user.id)
-      router.push('/dashboard')
+
+      if (userType === 'mentor') {
+        const mentorSkills = skills.split(',').map(s => s.trim()).filter(Boolean)
+        const mentorTechs = technologies.split(',').map(t => t.trim()).filter(Boolean)
+        await supabase.from('mentor_profiles').insert({
+          user_id: data.user.id,
+          bio: bio || null,
+          skills: mentorSkills,
+          technologies: mentorTechs,
+          experience_years: parseInt(experienceYears) || 0,
+          linkedin_url: linkedinUrl || null,
+          github_url: githubUrl || null,
+        })
+        router.push('/mentor/dashboard')
+      } else {
+        router.push('/dashboard')
+      }
       router.refresh()
     }
 
@@ -154,6 +176,20 @@ function JoinContent() {
             </button>
 
             <button
+              onClick={() => setSelectedUserType('mentor')}
+              style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
+              onMouseEnter={e => { (e.currentTarget).style.borderColor = '#8B5CF6'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
+              onMouseLeave={e => { (e.currentTarget).style.borderColor = 'rgba(28,20,16,0.1)'; (e.currentTarget).style.transform = 'translateY(0)' }}
+            >
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🧭</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#1C1410', marginBottom: 6 }}>I want to Mentor</div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', fontWeight: 300 }}>Guide student teams, share your expertise, and shape the next generation of builders.</div>
+              <div style={{ marginTop: 12, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#8B5CF6', background: 'rgba(139,92,246,0.08)', padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>
+                Industry Experts · Alumni · Faculty
+              </div>
+            </button>
+
+            <button
               onClick={() => setSelectedUserType('poster')}
               style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: 24, cursor: 'pointer', textAlign: 'left', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', transition: 'all 0.2s' }}
               onMouseEnter={e => { (e.currentTarget).style.borderColor = '#F4A723'; (e.currentTarget).style.transform = 'translateY(-2px)' }}
@@ -178,16 +214,16 @@ function JoinContent() {
         {userType && (
           <div style={{ background: '#fff', border: '1.5px solid rgba(28,20,16,0.08)', borderRadius: 14, padding: '36px 40px', boxShadow: '0 4px 24px rgba(28,20,16,0.07)' }}>
             <button
-              onClick={() => { setSelectedUserType(null); setError('') }}
+              onClick={() => { setSelectedUserType(null); setError(''); router.replace('/join') }}
               style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#9CA3A0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}
             >
               ← Back
             </button>
 
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{userType === 'student' ? '🎓' : '🏢'}</div>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{userType === 'student' ? '🎓' : userType === 'mentor' ? '🧭' : '🏢'}</div>
               <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#1C1410' }}>
-                {userType === 'student' ? 'Create Student Account' : 'Create Poster Account'}
+                {userType === 'student' ? 'Create Student Account' : userType === 'mentor' ? 'Create Mentor Account' : 'Create Poster Account'}
               </div>
             </div>
 
@@ -249,6 +285,39 @@ function JoinContent() {
                     <option value="">Select type</option>
                     {ORG_TYPES.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
+                </div>
+              </>)}
+
+              {userType === 'mentor' && (<>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>Bio</label>
+                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell students about your expertise and what you can help with..." style={{ ...inp, resize: 'vertical', minHeight: 70 }}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>Skills (comma-separated)</label>
+                  <input type="text" value={skills} onChange={e => setSkills(e.target.value)} placeholder="Web Development, System Design, AI/ML" style={inp}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>Technologies (comma-separated)</label>
+                  <input type="text" value={technologies} onChange={e => setTechnologies(e.target.value)} placeholder="React, Python, PostgreSQL, AWS" style={inp}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>Years of experience</label>
+                  <input type="number" value={experienceYears} onChange={e => setExperienceYears(e.target.value)} min={0} max={50} placeholder="5" style={inp}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>LinkedIn URL (optional)</label>
+                  <input type="url" value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourprofile" style={inp}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={lbl}>GitHub URL (optional)</label>
+                  <input type="url" value={githubUrl} onChange={e => setGithubUrl(e.target.value)} placeholder="https://github.com/yourhandle" style={inp}
+                    onFocus={e => e.target.style.borderColor = '#2D6A4F'} onBlur={e => e.target.style.borderColor = 'rgba(28,20,16,0.12)'} />
                 </div>
               </>)}
 

@@ -23,6 +23,11 @@ type ProblemPayload = {
   scope: string
   constraints: string
   deliverables: string
+  team_mode?: string
+  min_team_size?: number
+  max_team_size?: number
+  mentor_required?: boolean
+  max_mentors_per_team?: number
 }
 
 export async function POST(req: Request) {
@@ -113,6 +118,11 @@ export async function POST(req: Request) {
     constraints: payload.constraints,
     deliverables: payload.deliverables,
     poster_id: user.id,
+    team_mode: payload.team_mode ?? 'solo',
+    min_team_size: payload.min_team_size ?? 1,
+    max_team_size: payload.max_team_size ?? 4,
+    mentor_required: payload.mentor_required ?? false,
+    max_mentors_per_team: payload.max_mentors_per_team ?? 1,
   }
 
   let warning: string | null = null
