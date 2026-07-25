@@ -123,16 +123,25 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     .order('created_at', { ascending: false })
     .limit(10)
 
-  const submissions = ((submissionRows ?? []) as Array<{
-    id: string; score: number | null; status: string; created_at: string;
-    problems: { title: string | null } | null
-  }>).map(s => ({
-    id: s.id,
-    problem_title: s.problems?.title ?? null,
-    score: s.score,
-    status: s.status,
-    created_at: s.created_at,
-  })) as RecentSubmission[]
+  type SubmissionRow = {
+    id: string
+    score: number | null
+    status: string
+    created_at: string
+    problems: { title: string | null } | { title: string | null }[] | null
+  }
+
+  const submissions = ((submissionRows ?? []) as SubmissionRow[]).map(s => {
+    const problem = Array.isArray(s.problems) ? s.problems[0] : s.problems
+
+    return {
+      id: s.id,
+      problem_title: problem?.title ?? null,
+      score: s.score,
+      status: s.status,
+      created_at: s.created_at,
+    }
+  }) as RecentSubmission[]
 
   const { data: enrollRows } = await admin
     .from('enrollments')
@@ -141,15 +150,22 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     .neq('status', 'completed')
     .limit(10)
 
-  const enrollments = ((enrollRows ?? []) as Array<{
-    problem_id: string; milestone: number;
-    problems: { title: string | null; total_milestones: number | null } | null
-  }>).map(e => ({
-    problem_id: e.problem_id,
-    problem_title: e.problems?.title ?? null,
-    milestone: e.milestone,
-    total_milestones: e.problems?.total_milestones ?? 1,
-  })) as EnrollmentProgress[]
+  type EnrollmentRow = {
+    problem_id: string
+    milestone: number
+    problems: { title: string | null; total_milestones: number | null } | { title: string | null; total_milestones: number | null }[] | null
+  }
+
+  const enrollments = ((enrollRows ?? []) as EnrollmentRow[]).map(e => {
+    const problem = Array.isArray(e.problems) ? e.problems[0] : e.problems
+
+    return {
+      problem_id: e.problem_id,
+      problem_title: problem?.title ?? null,
+      milestone: e.milestone,
+      total_milestones: problem?.total_milestones ?? 1,
+    }
+  }) as EnrollmentProgress[]
 
   const ac = avatarColor(userProfile.name)
   const init = initials(userProfile.name)
