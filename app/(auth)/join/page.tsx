@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 type UserType = 'student' | 'poster' | 'mentor' | null
 
 const DEPARTMENTS = [
-  'Computer Science', 'Information Science', 'Electronics & Communication',
+  'Computer Science', 'Information Science', 'AIML',
+  'Electronics & Communication',
   'Electrical Engineering', 'Mechanical Engineering', 'Civil Engineering',
   'Biotechnology', 'MBA', 'MCA', 'Other'
 ]

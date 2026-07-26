@@ -81,10 +81,6 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    if (pathname.startsWith('/login') || pathname.startsWith('/join')) {
-      const target = role === 'poster' ? '/poster/dashboard' : role === 'mentor' ? '/mentor/dashboard' : '/dashboard'
-      return NextResponse.redirect(new URL(target, request.url))
-    }
   }
 
   return supabaseResponse
