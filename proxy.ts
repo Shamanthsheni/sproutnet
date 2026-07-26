@@ -34,6 +34,7 @@ export async function proxy(request: NextRequest) {
     '/login/student',
     '/login/poster',
     '/login/mentor',
+    '/login/admin',
     '/join',
     '/problems',
     '/blogs',
