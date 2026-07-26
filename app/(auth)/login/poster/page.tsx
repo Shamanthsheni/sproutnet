@@ -26,26 +26,25 @@ export default function PosterLoginPage() {
       return
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
+    const profileRes = await fetch('/api/auth/profile')
+    const profileData = await profileRes.json()
 
-    if (profileError || !profile) {
+    if (!profileRes.ok || !profileData.profile) {
       await supabase.auth.signOut()
       setError('Profile not found. Please contact support.')
       setLoading(false)
       return
     }
 
-    if (profile.role === 'poster') {
+    const role = profileData.profile.role
+
+    if (role === 'poster') {
       router.push('/poster/dashboard')
       router.refresh()
       return
     }
 
-    if (profile.role === 'admin') {
+    if (role === 'admin') {
       router.push('/dashboard')
       router.refresh()
       return

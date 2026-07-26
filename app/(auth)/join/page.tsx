@@ -85,7 +85,11 @@ function JoinContent() {
         updates.city = city
         updates.org_type = orgType
       }
-      await supabase.from('users').update(updates).eq('id', data.user.id)
+      await fetch('/api/auth/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
 
       if (userType === 'mentor') {
         const mentorSkills = skills.split(',').map(s => s.trim()).filter(Boolean)

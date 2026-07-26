@@ -26,27 +26,26 @@ export default function MentorLoginPage() {
       return
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
+    const profileRes = await fetch('/api/auth/profile')
+    const profileData = await profileRes.json()
 
-    if (profileError || !profile) {
+    if (!profileRes.ok || !profileData.profile) {
       await supabase.auth.signOut()
       setError('Profile not found. Please contact support.')
       setLoading(false)
       return
     }
 
-    if (profile.role === 'mentor' || profile.role === 'admin') {
+    const role = profileData.profile.role
+
+    if (role === 'mentor' || role === 'admin') {
       router.push('/mentor/dashboard')
       router.refresh()
       return
     }
 
     await supabase.auth.signOut()
-    setError(`This account has role "${profile.role}". Please use the appropriate login page.`)
+    setError(`This account has role "${role}". Please use the appropriate login page.`)
     setLoading(false)
   }
 
