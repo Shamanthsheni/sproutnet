@@ -39,4 +39,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 # sproutnet
 SproutNet is a platform where real Indian problems meet structured student solutions. Anyone can post civic or industry challenges, and students submit thoughtful, milestone-based responses evaluated through blind judging.
 >>>>>>> 9212281ab9a6d7af1ba1546ea4c40e79fe87549e
-#########################################################################################
+############################################################################################
