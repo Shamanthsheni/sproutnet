@@ -50,6 +50,7 @@ export async function proxy(request: NextRequest) {
   )
     || (pathname.startsWith('/blogs/') && !pathname.startsWith('/blogs/manage'))
     || pathname.startsWith('/profile/')
+    || pathname.startsWith('/admin/') || pathname === '/admin'
 
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
