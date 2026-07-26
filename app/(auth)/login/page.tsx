@@ -78,20 +78,6 @@ export default function LoginPage() {
               </div>
             </a>
 
-            <div style={{ borderTop: '1px dashed rgba(28,20,16,0.1)', margin: '0' }} />
-
-            <a href="/login/admin" style={{
-              display: 'block', textDecoration: 'none',
-              border: '1.5px solid rgba(28,20,16,0.1)', borderRadius: 12, padding: '18px 20px',
-              background: '#F6F2EB'
-            }}>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410' }}>
-                Admin Login
-              </div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: '#4A3F38', marginTop: 6, fontWeight: 300 }}>
-                Platform management and oversight.
-              </div>
-            </a>
           </div>
 
           <div style={{ borderTop: '1px solid rgba(28,20,16,0.07)', margin: '24px 0' }} />
