@@ -8,7 +8,15 @@ create table if not exists public.blog_posts (
   post_type text not null default 'knowledge'
     check (post_type in ('knowledge', 'question')),
   created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  updated_at timestamptz not null default timezone('utc', now()),
+  cover_image text,
+  slug text,
+  excerpt text,
+  tags text[] default '{}',
+  category text,
+  seo_title text,
+  seo_description text,
+  status text not null default 'published' check (status in ('draft', 'published'))
 );
 
 create table if not exists public.blog_comments (
