@@ -42,6 +42,9 @@ type Problem = {
   constraints: string
   deliverables: string
   status: string
+  team_mode: string
+  min_team_size: number | null
+  max_team_size: number | null
 }
 
 export default function EditProblemForm({ posterName, problem }: { posterName: string; problem: Problem }) {
@@ -62,6 +65,9 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
   const [scope, setScope] = useState(problem.scope)
   const [constraints, setConstraints] = useState(problem.constraints)
   const [deliverables, setDeliverables] = useState(problem.deliverables)
+  const [teamMode, setTeamMode] = useState(problem.team_mode || 'solo')
+  const [minTeamSize, setMinTeamSize] = useState(String(problem.min_team_size ?? 1))
+  const [maxTeamSize, setMaxTeamSize] = useState(String(problem.max_team_size ?? 4))
   const [thumbnailUrl, setThumbnailUrl] = useState(problem.thumbnail_url ?? '')
   const [thumbnailPreview, setThumbnailPreview] = useState(problem.thumbnail_url ?? '')
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
@@ -170,6 +176,9 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
       scope: scope.trim(),
       constraints: constraints.trim(),
       deliverables: deliverables.trim(),
+      team_mode: teamMode,
+      min_team_size: Number(minTeamSize) || 1,
+      max_team_size: Number(maxTeamSize) || 4,
     }
 
     const res = await fetch('/api/problems/update', {
@@ -399,6 +408,26 @@ export default function EditProblemForm({ posterName, problem }: { posterName: s
             <Field label="Judging deadline">
               <input type="date" value={judgingDeadline} onChange={e => setJudgingDeadline(e.target.value)} required style={inputStyle} />
             </Field>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <Field label="Participation Type">
+              <select value={teamMode} onChange={e => setTeamMode(e.target.value)} style={inputStyle}>
+                <option value="solo">Individual Only</option>
+                <option value="team">Team Only</option>
+                <option value="both">Both Individual & Team</option>
+              </select>
+            </Field>
+            {teamMode !== 'solo' && (
+              <>
+                <Field label="Min Team Size">
+                  <input type="number" min="1" value={minTeamSize} onChange={e => setMinTeamSize(e.target.value)} style={inputStyle} />
+                </Field>
+                <Field label="Max Team Size">
+                  <input type="number" min="1" value={maxTeamSize} onChange={e => setMaxTeamSize(e.target.value)} style={inputStyle} />
+                </Field>
+              </>
+            )}
           </div>
 
           <Field label="Background & context">

@@ -95,7 +95,7 @@ export async function POST(req: Request) {
   }
 
   // Send notification to mentor
-  await admin.from('notifications').insert({
+  const { data: notifRow } = await admin.from('notifications').insert({
     user_id: mentorId,
     event_type: 'MENTOR_CONNECT_REQUEST',
     title: 'New Mentorship Connection',
@@ -109,7 +109,14 @@ export async function POST(req: Request) {
       message: message || null,
       conversation_id: conversationId,
     }
-  })
+  }).select('id').single()
+
+  // Update link_url to point to the dedicated profile page
+  if (notifRow) {
+    await admin.from('notifications').update({
+      link_url: `/mentor/connect/${notifRow.id}`
+    }).eq('id', notifRow.id)
+  }
 
   // Log activity
   await admin.from('activity_logs').insert({

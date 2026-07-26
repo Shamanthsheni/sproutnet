@@ -63,7 +63,12 @@ export default function ConnectRequestCard({ id, studentName, message, studentId
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <Link href={`/mentor/connect/${id}`} style={{
+          fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#8B5CF6', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', padding: '9px 18px', borderRadius: 8, textDecoration: 'none'
+        }}>
+          View Profile →
+        </Link>
         <button onClick={() => handle('accept')} disabled={busy} style={{
           fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 600, color: '#fff', background: '#2D6A4F', border: 'none', padding: '9px 18px', borderRadius: 8, cursor: 'pointer', opacity: busy ? 0.6 : 1
         }}>

@@ -22,6 +22,9 @@ type EditableProblem = {
   constraints: string
   deliverables: string
   status: string
+  team_mode: string
+  min_team_size: number | null
+  max_team_size: number | null
 }
 
 export default async function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +45,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
 
   let { data: problem, error } = await supabase
     .from('problems')
-    .select('id, title, domain, problem_type, thumbnail_url, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status')
+    .select('id, title, domain, problem_type, thumbnail_url, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status, team_mode, min_team_size, max_team_size')
     .eq('id', id)
     .eq('poster_id', user.id)
     .single()
@@ -50,7 +53,7 @@ export default async function EditProblemPage({ params }: { params: Promise<{ id
   if (error && isMissingProblemThumbnailColumnError(error.message)) {
     const fallback = await supabase
       .from('problems')
-      .select('id, title, domain, problem_type, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status, rejected_reason')
+      .select('id, title, domain, problem_type, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status, rejected_reason, team_mode, min_team_size, max_team_size')
       .eq('id', id)
       .eq('poster_id', user.id)
       .single()

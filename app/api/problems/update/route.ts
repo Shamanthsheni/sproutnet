@@ -22,6 +22,9 @@ type ProblemPayload = {
   scope: string
   constraints: string
   deliverables: string
+  team_mode?: string
+  min_team_size?: number
+  max_team_size?: number
 }
 
 export async function POST(req: Request) {
@@ -100,6 +103,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
+  const validTeamModes = ['solo', 'team', 'both']
+  const teamMode = payload.team_mode && validTeamModes.includes(payload.team_mode) ? payload.team_mode : undefined
+
   const updateData: Record<string, unknown> = {
     title: payload.title,
     domain: payload.domain,
@@ -113,6 +119,12 @@ export async function POST(req: Request) {
     scope: payload.scope,
     constraints: payload.constraints,
     deliverables: payload.deliverables,
+  }
+
+  if (teamMode) {
+    updateData.team_mode = teamMode
+    if (payload.min_team_size != null) updateData.min_team_size = payload.min_team_size
+    if (payload.max_team_size != null) updateData.max_team_size = payload.max_team_size
   }
 
   if (shouldUpdateThumbnail) {
