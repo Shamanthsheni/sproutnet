@@ -39,7 +39,7 @@ function JoinContent() {
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [githubUrl, setGithubUrl] = useState('')
 
-  const userType = searchParams.get('role') === 'poster' ? 'poster' : searchParams.get('role') === 'mentor' ? 'mentor' : selectedUserType
+  const userType = selectedUserType || (searchParams.get('role') === 'poster' ? 'poster' : searchParams.get('role') === 'mentor' ? 'mentor' : null)
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -67,7 +67,7 @@ function JoinContent() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } }
+      options: { data: { name, role: userType! } }
     })
 
     if (signUpError) {

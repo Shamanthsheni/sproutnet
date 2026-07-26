@@ -51,7 +51,7 @@ export default function StudentLoginPage() {
     }
 
     await supabase.auth.signOut()
-    setError('This is a poster account. Please use Poster Login.')
+    setError(`This account has role "${role}". Please use the appropriate login page.`)
     setLoading(false)
   }
 
