@@ -41,7 +41,8 @@ type LocalBlogsData = {
   likes: LocalBlogLikeRow[]
 }
 
-const BLOGS_LOCAL_DATA_PATH = path.join(process.cwd(), '.data', 'blogs.json')
+const DATA_DIR = process.env.VERCEL ? '/tmp/.data' : path.join(process.cwd(), '.data')
+const BLOGS_LOCAL_DATA_PATH = path.join(DATA_DIR, 'blogs.json')
 
 function normalizeLocalData(value: unknown): LocalBlogsData {
   if (!value || typeof value !== 'object') {
