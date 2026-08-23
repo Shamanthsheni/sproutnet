@@ -181,6 +181,13 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Missing comment_id.' }, { status: 400 })
   }
 
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isModerator = profile?.role === 'admin'
+
   const admin = createAdminClient()
   const { data: commentRows, error: commentError } = await admin
     .from('blog_comments')
@@ -209,15 +216,14 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: 'Comment not found.' }, { status: 404 })
   }
 
-  if (commentRows[0].author_id !== user.id) {
+  if (commentRows[0].author_id !== user.id && !isModerator) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { error } = await admin
-    .from('blog_comments')
-    .delete()
-    .eq('id', commentId)
-    .eq('author_id', user.id)
+  // Replies cascade-delete with their parent.
+  const { error } = isModerator && commentRows[0].author_id !== user.id
+    ? await admin.from('blog_comments').delete().eq('id', commentId)
+    : await admin.from('blog_comments').delete().eq('id', commentId).eq('author_id', user.id)
 
   if (error) {
     if (isMissingBlogTablesError(error.message) && BLOGS_LOCAL_FALLBACK_ENABLED) {

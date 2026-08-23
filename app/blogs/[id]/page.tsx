@@ -134,6 +134,28 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
     load()
   }, [id])
 
+  async function handleDeleteComment(commentId: string) {
+    if (!currentUser) return
+    if (!window.confirm('Delete this comment? Replies under it will also be removed.')) return
+
+    const res = await fetch('/api/blogs/comments', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment_id: commentId }),
+    })
+
+    if (res.ok) {
+      setComments(prev => prev.filter(c => c.id !== commentId && c.parentId !== commentId))
+    } else {
+      const text = await res.text().catch(() => '')
+      let message = `Could not delete the comment (${res.status}).`
+      try {
+        message = JSON.parse(text)?.error ?? message
+      } catch { /* keep default */ }
+      window.alert(message)
+    }
+  }
+
   async function handleLike() {
     if (!currentUser) { router.push('/login'); return }
     const res = await fetch('/api/blogs/likes', {
@@ -280,28 +302,52 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
             <div style={{ fontSize: 14, color: '#7A7068' }}>{currentUser ? 'No comments yet. Be the first!' : 'No comments yet.'}</div>
           ) : (
             <div style={{ display: 'grid', gap: 14 }}>
-              {comments.filter(c => !c.parentId).map(comment => (
+              {comments.filter(c => !c.parentId).map(comment => {
+                const canDelete = currentUser?.id != null && comment.author?.id === currentUser.id
+                return (
                 <div key={comment.id}>
                   <div style={{ background: '#fff', border: '1px solid rgba(28,20,16,0.06)', borderRadius: 14, padding: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                       <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700, color: '#1C1410' }}>{comment.author?.name ?? 'SproutNet member'}</span>
                       <span style={{ fontSize: 11, color: '#8A8078' }}>{formatDate(comment.createdAt)}</span>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(comment.id)}
+                          title="Delete comment"
+                          style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: '#DC2626', background: 'none', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                     <div style={{ fontSize: 14, color: '#3F352E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{comment.body}</div>
                   </div>
-                  {comments.filter(c => c.parentId === comment.id).map(reply => (
+                  {comments.filter(c => c.parentId === comment.id).map(reply => {
+                    const canDeleteReply = currentUser?.id != null && reply.author?.id === currentUser.id
+                    return (
                     <div key={reply.id} style={{ marginLeft: 24, marginTop: 10, paddingLeft: 16, borderLeft: '2px solid rgba(28,20,16,0.06)' }}>
                       <div style={{ background: '#fff', border: '1px solid rgba(28,20,16,0.06)', borderRadius: 14, padding: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                           <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700, color: '#1C1410' }}>{reply.author?.name ?? 'SproutNet member'}</span>
                           <span style={{ fontSize: 11, color: '#8A8078' }}>{formatDate(reply.createdAt)}</span>
+                          {canDeleteReply && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteComment(reply.id)}
+                              title="Delete reply"
+                              style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: '#DC2626', background: 'none', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                         <div style={{ fontSize: 14, color: '#3F352E', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{reply.body}</div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
