@@ -1,7 +1,42 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { MAX_ACTIVE_ENROLLMENTS } from '@/lib/enrollment-progress'
 import { nanoid } from 'nanoid'
+
+// Team participation counts as an enrollment so the problem shows in the
+// student dashboard and unlocks the solution submit page.
+async function ensureEnrollment(admin: ReturnType<typeof createAdminClient>, userId: string, problemId: string) {
+  const { data: existing } = await admin
+    .from('enrollments')
+    .select('id, status')
+    .eq('problem_id', problemId)
+    .eq('student_id', userId)
+    .maybeSingle()
+
+  if (existing) {
+    if (existing.status !== 'active') {
+      const { error } = await admin.from('enrollments').update({ status: 'active' }).eq('id', existing.id)
+      return { error: error?.message ?? null }
+    }
+    return { error: null }
+  }
+
+  const { count } = await admin
+    .from('enrollments')
+    .select('id', { count: 'exact', head: true })
+    .eq('student_id', userId)
+    .eq('status', 'active')
+
+  if ((count ?? 0) >= MAX_ACTIVE_ENROLLMENTS) {
+    return { error: `You can only work on ${MAX_ACTIVE_ENROLLMENTS} problems at a time.` }
+  }
+
+  const { error } = await admin
+    .from('enrollments')
+    .insert({ problem_id: problemId, student_id: userId, status: 'active' })
+  return { error: error?.message ?? null }
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -31,6 +66,11 @@ export async function POST(req: Request) {
 
   if (problem.team_mode === 'solo') {
     return NextResponse.json({ error: 'This problem only allows solo participation.' }, { status: 400 })
+  }
+
+  const enrollment = await ensureEnrollment(admin, user.id, problemId)
+  if (enrollment.error) {
+    return NextResponse.json({ error: enrollment.error }, { status: 403 })
   }
 
   // Generate unique invite code (e.g. SPROUT-8CHAR)

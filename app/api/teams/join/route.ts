@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { MAX_ACTIVE_ENROLLMENTS } from '@/lib/enrollment-progress'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -39,6 +40,39 @@ export async function POST(req: Request) {
 
   if ((memberCount ?? 0) >= maxLimit) {
     return NextResponse.json({ error: `Team capacity limit (${maxLimit} members) reached.` }, { status: 400 })
+  }
+
+  // Joining a team enrolls the member in the team's problem so it shows in
+  // their dashboard and unlocks the solution submit page.
+  const { data: existingEnrollment } = await admin
+    .from('enrollments')
+    .select('id, status')
+    .eq('problem_id', team.problem_id)
+    .eq('student_id', user.id)
+    .maybeSingle()
+
+  if (!existingEnrollment) {
+    const { count: activeCount } = await admin
+      .from('enrollments')
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', user.id)
+      .eq('status', 'active')
+
+    if ((activeCount ?? 0) >= MAX_ACTIVE_ENROLLMENTS) {
+      return NextResponse.json(
+        { error: `You can only work on ${MAX_ACTIVE_ENROLLMENTS} problems at a time. Finish one before joining this team.` },
+        { status: 403 }
+      )
+    }
+
+    const { error: enrollErr } = await admin
+      .from('enrollments')
+      .insert({ problem_id: team.problem_id, student_id: user.id, status: 'active' })
+    if (enrollErr) {
+      return NextResponse.json({ error: enrollErr.message }, { status: 400 })
+    }
+  } else if (existingEnrollment.status !== 'active') {
+    await admin.from('enrollments').update({ status: 'active' }).eq('id', existingEnrollment.id)
   }
 
   // Insert into team_members

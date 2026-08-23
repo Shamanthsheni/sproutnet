@@ -93,6 +93,26 @@ export default async function DashboardPage() {
     )
 
     if (problemIds.length > 0) {
+      // Team members share submission visibility: gather all students on the
+      // user's teams so a teammate's Stage-1/Stage-2 progress shows here too.
+      const { data: myMemberships } = await admin
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+
+      const myTeamIds = Array.from(new Set((myMemberships ?? []).map(m => m.team_id as string)))
+      let teammateUserIds: string[] = [user.id]
+      if (myTeamIds.length > 0) {
+        const { data: teammateRows } = await admin
+          .from('team_members')
+          .select('user_id')
+          .in('team_id', myTeamIds)
+        teammateUserIds = Array.from(new Set([
+          user.id,
+          ...((teammateRows ?? []).map(r => r.user_id as string)),
+        ]))
+      }
+
       const [{ data: problemRows }, { data: submissionRows }] = await Promise.all([
         admin
           .from('problems')
@@ -100,22 +120,33 @@ export default async function DashboardPage() {
           .in('id', problemIds),
         admin
           .from('submissions')
-          .select('problem_id, status, score')
-          .eq('student_id', user.id)
+          .select('problem_id, student_id, status, score')
+          .in('student_id', teammateUserIds)
           .in('problem_id', problemIds),
       ])
 
       const order = new Map(problemIds.map((problemId, index) => [problemId, index]))
-      const submissionByProblem = new Map(
-        (submissionRows ?? []).map(row => [row.problem_id, { status: row.status as string | null, score: row.score as number | null }])
-      )
+      const STATUS_RANK: Record<string, number> = { approved: 3, pending: 2, rejected: 1, judged: 2, draft: 0 }
+
+      const byProblem = new Map<string, { status: string | null; score: number | null; hasSubmission: boolean }>()
+      for (const row of (submissionRows ?? []) as Array<{ problem_id: string; status: string | null; score: number | null }>) {
+        const current = byProblem.get(row.problem_id)
+        const rank = STATUS_RANK[row.status ?? ''] ?? -1
+        if (!current) {
+          byProblem.set(row.problem_id, { status: row.status, score: row.score, hasSubmission: true })
+          continue
+        }
+        if ((STATUS_RANK[current.status ?? ''] ?? -1) < rank) {
+          byProblem.set(row.problem_id, { status: row.status, score: row.score, hasSubmission: true })
+        }
+      }
 
       enrolledProblems = ((problemRows ?? []) as EnrolledProblem[])
         .map(problem => ({
           ...problem,
-          hasSubmission: submissionByProblem.has(problem.id),
-          submissionStatus: submissionByProblem.get(problem.id)?.status ?? null,
-          submissionScore: submissionByProblem.get(problem.id)?.score ?? null,
+          hasSubmission: byProblem.has(problem.id),
+          submissionStatus: byProblem.get(problem.id)?.status ?? null,
+          submissionScore: byProblem.get(problem.id)?.score ?? null,
         }))
         .sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999))
     }
