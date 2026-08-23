@@ -64,12 +64,53 @@ export default async function TeamWorkspacePage(props: { params: Promise<{ id: s
     .select('assigned_at, mentor_id, users(id, name, email), mentor_profiles(*)')
     .eq('team_id', teamId)
 
-  // Fetch Workspace & Conversation Channel
-  const { data: workspace } = await admin
+  // Fetch Workspace; auto-create it (plus the #general group chat with all
+  // members) if it does not exist yet, so messaging always works.
+  let { data: workspace } = await admin
     .from('workspaces')
     .select('*')
     .eq('team_id', teamId)
-    .single()
+    .maybeSingle()
+
+  if (!workspace) {
+    const teamName = (team as { name?: string } | null)?.name ?? 'Team'
+    const { data: createdWorkspace } = await admin
+      .from('workspaces')
+      .insert({ team_id: teamId, name: `${teamName} Workspace`, status: 'active' })
+      .select()
+      .single()
+
+    workspace = createdWorkspace ?? null
+
+    if (workspace) {
+      const { data: generalChannel } = await admin
+        .from('conversations')
+        .insert({
+          workspace_id: workspace.id,
+          type: 'channel',
+          name: 'general',
+          description: 'General workspace discussion',
+          created_by: user.id,
+        })
+        .select()
+        .single()
+
+      const memberUserIds = (members ?? []).map(m => m.user_id as string)
+      if (generalChannel && memberUserIds.length > 0) {
+        await admin.from('conversation_members').insert(
+          memberUserIds.map(uid => ({ conversation_id: generalChannel.id, user_id: uid }))
+        )
+      }
+
+      await admin.from('activity_logs').insert({
+        workspace_id: workspace.id,
+        actor_id: user.id,
+        action_type: 'WORKSPACE_CREATED',
+        description: 'Workspace and #general channel were set up automatically.',
+        metadata: { team_id: teamId },
+      })
+    }
+  }
 
   let channelId: string | null = null
   if (workspace) {

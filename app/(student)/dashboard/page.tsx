@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   const isStudent = profile.role === 'student'
   const isAdmin = profile.role === 'admin'
-  let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean; submissionStatus?: string | null; submissionScore?: number | null }> = []
+  let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean; submissionStatus?: string | null; submissionScore?: number | null; teamId?: string | null; teamName?: string | null }> = []
 
   let workspaces: any[] = []
   if (isStudent) {
@@ -113,6 +113,18 @@ export default async function DashboardPage() {
         ]))
       }
 
+      // Map each problem to the user's team working on it (for workspace links)
+      const teamByProblem = new Map<string, { id: string; name: string }>()
+      if (myTeamIds.length > 0) {
+        const { data: myTeamsRows } = await admin
+          .from('teams')
+          .select('id, name, problem_id')
+          .in('id', myTeamIds)
+        for (const t of (myTeamsRows ?? []) as Array<{ id: string; name: string; problem_id: string }>) {
+          if (t.problem_id) teamByProblem.set(t.problem_id, { id: t.id, name: t.name })
+        }
+      }
+
       const [{ data: problemRows }, { data: submissionRows }] = await Promise.all([
         admin
           .from('problems')
@@ -147,6 +159,8 @@ export default async function DashboardPage() {
           hasSubmission: byProblem.has(problem.id),
           submissionStatus: byProblem.get(problem.id)?.status ?? null,
           submissionScore: byProblem.get(problem.id)?.score ?? null,
+          teamId: teamByProblem.get(problem.id)?.id ?? null,
+          teamName: teamByProblem.get(problem.id)?.name ?? null,
         }))
         .sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999))
     }
@@ -373,6 +387,20 @@ export default async function DashboardPage() {
                         </span>
 
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                          {problem.teamId && (
+                            <Link href={`/teams/${problem.teamId}`} title={`Team ${problem.teamName ?? ''} — chat & collaborate`} style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#2D6A4F',
+                              background: '#EAF4EE',
+                              border: '1px solid rgba(45,106,79,0.25)',
+                              padding: '9px 12px',
+                              borderRadius: 8,
+                              textDecoration: 'none'
+                            }}>
+                              💬 Go to Workspace →
+                            </Link>
+                          )}
                           <Link href={`/problems/${problem.id}`} style={{
                             fontSize: 13,
                             fontWeight: 600,
