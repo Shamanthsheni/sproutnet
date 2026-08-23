@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { parseProgressUploads } from '@/lib/problem-progress'
 import { parseDeliverables, type DeliverableItem } from '@/lib/deliverables'
 
@@ -39,9 +40,11 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }
 }
 
 export default function AdminSolutionsList({ solutions }: { solutions: AdminSolutionRow[] }) {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -60,6 +63,32 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
       )
     })
   }, [solutions, query, statusFilter])
+
+  async function removeSolution(submissionId: string) {
+    if (!window.confirm('Permanently remove this solution? This cannot be undone and the leaderboard will be recalculated.')) return
+    setRemovingId(submissionId)
+    try {
+      const res = await fetch('/api/submissions/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submission_id: submissionId }),
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        let message = `Could not remove (${res.status}).`
+        try { message = JSON.parse(text)?.error ?? message } catch { /* keep default */ }
+        window.alert(message)
+        setRemovingId(null)
+        return
+      }
+      setExpandedId(null)
+      setRemovingId(null)
+      router.refresh()
+    } catch {
+      window.alert('Network error. Try again.')
+      setRemovingId(null)
+    }
+  }
 
   if (solutions.length === 0) {
     return (
@@ -99,8 +128,8 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
             flex: '1 1 260px',
             fontFamily: 'DM Sans, sans-serif',
             fontSize: 13,
-            color: 'var(--text-primary)',
-            background: '#1A1A1A',
+            color: '#111827',
+            background: '#FFFFFF',
             border: '1px solid var(--border-input)',
             borderRadius: 10,
             padding: '10px 14px',
@@ -114,8 +143,8 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
             fontFamily: 'DM Sans, sans-serif',
             fontSize: 13,
             fontWeight: 700,
-            color: 'var(--text-primary)',
-            background: '#1A1A1A',
+            color: '#111827',
+            background: '#FFFFFF',
             border: '1px solid var(--border-input)',
             borderRadius: 10,
             padding: '10px 14px',
@@ -349,10 +378,29 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
                       </div>
                     </Section>
 
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                       <Link href={`/problems/${sub.problemId}`} className="admin-btn admin-linkbtn" style={{ fontSize: 12, textDecoration: 'none' }}>
                         View problem page ↗
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => removeSolution(sub.id)}
+                        disabled={removingId === sub.id}
+                        style={{
+                          fontFamily: 'DM Sans, sans-serif',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          color: '#B91C1C',
+                          background: removingId === sub.id ? '#FEE2E2' : '#FFFFFF',
+                          border: '1px solid rgba(220,38,38,0.45)',
+                          borderRadius: 8,
+                          padding: '8px 14px',
+                          cursor: removingId === sub.id ? 'not-allowed' : 'pointer',
+                          marginLeft: 'auto',
+                        }}
+                      >
+                        {removingId === sub.id ? 'Removing…' : '🗑 Remove solution'}
+                      </button>
                     </div>
                   </div>
                 )}

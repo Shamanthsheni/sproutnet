@@ -180,7 +180,7 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
           {row.participantType === 'team' ? '👥 Team' : 'Indiv.'}
         </span>
 
-        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(226,232,240,0.85)' }}>
+        <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-secondary)', opacity: 0.75 }}>
           {submitted}
         </div>
 
@@ -204,15 +204,15 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
         }}>
           {/* Judge panel */}
           <div style={{
-            border: '1px solid rgba(244,167,35,0.35)',
-            background: 'rgba(244,167,35,0.05)',
+            border: '1px solid rgba(180,83,9,0.35)',
+            background: '#FFFBEB',
             borderRadius: 14,
             padding: 16,
             display: 'grid',
             gap: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 Judge this submission
               </span>
               <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
@@ -221,8 +221,13 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
             </div>
 
             <div>
-              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
-                Score — {score}/10
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  Score
+                </span>
+                <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 20, fontWeight: 900 }}>
+                  {score}<span style={{ fontSize: 13, opacity: 0.5 }}> / 10</span>
+                </span>
               </div>
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
@@ -231,12 +236,12 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
                     type="button"
                     onClick={() => setScore(n)}
                     style={{
-                      width: 34, height: 34, borderRadius: 8,
-                      border: `1.5px solid ${score === n ? '#F4A723' : 'var(--border-input)'}`,
-                      background: score === n ? 'rgba(244,167,35,0.15)' : '#1A1A1A',
-                      color: score === n ? '#F4A723' : 'rgba(226,232,240,0.65)',
+                      width: 36, height: 36, borderRadius: 8,
+                      border: `2px solid ${score === n ? '#B45309' : 'var(--border-input)'}`,
+                      background: score === n ? '#FEF3C7' : '#FFFFFF',
+                      boxShadow: score === n ? '0 0 0 3px rgba(180,83,9,0.12)' : 'none',
                       fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     }}
                   >
                     {n}
@@ -252,9 +257,9 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
               rows={2}
               style={{
                 width: '100%', boxSizing: 'border-box',
-                background: '#1A1A1A', border: '1px solid var(--border-input)',
+                background: '#FFFFFF', border: '1px solid var(--border-input)',
                 borderRadius: 10, padding: '10px 12px',
-                fontSize: 13, color: 'var(--text-primary)', resize: 'vertical',
+                fontSize: 13, color: '#111827', resize: 'vertical',
                 fontFamily: 'DM Sans, sans-serif', outline: 'none',
               }}
             />
@@ -270,9 +275,8 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
                 disabled={saving !== null}
                 style={{
                   padding: '11px 0',
-                  background: saving === 'reject' ? '#7F1D1D' : 'rgba(239,68,68,0.14)',
-                  color: saving === 'reject' ? 'rgba(255,255,255,0.5)' : '#F87171',
-                  border: '1px solid rgba(239,68,68,0.45)', borderRadius: 10,
+                  background: saving === 'reject' ? '#FEE2E2' : '#FFFFFF',
+                  border: `2px solid ${saving === 'reject' ? '#DC2626' : 'rgba(220,38,38,0.45)'}`, borderRadius: 10,
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: 14, fontWeight: 800, cursor: saving !== null ? 'not-allowed' : 'pointer',
                 }}
@@ -285,9 +289,8 @@ function JudgingRowItem({ row }: { row: JudgingRow }) {
                 disabled={saving !== null}
                 style={{
                   padding: '11px 0',
-                  background: saving === 'approve' ? '#14532D' : 'rgba(52,211,153,0.16)',
-                  color: saving === 'approve' ? 'rgba(255,255,255,0.5)' : '#34D399',
-                  border: '1px solid rgba(52,211,153,0.5)', borderRadius: 10,
+                  background: saving === 'approve' ? '#DCFCE7' : '#FFFFFF',
+                  border: `2px solid ${saving === 'approve' ? '#16A34A' : 'rgba(22,163,74,0.45)'}`, borderRadius: 10,
                   fontFamily: 'DM Sans, sans-serif',
                   fontSize: 14, fontWeight: 800, cursor: saving !== null ? 'not-allowed' : 'pointer',
                 }}
