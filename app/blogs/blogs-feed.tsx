@@ -1,12 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { startTransition, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   BLOGS_SETUP_REQUIRED_MESSAGE,
   BLOGS_SETUP_SQL_PATH,
-  isBlogBodyEmpty,
   getBlogBodyText,
   type BlogFeedPost,
   type BlogUserSummary,
@@ -31,13 +28,11 @@ const POST_TYPE_META = {
     label: 'Knowledge Share',
     accent: '#2D6A4F',
     background: '#EAF4EE',
-    description: 'Share something useful you learned, built, or tested.',
   },
   question: {
     label: 'Question / Doubt',
     accent: '#1E40AF',
     background: 'rgba(30,64,175,0.08)',
-    description: 'Ask for feedback, clarity, or help from the community.',
   },
 } as const
 
@@ -65,18 +60,6 @@ function formatDate(value: string) {
   })
 }
 
-async function readErrorMessage(res: Response, fallback: string) {
-  const text = await res.text().catch(() => '')
-  if (!text) return fallback
-
-  try {
-    const data = JSON.parse(text)
-    return data?.error ?? fallback
-  } catch {
-    return text
-  }
-}
-
 export default function BlogsFeed({
   viewer,
   initialPosts,
@@ -87,58 +70,11 @@ export default function BlogsFeed({
   showFeed = true,
   emptyState,
 }: BlogsFeedProps) {
-  const router = useRouter()
-  const [postType, setPostType] = useState<'knowledge' | 'question'>('knowledge')
-  const [postTitle, setPostTitle] = useState('')
-  const [postBody, setPostBody] = useState('')
-  const [submittingPost, setSubmittingPost] = useState(false)
-  const [actionError, setActionError] = useState('')
-
   const dashboardHref = !viewer ? '/login' : viewer.role === 'poster' ? '/poster/dashboard' : '/dashboard'
   const posts = initialPosts
   const emptyStateTitle = emptyState?.title ?? 'No blog posts yet'
   const emptyStateBody = emptyState?.body ?? 'The feed is empty for now. The first knowledge share or question posted here will become the starting point for the whole community.'
 
-  async function handleCreatePost() {
-    if (submittingPost) return
-    if (setupRequired) {
-      setActionError(BLOGS_SETUP_REQUIRED_MESSAGE)
-      return
-    }
-
-    if (!postTitle.trim()) {
-      setActionError('Post title is required.')
-      return
-    }
-    if (isBlogBodyEmpty(postBody)) {
-      setActionError('Post body cannot be empty.')
-      return
-    }
-
-    setSubmittingPost(true)
-    setActionError('')
-
-    const res = await fetch('/api/blogs/posts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: postTitle,
-        body: postBody,
-        post_type: postType,
-      }),
-    })
-
-    if (!res.ok) {
-      setActionError(await readErrorMessage(res, `Could not publish the post (${res.status}).`))
-      setSubmittingPost(false)
-      return
-    }
-
-    setPostTitle('')
-    setPostBody('')
-    setSubmittingPost(false)
-    startTransition(() => router.refresh())
-  }
 
 
 
@@ -186,71 +122,22 @@ export default function BlogsFeed({
               <div style={{ fontSize: 14, color: '#5C524A', lineHeight: 1.75, marginBottom: 16 }}>
                 {setupRequired
                   ? 'This environment is missing the blog feed tables, so posting, comments, and likes are paused until setup is completed.'
-                  : POST_TYPE_META[postType].description}
+                  : 'Share a lesson, ask a doubt, or publish a deep-dive with images, formatting, and cover art in the full editor.'}
               </div>
               {setupRequired ? (
                 <code style={{ display: 'inline-block', fontSize: 12, color: '#5C524A', background: '#F6F2EB', borderRadius: 999, padding: '10px 14px' }}>
                   {BLOGS_SETUP_SQL_PATH}
                 </code>
               ) : (
-                <>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-                    {(['knowledge', 'question'] as const).map(type => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setPostType(type)}
-                        style={{
-                          fontFamily: 'DM Sans, sans-serif',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: postType === type ? '#1C1410' : POST_TYPE_META[type].accent,
-                          background: postType === type ? '#F4A723' : POST_TYPE_META[type].background,
-                          border: 'none',
-                          borderRadius: 999,
-                          padding: '9px 14px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {POST_TYPE_META[type].label}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    value={postTitle}
-                    onChange={e => setPostTitle(e.target.value)}
-                    placeholder="Give your post a sharp title"
-                    style={{ width: '100%', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 12, padding: '14px 16px', fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#1C1410', marginBottom: 12, outline: 'none' }}
-                  />
-                  <textarea
-                    value={postBody}
-                    onChange={e => setPostBody(e.target.value)}
-                    placeholder={postType === 'question'
-                      ? 'What are you stuck on? Add context so others can help well.'
-                      : 'Share a lesson, framework, observation, or field note that could help someone else.'}
-                    rows={6}
-                    style={{ width: '100%', border: '1.5px solid rgba(28,20,16,0.12)', borderRadius: 14, padding: 16, fontFamily: 'DM Sans, sans-serif', fontSize: 15, color: '#1C1410', resize: 'vertical', outline: 'none', lineHeight: 1.7, marginBottom: 14 }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <Link
-                        href="/blogs/new"
-                        style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 700, color: '#2D6A4F', background: 'rgba(45,106,79,0.1)', padding: '10px 16px', borderRadius: 10, textDecoration: 'none' }}
-                      >
-                        Rich editor →
-                      </Link>
-                      <span style={{ fontSize: 11, color: '#8A8078' }}>For longer posts with images</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleCreatePost}
-                      disabled={submittingPost}
-                      style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 700, color: '#1C1410', background: submittingPost ? '#F9C05A' : '#F4A723', border: 'none', borderRadius: 10, padding: '12px 20px', cursor: submittingPost ? 'not-allowed' : 'pointer', boxShadow: '0 8px 18px rgba(244,167,35,0.22)' }}
-                    >
-                      {submittingPost ? 'Publishing...' : 'Quick Publish →'}
-                    </button>
-                  </div>
-                </>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Link
+                    href="/blogs/new"
+                    style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 700, color: '#FAF8F4', background: '#F4A723', padding: '12px 20px', borderRadius: 10, textDecoration: 'none', boxShadow: '0 8px 18px rgba(244,167,35,0.22)' }}
+                  >
+                    Write a post →
+                  </Link>
+                  <span style={{ fontSize: 12, color: '#8A8078' }}>Rich editor with images &amp; formatting</span>
+                </div>
               )}
             </section>
           ) : (
@@ -269,11 +156,6 @@ export default function BlogsFeed({
           )
         )}
 
-        {actionError && (
-          <div style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 14, padding: '14px 16px', fontSize: 13, color: '#B91C1C' }}>
-            {actionError}
-          </div>
-        )}
 
         {showFeed && (
           posts.length === 0 && !loadError ? (
