@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTeamEntryKeys, resolveParticipantType } from '@/lib/team-entries'
 import AdminSolutionsList, { type AdminSolutionRow } from './solutions-list'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,7 @@ export default async function AdminSolutionsPage() {
   const rows = (data ?? []) as SubRow[]
   const problemIds = Array.from(new Set(rows.map(r => r.problem_id).filter(Boolean)))
   const studentIds = Array.from(new Set(rows.map(r => r.student_id).filter(Boolean)))
+  const teamKeys = await getTeamEntryKeys(admin, studentIds)
 
   const problemById = new Map<string, { title: string; domain: string | null; team_mode: string | null }>()
   if (problemIds.length > 0) {
@@ -64,7 +66,7 @@ export default async function AdminSolutionsPage() {
       id: r.id,
       status: r.status,
       score: r.score ?? null,
-      participantType: r.participant_type === 'team' ? 'team' : 'individual',
+      participantType: resolveParticipantType(r.participant_type, r.student_id, r.problem_id, teamKeys),
       deliverables: Array.isArray(r.final_deliverables) ? r.final_deliverables : [],
       fields: {
         f_understanding: r.f_understanding ?? '',
