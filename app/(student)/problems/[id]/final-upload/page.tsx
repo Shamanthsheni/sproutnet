@@ -26,6 +26,8 @@ export default function FinalUploadPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [justSavedCount, setJustSavedCount] = useState<number | null>(null)
 
   const [score, setScore] = useState<number | null>(null)
   const [judgeFeedback, setJudgeFeedback] = useState<string | null>(null)
@@ -164,11 +166,15 @@ export default function FinalUploadPage() {
     setDeliverables(prev => prev.filter((_, i) => i !== index))
   }
 
-  async function handleSave() {
+  function requestSave() {
+    setError('')
+    setShowConfirm(true)
+  }
+
+  async function confirmSave() {
     if (!submissionId) return
     setSaving(true)
     setError('')
-    setSaved(false)
 
     const supabase = createClient()
     const { error: updateError } = await supabase
@@ -176,14 +182,17 @@ export default function FinalUploadPage() {
       .update({ final_deliverables: deliverables, participant_type: participantType })
       .eq('id', submissionId)
 
+    setSaving(false)
+
     if (updateError) {
       setError(updateError.message)
-      setSaving(false)
+      setShowConfirm(false)
       return
     }
 
+    setJustSavedCount(deliverables.length)
     setSaved(true)
-    setSaving(false)
+    setShowConfirm(false)
   }
 
   if (loading) return (
@@ -452,7 +461,7 @@ export default function FinalUploadPage() {
             Back to problem
           </Link>
           <button
-            onClick={handleSave}
+            onClick={requestSave}
             disabled={saving}
             style={{
               fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: '#1C1410',
@@ -461,7 +470,7 @@ export default function FinalUploadPage() {
               boxShadow: '0 2px 10px rgba(244,167,35,0.3)'
             }}
           >
-            {saving ? 'Saving...' : 'Save final work'}
+            {saved ? 'Saved — Update final work' : 'Submit final work'}
           </button>
         </div>
       </div>
@@ -469,6 +478,136 @@ export default function FinalUploadPage() {
       <p style={{ textAlign: 'center', marginTop: 20, fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: '#9CA3A0' }}>
         Builder: {user?.name} {user?.dept ? `(${user.dept} · ${user.year})` : ''} · Signed in as {user ? 'Student' : ''}
       </p>
+
+      {/* Confirm submission popup */}
+      {showConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => { if (!saving) setShowConfirm(false) }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(28,20,16,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 18, width: '100%', maxWidth: 460,
+              padding: '28px 30px', boxShadow: '0 24px 64px rgba(28,20,16,0.3)',
+              border: '1.5px solid rgba(28,20,16,0.1)', maxHeight: '90vh', overflowY: 'auto',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            <h3 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 24, fontWeight: 400, color: '#1C1410', margin: '0 0 6px' }}>
+              Submit your final work?
+            </h3>
+            <p style={{ fontSize: 13.5, color: '#4A3F38', margin: '0 0 16px', lineHeight: 1.55 }}>
+              This replaces everything currently saved for this problem. Admins will see it instantly in their panel.
+            </p>
+
+            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+              <Row label="Entry type" value={participantType === 'team' ? '👥 Team' : '🙋 Individual'} />
+              <Row label="Items" value={`${deliverables.length} of ${MAX_DELIVERABLES}`} />
+              <Row label="Links" value={String(deliverables.filter(d => d.kind === 'link').length)} />
+              <Row label="Files" value={String(deliverables.filter(d => d.kind === 'file').length)} />
+            </div>
+
+            {deliverables.length === 0 && (
+              <div style={{ fontSize: 13, color: '#B45309', background: 'rgba(244,167,35,0.1)', border: '1px solid rgba(244,167,35,0.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
+                ⚠️ You haven&apos;t added any items yet — you can still save an empty set.
+              </div>
+            )}
+
+            {deliverables.length > 0 && (
+              <ul style={{ margin: '0 0 16px', paddingLeft: 18, fontSize: 13, color: '#4A3F38', lineHeight: 1.7, maxHeight: 150, overflowY: 'auto' }}>
+                {deliverables.map((d, i) => (
+                  <li key={`${d.url}-${i}`}>
+                    <strong>{i + 1}. {d.label}</strong>{' '}
+                    <span style={{ color: '#9CA3A0', fontFamily: "'JetBrains Mono', monospace", fontSize: 10 }}>{d.kind.toUpperCase()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={saving}
+                style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: '#4A3F38',
+                  background: '#FAF8F4', border: '1.5px solid rgba(28,20,16,0.12)',
+                  borderRadius: 8, padding: '11px 18px', cursor: saving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={saving}
+                style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 700, color: '#FAF8F4',
+                  background: saving ? '#7BA88F' : '#2D6A4F', border: 'none',
+                  borderRadius: 8, padding: '11px 22px', cursor: saving ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {saving ? 'Submitting...' : `Submit ${deliverables.length} item${deliverables.length === 1 ? '' : 's'} ✓`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success popup */}
+      {justSavedCount != null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(28,20,16,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div style={{
+            background: '#fff', borderRadius: 18, width: '100%', maxWidth: 400,
+            padding: '30px 30px', boxShadow: '0 24px 64px rgba(28,20,16,0.3)',
+            textAlign: 'center', fontFamily: "'DM Sans', sans-serif",
+          }}>
+            <div style={{ width: 60, height: 60, margin: '0 auto 14px', background: '#EAF4EE', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 24, fontWeight: 400, color: '#1C1410', margin: '0 0 8px' }}>
+              Final work submitted!
+            </h3>
+            <p style={{ fontSize: 14, color: '#4A3F38', margin: '0 0 20px', lineHeight: 1.55 }}>
+              {justSavedCount} item{justSavedCount === 1 ? '' : 's'} delivered as a {participantType === 'team' ? 'team' : 'individual'} entry.
+              The admin panel now shows your uploads.
+            </p>
+            <button
+              onClick={() => setJustSavedCount(null)}
+              style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 700, color: '#FAF8F4',
+                background: '#2D6A4F', border: 'none', borderRadius: 8, padding: '11px 26px', cursor: 'pointer',
+              }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAF8F4', borderRadius: 8, padding: '9px 14px', fontSize: 13 }}>
+      <span style={{ color: '#6A5F58' }}>{label}</span>
+      <span style={{ color: '#1C1410', fontWeight: 600 }}>{value}</span>
     </div>
   )
 }

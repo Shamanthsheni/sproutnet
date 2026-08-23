@@ -46,7 +46,12 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return solutions.filter(s => {
-      if (statusFilter !== 'all' && s.status !== statusFilter) return false
+      const deliverableCount = parseDeliverables(s.deliverables).length
+      if (statusFilter === 'final') {
+        if (deliverableCount === 0) return false
+      } else if (statusFilter !== 'all' && s.status !== statusFilter) {
+        return false
+      }
       if (!q) return true
       return (
         s.problemTitle.toLowerCase().includes(q) ||
@@ -123,6 +128,7 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="draft">Draft</option>
+          <option value="final">📦 With final work</option>
         </select>
         <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
           {filtered.length} of {solutions.length}
@@ -133,14 +139,14 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
       <div className="admin-table">
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(220px, 1.5fr) 130px 110px 150px 90px 100px',
-          minWidth: 900,
+          gridTemplateColumns: 'minmax(220px, 1.5fr) 120px 110px 140px 90px 90px 100px',
+          minWidth: 980,
           gap: 10,
           padding: '12px 14px',
           background: 'var(--bg-hover)',
           borderBottom: '1px solid var(--border-primary)'
         }}>
-          {['Problem / Student', 'Domain', 'Entry', 'Submitted', 'Status', 'Actions'].map(h => (
+          {['Problem / Student', 'Domain', 'Entry', 'Submitted', 'Status', 'Final work', 'Actions'].map(h => (
             <div key={h} style={{
               fontFamily: 'JetBrains Mono, monospace',
               fontSize: 10,
@@ -166,8 +172,8 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
                 {/* Row */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'minmax(220px, 1.5fr) 130px 110px 150px 90px 100px',
-                  minWidth: 900,
+                  gridTemplateColumns: 'minmax(220px, 1.5fr) 120px 110px 140px 90px 90px 100px',
+                  minWidth: 980,
                   gap: 10,
                   padding: '12px 14px',
                   alignItems: 'center',
@@ -225,6 +231,26 @@ export default function AdminSolutionsList({ solutions }: { solutions: AdminSolu
                     }}>
                       {sub.status}{sub.score != null ? ` · ${sub.score}` : ''}
                     </span>
+                  </div>
+
+                  <div>
+                    {deliverables.length > 0 ? (
+                      <span style={{
+                        display: 'inline-block',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 10,
+                        letterSpacing: '0.08em',
+                        padding: '4px 9px',
+                        borderRadius: 999,
+                        background: 'rgba(96,165,250,0.12)',
+                        border: '1px solid rgba(96,165,250,0.35)',
+                        color: '#60A5FA',
+                      }}>
+                        📦 {deliverables.length}
+                      </span>
+                    ) : (
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
