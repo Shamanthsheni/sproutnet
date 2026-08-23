@@ -83,6 +83,11 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
         <Link href="/mentors" style={linkStyle('/mentors')}>
           Mentors
         </Link>
+        {hasProfile && (
+          <Link href={`/profile/${user?.profile_slug || user?.id}`} style={linkStyle('/profile')}>
+            My Portfolio
+          </Link>
+        )}
 
         {user ? (
           <>
@@ -251,7 +256,7 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
           <Link href="/mentors">Mentors</Link>
           {user ? (
             <>
-              <Link href={`/profile/${user.profile_slug || user.id}`}>Profile</Link>
+              <Link href={`/profile/${user.profile_slug || user.id}`}>My Portfolio</Link>
               {user?.role === 'admin' && <Link href="/admin">Admin Panel</Link>}
               {isPoster && <Link href="/post-problem">Post a Problem</Link>}
               <Link href="/messages">Messages</Link>

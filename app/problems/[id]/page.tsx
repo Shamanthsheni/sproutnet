@@ -163,6 +163,7 @@ export default function ProblemDetailPage() {
   const [posting, setPosting] = useState(false)
   const [activeSection, setActiveSection] = useState('context')
   const [hasSubmitted, setHasSubmitted] = useState(false)
+  const [submissionStatus, setSubmissionStatus] = useState<string | null>(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
@@ -315,6 +316,7 @@ export default function ProblemDetailPage() {
             const statusData = await statusRes.json()
             setIsEnrolled(Boolean(statusData?.enrolled))
             setHasSubmitted(Boolean(statusData?.hasSubmitted))
+            setSubmissionStatus(statusData?.submissionStatus ?? null)
             setIsCompleted(Boolean(statusData?.completed))
           } else {
             setIsEnrolled(false)
@@ -1277,6 +1279,24 @@ export default function ProblemDetailPage() {
                 </div>
               ) : isEnrolled ? (
                 <div style={{ display: 'grid', gap: 10 }}>
+                {submissionStatus === 'approved' && (
+                  <Link
+                    href={`/problems/${problem.id}/final-upload`}
+                    style={{ display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#FAF8F4', background: '#2D6A4F', borderRadius: 8, padding: '14px', textDecoration: 'none' }}
+                  >
+                    🎉 Approved! Upload Final Work (APK, papers…) →
+                  </Link>
+                )}
+                {submissionStatus === 'pending' && (
+                  <div style={{ textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#B45309', background: 'rgba(244,167,35,0.12)', border: '1px solid rgba(244,167,35,0.3)', borderRadius: 8, padding: '12px' }}>
+                    ⏳ Submitted — waiting for admin review
+                  </div>
+                )}
+                {submissionStatus === 'rejected' && (
+                  <div style={{ textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600, color: '#991B1B', background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.25)', borderRadius: 8, padding: '12px' }}>
+                    ✗ Solution was not approved — improve it and resubmit
+                  </div>
+                )}
                 <Link
                   href={`/problems/${problem.id}/submit`}
                   style={{ display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center', fontFamily: 'DM Sans, sans-serif', fontSize: 15, fontWeight: 600, color: '#1C1410', background: '#F4A723', borderRadius: 8, padding: '14px', textDecoration: 'none' }}

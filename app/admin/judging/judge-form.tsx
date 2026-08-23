@@ -12,13 +12,13 @@ export function JudgeForm({ submissionId }: { submissionId: string }) {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  async function handleJudge() {
+  async function handleJudge(decision: 'approve' | 'reject') {
     setSaving(true)
     setError('')
     const res = await fetch('/api/submissions/judge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submission_id: submissionId, score, feedback: feedback || undefined }),
+      body: JSON.stringify({ submission_id: submissionId, score, feedback: feedback || undefined, decision }),
     })
     const data = await res.json()
     setSaving(false)
@@ -97,18 +97,37 @@ export function JudgeForm({ submissionId }: { submissionId: string }) {
             <div style={{ fontSize: 11, color: '#EF4444', marginBottom: 8 }}>{error}</div>
           )}
 
-          <button
-            onClick={handleJudge}
-            disabled={saving}
-            style={{
-              width: '100%', padding: '9px 0',
-              background: saving ? '#6B5E52' : '#F4A723',
-              color: '#1C1410', border: 'none', borderRadius: 8,
-              fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {saving ? 'Saving…' : `Submit Score (${score}/10)`}
-          </button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <button
+              onClick={() => handleJudge('reject')}
+              disabled={saving}
+              style={{
+                padding: '9px 0',
+                background: saving ? '#7F1D1D' : 'rgba(239,68,68,0.15)',
+                color: saving ? 'rgba(255,255,255,0.5)' : '#F87171',
+                border: '1px solid rgba(239,68,68,0.4)', borderRadius: 8,
+                fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Reject
+            </button>
+            <button
+              onClick={() => handleJudge('approve')}
+              disabled={saving}
+              style={{
+                padding: '9px 0',
+                background: saving ? '#14532D' : 'rgba(52,211,153,0.18)',
+                color: saving ? 'rgba(255,255,255,0.5)' : '#34D399',
+                border: '1px solid rgba(52,211,153,0.45)', borderRadius: 8,
+                fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Approve
+            </button>
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 6, textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
+            APPROVE UNLOCKS THE STUDENT&apos;S FINAL UPLOAD STAGE
+          </div>
         </div>
       )}
     </div>

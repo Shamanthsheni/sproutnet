@@ -17,6 +17,7 @@ type Problem = {
   title: string
   domain: string
   deadline: string
+  team_mode?: string | null
 }
 
 type User = {
@@ -39,6 +40,8 @@ type ExistingSubmission = {
   f_implementation: string | null
   status: string
   ai_feedback: string | null
+  participant_type?: string | null
+  final_deliverables?: unknown
 }
 
 const ALL_FIELDS = [
@@ -267,6 +270,7 @@ export default function SubmitPage() {
 
   const [existing, setExisting] = useState<ExistingSubmission | null>(null)
   const [progressFiles, setProgressFiles] = useState<ProgressUploadItem[]>([])
+  const [participantType, setParticipantType] = useState<'team' | 'individual'>('individual')
 
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
 
@@ -295,6 +299,9 @@ export default function SubmitPage() {
       const parsedImplementation = parseProgressUploads(sub.f_implementation ?? '')
       setExisting(sub as ExistingSubmission)
       setProgressFiles(parsedImplementation.files)
+      if (sub.participant_type === 'team' || sub.participant_type === 'individual') {
+        setParticipantType(sub.participant_type)
+      }
       setFields({
         f_understanding: sub.f_understanding ?? '',
         f_solution: sub.f_solution ?? '',
@@ -352,10 +359,14 @@ export default function SubmitPage() {
 
       const { data: prob } = await supabase
         .from('problems')
-        .select('id, title, domain, deadline')
+        .select('id, title, domain, deadline, team_mode')
         .eq('id', problemId)
         .single()
       setProblem(prob)
+
+      // Default entry type from the problem's participation requirement.
+      const mode = (prob as Problem | null)?.team_mode
+      setParticipantType(mode === 'team' ? 'team' : 'individual')
 
       await loadSubmission(supabase, authUser.id)
       setLoading(false)
@@ -466,6 +477,7 @@ export default function SubmitPage() {
       f_feasibility: fields.f_feasibility,
       f_risks: fields.f_risks,
       f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
+      participant_type: participantType,
     }
 
     if (existing) {
@@ -534,6 +546,7 @@ export default function SubmitPage() {
       f_feasibility: fields.f_feasibility,
       f_risks: fields.f_risks,
       f_implementation: serializeProgressUploads(fields.f_implementation, progressFiles),
+      participant_type: participantType,
     }
 
     if (existing) {

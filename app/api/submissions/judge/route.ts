@@ -21,15 +21,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { submission_id, score, feedback } = await req.json() as {
+  const { submission_id, score, feedback, decision } = await req.json() as {
     submission_id: string
     score: number
     feedback?: string
+    decision?: 'approve' | 'reject'
   }
 
   if (!submission_id || score == null || score < 0 || score > 10) {
     return NextResponse.json({ error: 'Invalid input. score must be 0-10.' }, { status: 400 })
   }
+
+  const finalStatus = decision === 'reject' ? 'rejected' : 'approved'
 
   const admin = createAdminClient()
 
@@ -43,14 +46,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
   }
 
-  if (sub.status === 'judged') {
+  if (sub.status === 'judged' || sub.status === 'approved' || sub.status === 'rejected') {
     return NextResponse.json({ error: 'Already judged' }, { status: 409 })
   }
 
   const { error: updateError } = await admin
     .from('submissions')
     .update({
-      status: 'judged',
+      status: finalStatus,
       score,
       judge_feedback: feedback ?? null,
     })

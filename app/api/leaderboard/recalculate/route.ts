@@ -34,7 +34,7 @@ export async function POST() {
   const { data: submissions } = await admin
     .from('submissions')
     .select('student_id, problem_id, milestone, status')
-    .eq('status', 'judged')
+    .eq('status', 'approved')
 
   const { data: problems } = await admin
     .from('problems')

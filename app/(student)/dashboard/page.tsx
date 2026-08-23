@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   const isStudent = profile.role === 'student'
   const isAdmin = profile.role === 'admin'
-  let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean }> = []
+  let enrolledProblems: Array<EnrolledProblem & { hasSubmission: boolean; submissionStatus?: string | null; submissionScore?: number | null }> = []
 
   let workspaces: any[] = []
   if (isStudent) {
@@ -100,18 +100,22 @@ export default async function DashboardPage() {
           .in('id', problemIds),
         admin
           .from('submissions')
-          .select('problem_id')
+          .select('problem_id, status, score')
           .eq('student_id', user.id)
           .in('problem_id', problemIds),
       ])
 
       const order = new Map(problemIds.map((problemId, index) => [problemId, index]))
-      const submittedProblemIds = new Set((submissionRows ?? []).map(row => row.problem_id))
+      const submissionByProblem = new Map(
+        (submissionRows ?? []).map(row => [row.problem_id, { status: row.status as string | null, score: row.score as number | null }])
+      )
 
       enrolledProblems = ((problemRows ?? []) as EnrolledProblem[])
         .map(problem => ({
           ...problem,
-          hasSubmission: submittedProblemIds.has(problem.id),
+          hasSubmission: submissionByProblem.has(problem.id),
+          submissionStatus: submissionByProblem.get(problem.id)?.status ?? null,
+          submissionScore: submissionByProblem.get(problem.id)?.score ?? null,
         }))
         .sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999))
     }
@@ -346,6 +350,45 @@ export default async function DashboardPage() {
                           }}>
                             View problem
                           </Link>
+                          {problem.submissionStatus === 'approved' && (
+                            <Link href={`/problems/${problem.id}/final-upload`} style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#FAF8F4',
+                              background: '#2D6A4F',
+                              padding: '10px 14px',
+                              borderRadius: 8,
+                              textDecoration: 'none'
+                            }}>
+                              🎉 Upload Final Work{problem.submissionScore != null ? ` · ${problem.submissionScore}/10` : ''} →
+                            </Link>
+                          )}
+                          {problem.submissionStatus === 'pending' && (
+                            <span style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: '#B45309',
+                              background: 'rgba(244,167,35,0.12)',
+                              border: '1px solid rgba(244,167,35,0.3)',
+                              padding: '9px 12px',
+                              borderRadius: 8
+                            }}>
+                              ⏳ Awaiting review
+                            </span>
+                          )}
+                          {problem.submissionStatus === 'rejected' && (
+                            <span style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: '#991B1B',
+                              background: 'rgba(220,38,38,0.07)',
+                              border: '1px solid rgba(220,38,38,0.25)',
+                              padding: '9px 12px',
+                              borderRadius: 8
+                            }}>
+                              ✗ Not approved — resubmit
+                            </span>
+                          )}
                           <Link href={`/problems/${problem.id}/submit`} style={{
                             fontSize: 13,
                             fontWeight: 600,
@@ -452,12 +495,7 @@ export default async function DashboardPage() {
             </>
           )}
           {isAdmin && (
-            <>
-              <ActionCard href="/blogs" icon={<BlogIcon />} title="Blogs" desc="Read and join the shared community feed." />
-              <ActionCard href="/admin/problems" icon={<CheckIcon />} title="Approve Problems" desc="Review and approve pending problem posts." />
-              <ActionCard href="/admin/judging" icon={<ScaleIcon />} title="Judge Submissions" desc="Score submissions assigned to admin." />
-              <ActionCard href="/admin/analytics" icon={<ChartIcon />} title="Analytics" desc="Platform-wide stats and domain breakdown." />
-            </>
+            <ActionCard href="/admin" icon={<ScaleIcon />} title="Admin Panel" desc="Problems, solutions, judging, and analytics — all in one place." />
           )}
         </div>
 
@@ -521,14 +559,6 @@ function ProfileIcon({ size = 28 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 }
 
-function CheckIcon({ size = 28 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-}
-
 function ScaleIcon({ size = 28 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20v-4"/><path d="M6 20v-8"/><path d="M2 20h20"/><path d="M2 4l6 4 4-4 4 4 6-4"/></svg>
-}
-
-function ChartIcon({ size = 28 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
 }

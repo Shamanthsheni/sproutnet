@@ -21,6 +21,12 @@ const PROBLEM_TYPES = [
   { value: 'industry_challenge', label: 'Industry Challenge' },
 ]
 
+const PARTICIPATION_MODES = [
+  { value: 'solo', label: 'Individual only' },
+  { value: 'team', label: 'Team only' },
+  { value: 'both', label: 'Individual or Team' },
+]
+
 type Problem = {
   id: string
   title: string
@@ -36,6 +42,9 @@ type Problem = {
   constraints: string
   deliverables: string
   status: string
+  team_mode?: string | null
+  min_team_size?: number | null
+  max_team_size?: number | null
 }
 
 export default function AdminEditProblemForm({ problem }: { problem: Problem }) {
@@ -47,6 +56,9 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
   const [title, setTitle] = useState(problem.title)
   const [domain, setDomain] = useState(problem.domain)
   const [problemType, setProblemType] = useState(problem.problem_type)
+  const [teamMode, setTeamMode] = useState(
+    problem.team_mode === 'team' || problem.team_mode === 'both' ? problem.team_mode : 'solo'
+  )
   const [rewardAmount, setRewardAmount] = useState(problem.reward_amount ? String(problem.reward_amount) : '')
   const [deadline, setDeadline] = useState(problem.deadline)
   const [judgingDeadline, setJudgingDeadline] = useState(problem.judging_deadline)
@@ -90,6 +102,7 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
       scope: scope.trim(),
       constraints: constraints.trim(),
       deliverables: deliverables.trim(),
+      team_mode: teamMode,
     }
 
     const res = await fetch('/api/problems/update', {
@@ -213,6 +226,11 @@ export default function AdminEditProblemForm({ problem }: { problem: Problem }) 
           <Field label="Problem type">
             <select value={problemType} onChange={e => setProblemType(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
               {PROBLEM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Participation mode">
+            <select value={teamMode} onChange={e => setTeamMode(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+              {PARTICIPATION_MODES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </Field>
         </div>

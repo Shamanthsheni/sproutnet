@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       .limit(1),
     admin
       .from('submissions')
-      .select('id, problem_id, milestone, problems(milestones)')
+      .select('id, problem_id, milestone, status, score, judge_feedback, problems(milestones)')
       .eq('problem_id', problemId)
       .eq('student_id', user.id),
     admin
@@ -71,6 +71,9 @@ export async function POST(req: Request) {
     enrolled: enrollmentStatus === 'active',
     hasSubmitted: (submission?.length ?? 0) > 0,
     completed: isCompleted,
+    submissionStatus: submission?.[0]?.status ?? null,
+    submissionScore: submission?.[0]?.score ?? null,
+    judgeFeedback: submission?.[0]?.judge_feedback ?? null,
     activeEnrollmentCount: activeEnrollmentCount ?? 0,
     maxActiveEnrollments: MAX_ACTIVE_ENROLLMENTS,
   })

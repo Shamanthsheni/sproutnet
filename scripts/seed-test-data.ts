@@ -120,6 +120,224 @@ async function main() {
     console.log('  ✓ Team leader created')
   }
 
+  // 3b. Create/ensure an admin user
+  const { data: existingAdmin } = await admin
+    .from('users')
+    .select('id')
+    .eq('email', 'admin@sproutnet.test')
+    .maybeSingle()
+
+  if (existingAdmin) {
+    console.log('  ↻ Admin already exists')
+  } else {
+    const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
+      email: 'admin@sproutnet.test',
+      password: 'Test@123',
+      email_confirm: true,
+      user_metadata: { name: 'Test Admin', role: 'admin' }
+    })
+    if (authErr || !authUser?.user) {
+      console.error('  ✗ Failed to create admin auth user:', authErr?.message)
+    } else {
+      await admin.from('users').upsert({
+        id: authUser.user.id, email: 'admin@sproutnet.test', name: 'Test Admin', role: 'admin'
+      }, { onConflict: 'id' })
+      console.log('  ✓ Admin created')
+    }
+  }
+
+  // 3c. Create/ensure a regular student (no team)
+  const { data: existingStudent } = await admin
+    .from('users')
+    .select('id')
+    .eq('email', 'student@sproutnet.test')
+    .maybeSingle()
+
+  if (existingStudent) {
+    console.log('  ↻ Regular student already exists')
+  } else {
+    const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
+      email: 'student@sproutnet.test',
+      password: 'Test@123',
+      email_confirm: true,
+      user_metadata: { name: 'Test Student', role: 'student' }
+    })
+    if (authErr || !authUser?.user) {
+      console.error('  ✗ Failed to create student auth user:', authErr?.message)
+    } else {
+      await admin.from('users').upsert({
+        id: authUser.user.id, email: 'student@sproutnet.test', name: 'Test Student', role: 'student',
+        dept: 'Information Science', year: '2nd Year'
+      }, { onConflict: 'id' })
+      console.log('  ✓ Regular student created')
+    }
+  }
+
+  // 3d. Enroll both test students in the test problem so they can upload solutions
+  for (const email of ['leader@sproutnet.test', 'student@sproutnet.test']) {
+    const { data: u } = await admin
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (!u) continue
+
+    const { data: enrollment } = await admin
+      .from('enrollments')
+      .select('id, status')
+      .eq('problem_id', problemId)
+      .eq('student_id', u.id)
+      .maybeSingle()
+
+    if (enrollment) {
+      if (enrollment.status !== 'active') {
+        await admin.from('enrollments').update({ status: 'active' }).eq('id', enrollment.id)
+        console.log(`  ✓ Enrollment reactivated for ${email}`)
+      } else {
+        console.log(`  ↻ ${email} already enrolled`)
+      }
+      continue
+    }
+
+    const { error: enrollErr } = await admin
+      .from('enrollments')
+      .insert({ problem_id: problemId, student_id: u.id, status: 'active' })
+    if (enrollErr) {
+      console.error(`  ✗ Failed to enroll ${email}:`, enrollErr.message)
+    } else {
+      console.log(`  ✓ Enrolled ${email} in test problem`)
+    }
+  }
+
+  // 3e. Create an APPROVED submission for student@sproutnet.test
+  // so the Stage-2 final upload page can be tested immediately.
+  {
+    const { data: u } = await admin
+      .from('users')
+      .select('id')
+      .eq('email', 'student@sproutnet.test')
+      .maybeSingle()
+
+    if (u) {
+      const { data: existingSub } = await admin
+        .from('submissions')
+        .select('id')
+        .eq('problem_id', problemId)
+        .eq('student_id', u.id)
+        .maybeSingle()
+
+      if (!existingSub) {
+        const { error: subErr } = await admin.from('submissions').insert({
+          problem_id: problemId,
+          student_id: u.id,
+          milestone: 1,
+          total_milestones: 1,
+          dept: 'Information Science',
+          year: '2nd Year',
+          stage: 'full',
+          status: 'approved',
+          score: 8,
+          judge_feedback: 'Strong problem understanding. Approved — upload your final work.',
+          participant_type: 'individual',
+          final_deliverables: [],
+          f_understanding: '<p>New students and visitors struggle to navigate the campus daily.</p>',
+          f_solution: '<p>A PWA with indoor/outdoor maps, turn-by-turn directions, and QR check-ins.</p>',
+          f_impact: '<p>Saves ~15 minutes per visitor per day across 5000+ students.</p>',
+          f_rootcause: '<p>Campus grew organically; signage never kept pace with building layout changes.</p>',
+          f_feasibility: '<p>Feasible with open map libraries and college floor-plan data.</p>',
+          f_risks: '<p>Indoor map accuracy depends on timely updates from the admin office.</p>',
+          f_implementation: '<p>MVP in 4 weeks: campus graph, search, basic routing. Phase 2: QR + events.</p>',
+        })
+        if (subErr) {
+          console.error('  ✗ Failed to create approved submission:', subErr.message)
+        } else {
+          console.log('  ✓ Approved (Stage-1) submission created for student@sproutnet.test')
+        }
+      } else {
+        console.log('  ↻ Approved submission already exists')
+      }
+    }
+  }
+
+  // 3f. Create a SECOND problem enrolled by student@sproutnet.test with NO submission,
+  // so the same account can also test a fresh Stage-1 submission.
+  {
+    const { data: existingSecond } = await admin
+      .from('problems')
+      .select('id')
+      .eq('title', 'Smart Waste Segregation Awareness Tracker')
+      .maybeSingle()
+
+    let secondProblemId: string
+    if (existingSecond) {
+      secondProblemId = existingSecond.id
+      console.log('  ↻ Second test problem already exists')
+    } else {
+      const { data: prob, error: probErr } = await admin
+        .from('problems')
+        .insert({
+          title: 'Smart Waste Segregation Awareness Tracker',
+          domain: 'Climate',
+          problem_type: 'public_impact',
+          status: 'open',
+          poster_id: posterId,
+          context: 'Households and hostels mix wet and dry waste, making recycling inefficient. Awareness campaigns rarely measure whether behaviour actually changes.',
+          problem_stmt: 'Build a tracker that helps students log and improve their waste segregation habits, with measurable weekly progress.',
+          scope: '- Daily segregation logging with photo proof\n- Weekly streaks and hostel leaderboards\n- Simple analytics on waste patterns',
+          constraints: '- Mobile-first web app\n- Works on low-end devices\n- Kannada and English support',
+          deliverables: '- Working prototype\n- Source repository\n- Short demo video',
+          milestones: 5,
+          deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          judging_deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+          reward_amount: null,
+          team_mode: 'solo',
+          min_team_size: 1,
+          max_team_size: 1,
+          mentor_required: false,
+        })
+        .select()
+        .single()
+
+      if (probErr || !prob) {
+        console.error('  ✗ Failed to create second problem:', probErr?.message)
+        secondProblemId = ''
+      } else {
+        secondProblemId = prob.id
+        console.log('  ✓ Second problem "Smart Waste Segregation" created (team_mode=solo)')
+      }
+    }
+
+    if (secondProblemId) {
+      const { data: u } = await admin
+        .from('users')
+        .select('id')
+        .eq('email', 'student@sproutnet.test')
+        .maybeSingle()
+
+      if (u) {
+        const { data: enr } = await admin
+          .from('enrollments')
+          .select('id, status')
+          .eq('problem_id', secondProblemId)
+          .eq('student_id', u.id)
+          .maybeSingle()
+
+        if (!enr) {
+          const { error: e2 } = await admin
+            .from('enrollments')
+            .insert({ problem_id: secondProblemId, student_id: u.id, status: 'active' })
+          if (e2 && !String(e2.message).includes('duplicate')) {
+            console.error('  ✗ Failed to enroll student in second problem:', e2.message)
+          } else {
+            console.log('  ✓ student@sproutnet.test enrolled in second problem (no submission yet)')
+          }
+        } else {
+          console.log('  ↻ Already enrolled in second problem')
+        }
+      }
+    }
+  }
+
   // 4. Create a team
   const { data: existingTeam } = await admin
     .from('teams')

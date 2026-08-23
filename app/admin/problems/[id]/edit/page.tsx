@@ -26,7 +26,7 @@ export default async function AdminEditProblemPage({ params }: { params: Promise
 
   const { data: problem } = await admin
     .from('problems')
-    .select('id, title, domain, problem_type, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status')
+    .select('id, title, domain, problem_type, reward_amount, milestones, deadline, judging_deadline, context, problem_stmt, scope, constraints, deliverables, status, team_mode')
     .eq('id', id)
     .single()
 

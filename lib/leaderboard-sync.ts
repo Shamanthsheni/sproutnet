@@ -14,7 +14,7 @@ export async function syncStudentToLeaderboard(studentId: string) {
   const { data: allSubs } = await admin
     .from('submissions')
     .select('problem_id, milestone, score')
-    .eq('status', 'judged')
+    .eq('status', 'approved')
     .eq('student_id', studentId)
 
   const { data: problems } = await admin

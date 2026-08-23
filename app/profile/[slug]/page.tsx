@@ -119,7 +119,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     .from('submissions')
     .select('id, score, status, created_at, problems(title)')
     .eq('student_id', userProfile.id)
-    .eq('status', 'judged')
+    .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(10)
 

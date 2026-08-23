@@ -30,7 +30,8 @@ export default function AdminOverviewPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-        <ActionCard href="/admin/problems" label="Problems" meta="moderation" desc="Approve/hold, edit, delete, view enrollments." />
+        <ActionCard href="/admin/problems" label="Problems" meta="moderation" desc="Approve/hold, edit, participation mode, delete." />
+        <ActionCard href="/admin/solutions" label="Solutions" meta="uploads" desc="View uploaded solutions, files, links, deliverables." />
         <ActionCard href="/admin/judging" label="Judging" meta="queue" desc="Stage 2 pending submissions in the queue." />
         <ActionCard href="/admin/analytics" label="Analytics" meta="metrics" desc="Live counts and domain breakdown." />
       </div>
