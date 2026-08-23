@@ -1,78 +1,81 @@
-import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { JudgeForm } from './judge-form'
+import { getTeamEntryKeys, resolveParticipantType } from '@/lib/team-entries'
+import JudgingQueue, { type JudgingRow } from './judging-queue'
 
-type SubmissionRow = {
-  id: string
-  stage: string
-  milestone: number
-  status: string
-  submitted_at: string
-  problem_id: string
-  student_id: string
-  problem_title: string | null
-  problem_domain: string | null
-  student_name: string | null
-  student_dept: string | null
-  student_year: string | null
-}
+export const dynamic = 'force-dynamic'
 
 export default async function AdminJudgingPage() {
   const admin = createAdminClient()
 
   const { data } = await admin
     .from('submissions')
-    .select('id, stage, milestone, status, submitted_at, problem_id, student_id')
+    .select('id, milestone, status, participant_type, final_deliverables, f_understanding, f_solution, f_impact, f_rootcause, f_feasibility, f_risks, f_implementation, submitted_at, problem_id, student_id')
     .eq('stage', 'full')
     .eq('status', 'pending')
     .order('submitted_at', { ascending: false })
     .limit(200)
 
-  const rows = (data ?? []) as Array<{
+  type SubRow = {
     id: string
-    stage: string
     milestone: number
     status: string
+    participant_type: string | null
+    final_deliverables: unknown
+    f_understanding: string | null
+    f_solution: string | null
+    f_impact: string | null
+    f_rootcause: string | null
+    f_feasibility: string | null
+    f_risks: string | null
+    f_implementation: string | null
     submitted_at: string
     problem_id: string
     student_id: string
-  }>
+  }
 
+  const rows = (data ?? []) as SubRow[]
   const problemIds = Array.from(new Set(rows.map(r => r.problem_id).filter(Boolean)))
   const studentIds = Array.from(new Set(rows.map(r => r.student_id).filter(Boolean)))
 
-  const problemById = new Map<string, { title: string | null; domain: string | null }>()
-  if (problemIds.length > 0) {
-    const { data: probs } = await admin
-      .from('problems')
-      .select('id, title, domain')
-      .in('id', problemIds)
-    for (const p of (probs ?? []) as Array<{ id: string; title: string | null; domain: string | null }>) {
-      problemById.set(p.id, { title: p.title ?? null, domain: p.domain ?? null })
-    }
-  }
+  const teamKeys = await getTeamEntryKeys(admin, studentIds)
 
-  const studentById = new Map<string, { name: string | null; dept: string | null; year: string | null }>()
-  if (studentIds.length > 0) {
-    const { data: users } = await admin
-      .from('users')
-      .select('id, name, dept, year')
-      .in('id', studentIds)
-    for (const u of (users ?? []) as Array<{ id: string; name: string | null; dept: string | null; year: string | null }>) {
-      studentById.set(u.id, { name: u.name ?? null, dept: u.dept ?? null, year: u.year ?? null })
-    }
-  }
+  const [problemMap, studentMap] = await Promise.all([
+    problemIds.length
+      ? admin.from('problems').select('id, title, domain').in('id', problemIds).then(
+          ({ data: probs }) => new Map(((probs ?? []) as Array<{ id: string; title: string; domain: string | null }>).map(p => [p.id, p]))
+        )
+      : Promise.resolve(new Map<string, { id: string; title: string; domain: string | null }>()),
+    studentIds.length
+      ? admin.from('users').select('id, name, dept, year').in('id', studentIds).then(
+          ({ data: users }) => new Map(((users ?? []) as Array<{ id: string; name: string; dept: string | null; year: string | null }>).map(u => [u.id, u]))
+        )
+      : Promise.resolve(new Map<string, { id: string; name: string; dept: string | null; year: string | null }>()),
+  ])
 
-  const submissions: SubmissionRow[] = rows.map(r => {
-    const p = problemById.get(r.problem_id)
-    const s = studentById.get(r.student_id)
+  const queue: JudgingRow[] = rows.map(r => {
+    const p = problemMap.get(r.problem_id)
+    const s = studentMap.get(r.student_id)
     return {
-      ...r,
-      problem_title: p?.title ?? null,
-      problem_domain: p?.domain ?? null,
-      student_name: s?.name ?? null,
-      student_dept: s?.dept ?? null,
-      student_year: s?.year ?? null,
+      id: r.id,
+      status: r.status,
+      participantType: resolveParticipantType(r.participant_type, r.student_id, r.problem_id, teamKeys),
+      deliverables: Array.isArray(r.final_deliverables) ? r.final_deliverables : [],
+      fields: {
+        f_understanding: r.f_understanding ?? '',
+        f_solution: r.f_solution ?? '',
+        f_impact: r.f_impact ?? '',
+        f_rootcause: r.f_rootcause ?? '',
+        f_feasibility: r.f_feasibility ?? '',
+        f_risks: r.f_risks ?? '',
+        f_implementation: r.f_implementation ?? '',
+      },
+      submittedAt: r.submitted_at,
+      problemTitle: p?.title ?? 'Unknown problem',
+      problemDomain: p?.domain ?? null,
+      problemId: r.problem_id,
+      studentName: s?.name ?? 'Unknown student',
+      studentDept: s?.dept ?? null,
+      studentYear: s?.year ?? null,
     }
   })
 
@@ -87,7 +90,7 @@ export default async function AdminJudgingPage() {
           textTransform: 'uppercase',
           marginBottom: 10
         }}>
-          JUDGING · QUEUE
+          JUDGING · STAGE-1 QUEUE
         </div>
         <h1 style={{
           fontFamily: 'Sora, sans-serif',
@@ -100,108 +103,12 @@ export default async function AdminJudgingPage() {
           Judging queue
         </h1>
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>
-          Submissions waiting in the blind judging queue. Showing latest 200.
+          Review each written solution, score it 0–10, then Approve to unlock the builder&apos;s
+          Stage-2 final upload — or Reject to send it back.
         </p>
       </div>
 
-      {submissions.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '80px 24px',
-          background: 'var(--bg-surface)',
-          borderRadius: 18,
-          border: '1px solid var(--border-primary)'
-        }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⚖️</div>
-          <div style={{
-            fontFamily: 'Sora, sans-serif',
-            fontSize: 18,
-            fontWeight: 900,
-            color: 'var(--text-primary)',
-            marginBottom: 8
-          }}>
-            No pending submissions
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-            When students submit solutions, they will appear here.
-          </div>
-        </div>
-      ) : (
-        <div className="admin-table">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.4fr 160px 130px 170px 180px',
-            minWidth: 800,
-            gap: 10,
-            padding: '12px 14px',
-            background: 'var(--bg-hover)',
-            borderBottom: '1px solid var(--border-primary)'
-          }}>
-            {['Problem', 'Domain', 'Submitted', 'Student', 'Actions'].map(h => (
-              <div key={h} style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 10,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em'
-              }}>
-                {h}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ maxHeight: 680, overflowY: 'auto' }}>
-            {submissions.map(sub => {
-              const submitted = new Date(sub.submitted_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-              const studentLabel = sub.student_name ?? `Student ${sub.student_id.slice(0, 6)}…`
-              return (
-                <div key={sub.id} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.4fr 160px 130px 170px 180px',
-                  minWidth: 800,
-                  gap: 10,
-                  padding: '12px 14px',
-                  borderBottom: '1px solid var(--border-primary)',
-                  alignItems: 'center'
-                }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {sub.problem_title ?? 'Problem'}
-                    </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
-                      {sub.id.slice(0, 8)}… · status={sub.status}
-                    </div>
-                  </div>
-
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(226,232,240,0.85)', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {sub.problem_domain ?? '—'}
-                  </div>
-
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(226,232,240,0.85)' }}>
-                    {submitted}
-                  </div>
-
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 12, color: 'rgba(226,232,240,0.9)', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {studentLabel}
-                    </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
-                      {(sub.student_dept ?? '—')} · {(sub.student_year ?? '—')}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <Link href={`/problems/${sub.problem_id}`} className="admin-btn admin-linkbtn" style={{ fontSize: 11 }}>
-                      View
-                    </Link>
-                    <JudgeForm submissionId={sub.id} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      <JudgingQueue rows={queue} />
 
       <div style={{
         marginTop: 18,
@@ -209,8 +116,9 @@ export default async function AdminJudgingPage() {
         fontSize: 12,
         color: 'var(--text-muted)'
       }}>
-        Click <strong>Judge</strong> on a submission to score it (0–10). Judged submissions are synced to the leaderboard automatically.
-        Requires the <code>score</code> column on the submissions table — run the latest migration if it does not exist.
+        Click <strong>Review</strong> to read the full submission inline — no page hops needed.
+        Approved solutions sync to the leaderboard automatically; approved builders get the
+        green “Upload Final Work” button on their dashboard and the public /solutions page.
       </div>
     </div>
   )

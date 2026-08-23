@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTeamEntryKeys, resolveParticipantType } from '@/lib/team-entries'
 import { parseDeliverables } from '@/lib/deliverables'
 
 export const dynamic = 'force-dynamic'
@@ -51,6 +52,7 @@ export default async function SolutionsPage() {
 
   const problemIds = Array.from(new Set(completed.map(r => r.problem_id)))
   const studentIds = Array.from(new Set(completed.map(r => r.student_id)))
+  const teamKeys = await getTeamEntryKeys(admin, studentIds)
 
   const [problemMap, studentMap] = await Promise.all([
     problemIds.length
@@ -75,7 +77,7 @@ export default async function SolutionsPage() {
       problemDomain: p?.domain ?? null,
       authorName: u?.name ?? 'SproutNet builder',
       authorSlug: u?.profile_slug ?? null,
-      participantType: r.participant_type === 'team' ? 'team' : 'individual',
+      participantType: resolveParticipantType(r.participant_type, r.student_id, r.problem_id, teamKeys),
       score: r.score ?? null,
       feedback: r.judge_feedback ?? null,
       deliverables: parseDeliverables(r.final_deliverables),
