@@ -38,6 +38,7 @@ export async function proxy(request: NextRequest) {
     '/join',
     '/forgot-password',
     '/problems',
+    '/solutions',
     '/blogs',
     '/leaderboard',
     '/impact',

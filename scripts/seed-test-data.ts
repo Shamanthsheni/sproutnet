@@ -231,7 +231,7 @@ async function main() {
           problem_id: problemId,
           student_id: u.id,
           milestone: 1,
-          total_milestones: 1,
+          total_milestones: 5,
           dept: 'Information Science',
           year: '2nd Year',
           stage: 'full',
@@ -256,6 +256,85 @@ async function main() {
       } else {
         console.log('  ↻ Approved submission already exists')
       }
+
+      // Ensure the approved submission carries sample Stage-2 deliverables
+      // so the public /solutions showcase has content.
+      const { data: subForDeliverables } = await admin
+        .from('submissions')
+        .select('id, final_deliverables')
+        .eq('problem_id', problemId)
+        .eq('student_id', u.id)
+        .maybeSingle()
+
+      if (subForDeliverables && (!Array.isArray(subForDeliverables.final_deliverables) || subForDeliverables.final_deliverables.length === 0)) {
+        const { error: delErr } = await admin
+          .from('submissions')
+          .update({
+            final_deliverables: [
+              { kind: 'link', label: 'Live app (PWA demo)', url: 'https://example.com/campus-nav-demo' },
+              { kind: 'link', label: 'GitHub repository', url: 'https://github.com/example/campus-navigation' },
+              { kind: 'file', label: 'Research notes (test data).txt', url: 'https://example.com/research-notes.txt', name: 'Research notes (test data).txt' },
+            ],
+            judge_feedback: 'Strong problem understanding. Approved — final work received.',
+          })
+          .eq('id', subForDeliverables.id)
+        if (delErr) {
+          console.error('  ✗ Failed to attach sample deliverables:', delErr.message)
+        } else {
+          console.log('  ✓ Sample final deliverables attached (shows on /solutions)')
+        }
+      }
+    }
+  }
+
+  // 3f-bis. Give the TEAM LEADER a completed two-phase submission too, so the
+  // /solutions showcase demonstrates a Team entry.
+  {
+    const { data: leader } = await admin
+      .from('users')
+      .select('id')
+      .eq('email', 'leader@sproutnet.test')
+      .maybeSingle()
+
+    const { data: existingLeaderSub } = await admin
+      .from('submissions')
+      .select('id')
+      .eq('problem_id', problemId)
+      .eq('student_id', leader?.id ?? '')
+      .maybeSingle()
+
+    if (leader && !existingLeaderSub) {
+      const { error: subErr } = await admin.from('submissions').insert({
+        problem_id: problemId,
+        student_id: leader.id,
+        milestone: 1,
+        total_milestones: 5,
+        dept: 'Computer Science',
+        year: '3rd Year',
+        stage: 'full',
+        status: 'approved',
+        score: 9,
+        judge_feedback: 'Excellent routing design and team execution. Approved.',
+        participant_type: 'team',
+        final_deliverables: [
+          { kind: 'link', label: 'Campus Coders — Live build', url: 'https://example.com/campus-coders-app' },
+          { kind: 'link', label: 'Campus Coders — GitHub org', url: 'https://github.com/example/campus-coders' },
+        ],
+        f_understanding: '<p>Wayfinding gaps cost every visitor time daily.</p>',
+        f_solution: '<p>Team-built PWA navigator with QR room check-ins.</p>',
+        f_impact: '<p>Cuts average wayfinding time by half in pilot surveys.</p>',
+        f_rootcause: '<p>No central, updated indoor map source existed.</p>',
+        f_feasibility: '<p>Built on open-source mapping stacks already in use.</p>',
+        f_risks: '<p>Room data upkeep needs an owner post-season.</p>',
+        f_implementation: '<p>Shipped MVP; facilities office adopting data pipeline.</p>',
+      })
+      if (subErr) {
+        console.error('  ✗ Failed to create team submission:', subErr.message)
+      } else {
+        console.log('  ✓ Completed TEAM submission created for leader@sproutnet.test')
+      }
+    } else {
+      console.log('  ↻ Team submission already exists')
     }
   }
 

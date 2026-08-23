@@ -27,8 +27,12 @@ All accounts use the same password: **`Test@123`**
 ## Seeded data
 
 - Problem: **Build a Smart Campus Navigation App** (AI & Data, `team_mode = both`)
+- Problem: **Smart Waste Segregation Awareness Tracker** (Climate, `team_mode = solo`)
 - Team: **Campus Coders** + workspace + general channel
-- Both test students are **enrolled (active)** in the problem above — they can upload solutions immediately
+- Both test students are **enrolled (active)** in the Smart Campus problem
+- Showcase submissions for `/solutions`:
+  - `student@sproutnet.test` → Individual entry, ★8, 3 sample deliverables
+  - `leader@sproutnet.test` → **Team** entry, ★9, 2 sample deliverables
 
 ## How to upload a solution (two-stage flow)
 

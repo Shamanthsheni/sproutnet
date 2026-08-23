@@ -74,6 +74,9 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
         <Link href="/problems" style={linkStyle('/problems')}>
           Problems
         </Link>
+        <Link href="/solutions" style={linkStyle('/solutions')}>
+          Solutions
+        </Link>
         <Link href="/blogs" style={linkStyle('/blogs')}>
           Blogs
         </Link>
@@ -251,6 +254,7 @@ export default function Navbar({ user }: { user?: NavbarUser | null }) {
         </summary>
         <div className="sn-mobile-panel">
           <Link href="/problems">Problems</Link>
+          <Link href="/solutions">Solutions</Link>
           <Link href="/blogs">Blogs</Link>
           <Link href="/leaderboard">Leaderboard</Link>
           <Link href="/mentors">Mentors</Link>
