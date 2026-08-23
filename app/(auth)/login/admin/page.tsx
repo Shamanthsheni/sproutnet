@@ -121,6 +121,10 @@ export default function AdminLoginPage() {
               {loading ? 'Signing in...' : 'Sign in as Admin →'}
             </button>
 
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, textAlign: 'center', margin: 0 }}>
+              <Link href="/forgot-password" style={{ color: '#2D6A4F', fontWeight: 600, textDecoration: 'none' }}>Forgot password?</Link>
+            </p>
+
           </form>
 
           <div style={{ borderTop: '1px solid rgba(28,20,16,0.07)', margin: '24px 0' }} />

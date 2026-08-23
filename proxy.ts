@@ -36,6 +36,7 @@ export async function proxy(request: NextRequest) {
     '/login/mentor',
     '/login/admin',
     '/join',
+    '/forgot-password',
     '/problems',
     '/blogs',
     '/leaderboard',
