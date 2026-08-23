@@ -29,10 +29,10 @@ export default async function SolutionsPage() {
   // Only fully-completed solutions: Phase 1 approved AND Phase 2 uploads exist.
   const { data: rows } = await admin
     .from('submissions')
-    .select('id, problem_id, student_id, participant_type, score, judge_feedback, final_deliverables, updated_at, created_at')
+    .select('id, problem_id, student_id, participant_type, score, judge_feedback, final_deliverables, submitted_at')
     .eq('stage', 'full')
     .eq('status', 'approved')
-    .order('updated_at', { ascending: false })
+    .order('submitted_at', { ascending: false })
     .limit(100)
 
   type Row = {
@@ -44,8 +44,7 @@ export default async function SolutionsPage() {
     judge_feedback: string | null
     final_deliverables: unknown
     f_solution: string | null
-    updated_at: string | null
-    created_at: string
+    submitted_at: string
   }
 
   const completed = ((rows ?? []) as Row[]).filter(r => parseDeliverables(r.final_deliverables).length > 0)
@@ -80,7 +79,7 @@ export default async function SolutionsPage() {
       score: r.score ?? null,
       feedback: r.judge_feedback ?? null,
       deliverables: parseDeliverables(r.final_deliverables),
-      completedAt: r.updated_at ?? r.created_at,
+      completedAt: r.submitted_at,
     }
   })
 

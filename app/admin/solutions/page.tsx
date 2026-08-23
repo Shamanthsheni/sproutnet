@@ -8,9 +8,9 @@ export default async function AdminSolutionsPage() {
 
   const { data } = await admin
     .from('submissions')
-    .select('id, stage, milestone, status, score, participant_type, final_deliverables, f_understanding, f_solution, f_impact, f_rootcause, f_feasibility, f_risks, f_implementation, created_at, problem_id, student_id')
+    .select('id, stage, milestone, status, score, participant_type, final_deliverables, f_understanding, f_solution, f_impact, f_rootcause, f_feasibility, f_risks, f_implementation, submitted_at, problem_id, student_id')
     .eq('stage', 'full')
-    .order('created_at', { ascending: false })
+    .order('submitted_at', { ascending: false })
     .limit(200)
 
   type SubRow = {
@@ -26,7 +26,7 @@ export default async function AdminSolutionsPage() {
     f_feasibility: string | null
     f_risks: string | null
     f_implementation: string | null
-    created_at: string
+    submitted_at: string
     problem_id: string
     student_id: string
   }
@@ -75,7 +75,7 @@ export default async function AdminSolutionsPage() {
         f_risks: r.f_risks ?? '',
         f_implementation: r.f_implementation ?? '',
       },
-      createdAt: r.created_at,
+      createdAt: r.submitted_at,
       problemTitle: p?.title ?? 'Unknown problem',
       problemDomain: p?.domain ?? null,
       problemId: r.problem_id,

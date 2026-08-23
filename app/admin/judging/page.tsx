@@ -7,7 +7,7 @@ type SubmissionRow = {
   stage: string
   milestone: number
   status: string
-  created_at: string
+  submitted_at: string
   problem_id: string
   student_id: string
   problem_title: string | null
@@ -22,10 +22,10 @@ export default async function AdminJudgingPage() {
 
   const { data } = await admin
     .from('submissions')
-    .select('id, stage, milestone, status, created_at, problem_id, student_id')
+    .select('id, stage, milestone, status, submitted_at, problem_id, student_id')
     .eq('stage', 'full')
     .eq('status', 'pending')
-    .order('created_at', { ascending: false })
+    .order('submitted_at', { ascending: false })
     .limit(200)
 
   const rows = (data ?? []) as Array<{
@@ -33,7 +33,7 @@ export default async function AdminJudgingPage() {
     stage: string
     milestone: number
     status: string
-    created_at: string
+    submitted_at: string
     problem_id: string
     student_id: string
   }>
@@ -152,7 +152,7 @@ export default async function AdminJudgingPage() {
 
           <div style={{ maxHeight: 680, overflowY: 'auto' }}>
             {submissions.map(sub => {
-              const submitted = new Date(sub.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              const submitted = new Date(sub.submitted_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
               const studentLabel = sub.student_name ?? `Student ${sub.student_id.slice(0, 6)}…`
               return (
                 <div key={sub.id} style={{
