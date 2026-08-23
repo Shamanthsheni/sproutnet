@@ -1,17 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-export async function POST() {
-  const supabase = await createClient()
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+  } catch {
+    // Even if sign-out fails, clear auth cookies and send the user home.
+  }
 
-  const { error } = await supabase.auth.signOut()
+  const response = NextResponse.redirect(new URL('/', request.url), { status: 302 })
 
-  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL!))
-
-  if (error) {
-    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https?:\/\/([^.]+)/)?.[1]
-    if (projectRef) {
-      response.cookies.set(`sb-${projectRef}-auth-token`, '', { maxAge: -1, path: '/' })
+  // Best-effort cookie cleanup so no stale session remains.
+  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https?:\/\/([^.]+)/)?.[1]
+  if (projectRef) {
+    for (const name of [`sb-${projectRef}-auth-token`, `sb-${projectRef}-auth-token-code-verifier`]) {
+      response.cookies.set(name, '', { maxAge: -1, path: '/' })
     }
   }
 
